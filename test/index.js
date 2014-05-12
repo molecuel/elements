@@ -92,10 +92,14 @@ describe('mlcl_elastic', function() {
       mypage.title = 'This is a testpage';
       mypage.save(function(err) {
         should.not.exist(err);
-        setTimeout(function() {
-          done();
-        }, 1000);
+        done();
       });
+    });
+
+    it('should wait for saved objects be refreshed in index', function(done) {
+      setTimeout(function() {
+        done();
+      }, 1000);
     });
 
     it('should return a object via url and lang', function(done) {
