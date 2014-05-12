@@ -3,7 +3,7 @@
  * INSPIRATIONlabs GmbH
  * http://www.inspirationlabs.com
  */
-var formsAngular = require('forms-angular');
+var formsAngular = require('forms-angular-states');
 var _ = require('underscore');
 var fs = require('fs');
 var async = require('async');
