@@ -4,7 +4,7 @@
   "private": false,
   "dependencies": {
     "mongoose": ">=0.0.1",
-    "forms-angular-states": ">=0.0.1",
+    "forms-angular": ">=0.0.1",
     "validator": ">=0.0.1",
     "uuid": ">=0.0.1",
     "underscore": ">=0.0.1",
