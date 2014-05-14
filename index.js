@@ -22,7 +22,7 @@ var elements = function () {
   this.appInitialized = false;
 
   // emit molecuel elements pre init event
-  molecuel.emit('mlcl::elemets::init:pre', self);
+  molecuel.emit('mlcl::elements::init:pre', self);
 
   // uuid
   this.uuid = require('uuid');
@@ -37,6 +37,8 @@ var elements = function () {
   this.schemaRegistry = {};
   this.subSchemaRegistry = {};
   this.schemaDefinitionRegistry = {};
+
+  this.postApiQueue = [];
 
   this.dataFormHandlerRegQueue = [];
   this.dataFormHandlerReg = [];
@@ -53,6 +55,7 @@ var elements = function () {
    */
   var checkInit = function checkInit() {
     if (self.database && self.elastic) {
+      molecuel.emit('mlcl::elements::registrations:pre', self);
       // register subschemas from registry
       self.registerSubSchemas();
       // load the definitions
@@ -61,6 +64,8 @@ var elements = function () {
       self.registerSchemas();
       // render Schemas from registry
       self.setElementTypes();
+      // all registered event
+      molecuel.emit('mlcl::elements::registrations:post', self);
       // send init event
       molecuel.emit('mlcl::elements::init:post', self);
     }
@@ -75,6 +80,7 @@ var elements = function () {
     var Schema = self.mongoose.Schema;
     var ObjectId = self.mongoose.Schema.ObjectId;
     self.ObjectId = ObjectId;
+    self.Types = self.mongoose.Schema.Types;
     self.coreSchema = Schema;
     self.baseSchema = {
       updatedat: { type: Date, default: Date.now, form: {hidden: true} },
@@ -99,9 +105,19 @@ var elements = function () {
     if (self.dataFormHandler) {
       molecuel.emit('mlcl::elements::dataFormHandler::addResources:pre', self);
       async.each(self.dataFormHandlerRegQueue, function (elname, callback) {
-        self.dataFormHandler.addResource(elname, self.modelRegistry[elname]);
         if (_.indexOf(self.dataFormHandlerReg, elname) === -1) {
-          self.dataFormHandler.addResource(elname, self.modelRegistry[elname]);
+          self.dataFormHandler.addResource(elname, self.modelRegistry[elname], {
+            onSave: function(doc, req, callback) {
+              molecuel.emit('mlcl::elements::api:save', doc, req);
+              async.each(self.postApiQueue, function(queueElement, qcallback) {
+                queueElement(doc, req, qcallback);
+              }, function() {
+                console.log('end');
+                callback(null);
+              });
+            }
+            //@todo findFunc function(req, callback(err, query)) applies a filter to records returned by the server
+          });
           self.dataFormHandlerReg.push(elname);
         }
         callback();
@@ -121,6 +137,10 @@ var elements = function () {
 
   return this;
 };
+
+elements.prototype.registerPostApiHandler = function registerPostApiHandler(handlerFunction) {
+  this.postApiQueue.push(handlerFunction);
+}
 
 /**
  * Set the base schema this function is like the not yet available mongoose extend function
@@ -456,7 +476,7 @@ elements.prototype.getFields = function () {
  */
 /*elements.prototype.getField = function (fieldname) {
 
-};*/
+ };*/
 
 /**
  * Set or create a field
@@ -465,9 +485,9 @@ elements.prototype.getFields = function () {
  * @todo implement this
  */
 /*
-elements.prototype.setField = function (fieldname, definition) {
+ elements.prototype.setField = function (fieldname, definition) {
 
-};*/
+ };*/
 
 /**
  * Search for element by url
