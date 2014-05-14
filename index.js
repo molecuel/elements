@@ -140,7 +140,7 @@ var elements = function () {
 
 elements.prototype.registerPostApiHandler = function registerPostApiHandler(handlerFunction) {
   this.postApiQueue.push(handlerFunction);
-}
+};
 
 /**
  * Set the base schema this function is like the not yet available mongoose extend function
