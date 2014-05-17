@@ -214,17 +214,20 @@ elements.prototype.initApplication = function (app) {
         var myObject = result.hits.hits[0];
         var mySource = result.hits.hits[0]._source;
         var myType = result.hits.hits[0]._type;
+        // set the elements content first for the main section
+        mySource._meta = {
+          module: 'elements',
+          type: myObject._type
+        };
+        mySource._view = { template: myObject._type};
+        molecuel.setContent(res, 'main', mySource);
+
+        // get the type handler if not default handling
         var currentTypeHandler = self.getTypeHandler(myType);
         // check if there is a special handler for the element type
         if(currentTypeHandler) {
           currentTypeHandler(req, res, next);
         } else {
-          mySource._meta = {
-            module: 'elements',
-            type: myObject._type
-          };
-          mySource._view = { template: 'news'};
-          molecuel.setContent(res, 'main', mySource);
           next();
         }
       } else {
