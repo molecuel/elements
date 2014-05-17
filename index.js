@@ -43,6 +43,8 @@ var elements = function () {
   this.dataFormHandlerRegQueue = [];
   this.dataFormHandlerReg = [];
 
+  this.typeHandlerRegistry = {};
+
   /**
    * Schema directory config
    */
@@ -211,14 +213,23 @@ elements.prototype.initApplication = function (app) {
       if (result && result.hits && result.hits.hits && result.hits.hits[0]) {
         var myObject = result.hits.hits[0];
         var mySource = result.hits.hits[0]._source;
-        mySource._meta = {
-          module: 'elements',
-          type: myObject._type
-        };
-        mySource._view = { template: 'news'};
-        molecuel.setContent(res, 'main', mySource);
+        var myType = result.hits.hits[0]._type;
+        var currentTypeHandler = self.getTypeHandler(myType);
+        // check if there is a special handler for the element type
+        if(currentTypeHandler) {
+          currentTypeHandler(req, res, next);
+        } else {
+          mySource._meta = {
+            module: 'elements',
+            type: myObject._type
+          };
+          mySource._view = { template: 'news'};
+          molecuel.setContent(res, 'main', mySource);
+          next();
+        }
+      } else {
+        next();
       }
-      next();
     });
   });
 
@@ -510,6 +521,32 @@ elements.prototype.searchByUrl = function searchByUrl(url, language, callback) {
  */
 elements.prototype.getModel = function getModel(modelName) {
   return this.modelRegistry[modelName];
+};
+
+/**
+ * Register a handler for a element type
+ * @param type
+ * @param handler
+ */
+elements.prototype.registerTypeHandler = function registerTypeHandler(type, handler ) {
+  this.typeHandlerRegistry[type] = handler;
+};
+
+/**
+ * Get the handler for a element type
+ * @param type
+ * @returns {*}
+ */
+elements.prototype.getTypeHandler = function getTypeHandler(type) {
+  return this.typeHandlerRegistry[type];
+};
+
+/**
+ * Unregister the type handler
+ * @param type
+ */
+elements.prototype.unregisterTypeHandler = function unregisterTypeHandler(type) {
+  delete this.typeHandlerRegistry[type];
 };
 
 /**

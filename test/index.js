@@ -74,7 +74,7 @@ describe('mlcl_elastic', function() {
       app.get('*',function(req, res) {
         res.send(JSON.stringify(res.locals));
       });
-      app.listen(9000);
+      app.listen(8000);
       elements.appInitialized.should.be.true;
       done();
     });
@@ -115,7 +115,48 @@ describe('mlcl_elastic', function() {
     });
 
     it('should answer the request with the correct page', function(done) {
-      request('http://localhost:9000/test_my_url', function (error, response, body) {
+      request('http://localhost:8000/test_my_url', function (error, response, body) {
+        assert(response.statusCode === 200);
+        if (!error && response.statusCode === 200) {
+          var mybody = JSON.parse(body);
+          assert(mybody.data.main.title === 'This is a testpage');
+          done();
+        }
+      });
+    });
+
+    it('should register a type handler', function(done) {
+      /**
+       * register a function to handle a specific object type
+       */
+      elements.registerTypeHandler('page', function(req, res) {
+        res.send('special page message');
+      });
+      assert(typeof elements.getTypeHandler('page') === 'function');
+      done();
+    });
+
+    it('should answer the request for the type', function(done) {
+      request('http://localhost:8000/test_my_url', function (error, response, body) {
+        assert(response.statusCode === 200);
+        if (!error && response.statusCode === 200) {
+          assert(body === 'special page message');
+          done();
+        }
+      });
+    });
+
+    it('should unregister a type handler', function(done) {
+      /**
+       * register a function to handle a specific object type
+       */
+      elements.unregisterTypeHandler('page');
+      should.not.exists(elements.getTypeHandler('page'));
+      done();
+    });
+
+    it('should answer the request with the correct page', function(done) {
+      request('http://localhost:8000/test_my_url', function (error, response, body) {
         assert(response.statusCode === 200);
         if (!error && response.statusCode === 200) {
           var mybody = JSON.parse(body);
