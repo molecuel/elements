@@ -206,7 +206,7 @@ elements.prototype.initApplication = function (app) {
    * Express middleware
    */
   app.get('*', function (req, res, next) {
-    if (!req.language) {
+    if (!req.language || req.language === 'dev') {
       req.language = 'en';
     }
     self.searchByUrl(req.url, req.language, function (err, result) {
