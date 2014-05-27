@@ -85,9 +85,7 @@ var elements = function () {
     self.Types = self.mongoose.Schema.Types;
     self.coreSchema = Schema;
     self.baseSchema = {
-      updatedat: { type: Date, default: Date.now, form: {hidden: true} },
-      createdat: { type: Date, default: Date.now, form: {hidden: true} },
-      published: { type: Boolean, default: true }
+      published: { type: Boolean}
     };
     checkInit();
   });
@@ -353,6 +351,7 @@ elements.prototype.registerSubSchema = function (schemaname) {
  * this is the place to extend the schema by other modules in the preRegister phase
  */
 elements.prototype.registerSchema = function (schemaname) {
+  var self = this;
   molecuel.emit('mlcl::elements::registerSchema:pre', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
   molecuel.emit('mlcl::elements::registerSchema:pre::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
   // merge after putting into registry
@@ -379,10 +378,14 @@ elements.prototype.registerSchema = function (schemaname) {
   // create the schema
   var modelSchema = new this.coreSchema(currentSchema, schemaoptions);
 
+  // add default plugin
+  modelSchema.plugin(self._defaultSchemaPlugin);
+
   // add to schema registry
   this.schemaRegistry[schemaname] = {};
   this.schemaRegistry[schemaname].schema = modelSchema;
   this.schemaRegistry[schemaname].config = this.schemaDefinitionRegistry[schemaname].config;
+
 
   // emit post register event and send the schemaRegistry for the current schema including the model
   molecuel.emit('mlcl::elements::registerSchema:post', this, schemaname, this.schemaRegistry[schemaname]);
@@ -481,6 +484,35 @@ elements.prototype.setElementType = function (typeName) {
  */
 elements.prototype.getFields = function () {
 
+};
+
+elements.prototype._defaultSchemaPlugin = function _defaultSchemaPlugin(schema) {
+  /**
+   * Add fields
+   */
+  schema.add({
+    updatedat: { type: Date, default: Date.now, form: {readonly: true} },
+    createdat: { type: Date, default: Date.now, form: {readonly: true} },
+    publishedat: {type: Date, form: {readonly: true}}
+  });
+
+  /**
+   * Set published date
+   */
+  schema.path('published').set(function(newval) {
+    if(this.published === false && newval === true)  {
+      this.publishedat = new Date();
+    }
+    return newval;
+  });
+
+  /**
+   * pre validation function to create a url if it does not exist yet
+   */
+  schema.pre('save', function (next) {
+    this.updatedat = new Date();
+    next();
+  });
 };
 
 /**
