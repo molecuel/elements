@@ -190,54 +190,60 @@ elements.prototype.initApplication = function (app) {
   // send init event
   molecuel.emit('mlcl::elements::initApplication:pre', this);
 
+  molecuel.emit('mlcl::elements::initApplication:post', this);
+};
+
+elements.prototype.middleware = function(config, app) {
+  if(config.type == 'formsangular') {
+    /**
+     * Form handler stuff
+     */
+      // send init dataForm Handler
+    molecuel.emit('mlcl::elements::dataFormHandlerInit:pre', this);
+
+    // initialize the form handler
+    this.dataFormHandler = new (formsAngular)(app);
+
+    // set the initialized variable to true
+    this.appInitialized = true;
+
+    molecuel.emit('mlcl::elements::dataFormHandlerInit:post', this, this.dataFormHandler);
+  }
+};
+
+/**
+ * Express middleware
+ */
+elements.prototype.get = function(req, res, next) {
   var self = this;
-  /**
-   * Form handler stuff
-   */
-    // send init dataForm Handler
-  molecuel.emit('mlcl::elements::dataFormHandlerInit:pre', this);
-  // initialize the form handler
-  this.dataFormHandler = new (formsAngular)(app);
-  molecuel.emit('mlcl::elements::dataFormHandlerInit:post', this, this.dataFormHandler);
+  if (!req.language || req.language === 'dev') {
+    req.language = 'en';
+  }
+  self.searchByUrl(req.url, req.language, function (err, result) {
+    if (result && result.hits && result.hits.hits && result.hits.hits[0]) {
+      var myObject = result.hits.hits[0];
+      var mySource = result.hits.hits[0]._source;
+      var myType = result.hits.hits[0]._type;
+      // set the elements content first for the main section
+      mySource._meta = {
+        module: 'elements',
+        type: myObject._type
+      };
+      mySource._view = { template: myObject._type};
+      molecuel.setContent(res, 'main', mySource);
 
-  /**
-   * Express middleware
-   */
-  app.get('*', function (req, res, next) {
-    if (!req.language || req.language === 'dev') {
-      req.language = 'en';
-    }
-    self.searchByUrl(req.url, req.language, function (err, result) {
-      if (result && result.hits && result.hits.hits && result.hits.hits[0]) {
-        var myObject = result.hits.hits[0];
-        var mySource = result.hits.hits[0]._source;
-        var myType = result.hits.hits[0]._type;
-        // set the elements content first for the main section
-        mySource._meta = {
-          module: 'elements',
-          type: myObject._type
-        };
-        mySource._view = { template: myObject._type};
-        molecuel.setContent(res, 'main', mySource);
-
-        // get the type handler if not default handling
-        var currentTypeHandler = self.getTypeHandler(myType);
-        // check if there is a special handler for the element type
-        if(currentTypeHandler) {
-          currentTypeHandler(req, res, next);
-        } else {
-          next();
-        }
+      // get the type handler if not default handling
+      var currentTypeHandler = self.getTypeHandler(myType);
+      // check if there is a special handler for the element type
+      if(currentTypeHandler) {
+        currentTypeHandler(req, res, next);
       } else {
         next();
       }
-    });
+    } else {
+      next();
+    }
   });
-
-  // set the initialized variable to true
-  this.appInitialized = true;
-
-  molecuel.emit('mlcl::elements::initApplication:post', this);
 };
 
 /**
