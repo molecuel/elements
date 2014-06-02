@@ -555,6 +555,9 @@ elements.prototype.searchByUrl = function searchByUrl(url, language, callback) {
   }
 };
 
+elements.prototype.getModelNames = function getModelNames() {
+}
+
 /**
  * Return the model from the model registry
  * @param modelName
@@ -593,6 +596,19 @@ elements.prototype.unregisterTypeHandler = function unregisterTypeHandler(type) 
 /**
  * Search for element by id
  */
+
+/**
+ * Syncs a model to elasticsearch
+ */
+elements.prototype.sync = function sync(modelName, callback) {
+  if(this.modelRegistry[modelName]) {
+    if (this.elastic) {
+      this.elastic.sync(this.modelRegistry[modelName], modelName, callback);
+    } else {
+      callback(new Error('No Elasticsearch connection'));
+    }
+  }
+}
 
 /* ************************************************************************
  SINGLETON CLASS DEFINITION
