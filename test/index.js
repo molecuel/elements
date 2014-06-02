@@ -70,7 +70,9 @@ describe('mlcl_elastic', function() {
 
     it('should initialize the middleware', function(done) {
       app = express();
-      elements.initApplication(app);
+      //elements.initApplication(app);
+      elements.middleware({type: 'formsangular'}, app);
+      app.get(elements.get);
       app.get('*',function(req, res) {
         res.send(JSON.stringify(res.locals));
       });
