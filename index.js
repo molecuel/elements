@@ -146,7 +146,7 @@ elements.prototype.registerPostApiHandler = function registerPostApiHandler(hand
  * Set the base schema this function is like the not yet available mongoose extend function
  * @param mySchema
  */
-elements.prototype.setBaseSchema = function (mySchema) {
+elements.prototype.setBaseSchema = function setBaseSchema(mySchema) {
   this.baseSchema = mySchema;
 };
 
@@ -154,7 +154,7 @@ elements.prototype.setBaseSchema = function (mySchema) {
  * Extend the base schema
  * @param mySchema
  */
-elements.prototype.addToBaseSchema = function (mySchema) {
+elements.prototype.addToBaseSchema = function addToBaseSchema(mySchema) {
   if (_.isObject(mySchema)) {
     _.extend(this.baseSchema, mySchema);
   }
@@ -164,7 +164,7 @@ elements.prototype.addToBaseSchema = function (mySchema) {
  * Extend the defined schema
  * @param mySchema
  */
-elements.prototype.addToSchemaDefinition = function (schemaname, mySchema) {
+elements.prototype.addToSchemaDefinition = function addToSchemaDefinition(schemaname, mySchema) {
   if (_.isObject(mySchema)) {
     _.extend(mySchema, this.schemaDefinitionRegistry[schemaname].schema);
 
@@ -178,7 +178,7 @@ elements.prototype.addToSchemaDefinition = function (schemaname, mySchema) {
  * return the base Schema
  * @returns {baseSchema}
  */
-elements.prototype.getBaseSchema = function () {
+elements.prototype.getBaseSchema = function getBaseSchema() {
   return this.baseSchema;
 };
 
@@ -186,15 +186,15 @@ elements.prototype.getBaseSchema = function () {
  * Init function for the molecuel module
  * @param app the express app
  */
-elements.prototype.initApplication = function (app) {
+elements.prototype.initApplication = function initApplication(app) {
   // send init event
   molecuel.emit('mlcl::elements::initApplication:pre', this);
 
   molecuel.emit('mlcl::elements::initApplication:post', this);
 };
 
-elements.prototype.middleware = function(config, app) {
-  if(config.type == 'formsangular') {
+elements.prototype.middleware = function middleware(config, app) {
+  if(config.type === 'formsangular') {
     /**
      * Form handler stuff
      */
@@ -214,7 +214,7 @@ elements.prototype.middleware = function(config, app) {
 /**
  * Express middleware
  */
-elements.prototype.get = function(req, res, next) {
+elements.prototype.get = function get(req, res, next) {
   var self = this;
   if (!req.language || req.language === 'dev') {
     req.language = 'en';
@@ -252,7 +252,7 @@ elements.prototype.get = function(req, res, next) {
  * @param definition
  * @param indexable
  */
-elements.prototype.injectDefinition = function (name, definition, indexable) {
+elements.prototype.injectDefinition = function injectDefinition(name, definition, indexable) {
   this.setElementType(name, definition, indexable);
 };
 
@@ -281,7 +281,7 @@ elements.prototype.getDefinitions = function getDefinitions() {
  * @param schemaname
  * @returns {*}
  */
-elements.prototype.getSubSchemaSchema = function (schemaname) {
+elements.prototype.getSubSchemaSchema = function getSubSchemaSchema(schemaname) {
   if (this.subSchemaRegistry[schemaname] && this.subSchemaRegistry[schemaname].schema) {
     return this.subSchemaRegistry[schemaname].schema;
   } else {
@@ -302,7 +302,7 @@ elements.prototype.getSubSchemaSchema = function (schemaname) {
  * @param schema
  * @param config
  */
-elements.prototype.registerSchemaDefinition = function (schemaname, schema, config, coreSchema) {
+elements.prototype.registerSchemaDefinition = function registerSchemaDefinition(schemaname, schema, config, coreSchema) {
   molecuel.emit('mlcl::elements::registerSchemaDefinition:pre', this, schemaname, schema, config, coreSchema);
   molecuel.emit('mlcl::elements::registerSchemaDefinition:pre::' + schemaname, this, schema, config, coreSchema);
   if (!this.schemaDefinitionRegistry[schemaname]) {
@@ -321,7 +321,7 @@ elements.prototype.registerSchemaDefinition = function (schemaname, schema, conf
 /**
  * Register all possible Subschemas
  */
-elements.prototype.registerSubSchemas = function () {
+elements.prototype.registerSubSchemas = function registerSubSchemas() {
   for (var name in this.schemaDefinitionRegistry) {
     if (this.schemaDefinitionRegistry[name].config.subSchema === true) {
       this.registerSubSchema(name);
@@ -334,7 +334,7 @@ elements.prototype.registerSubSchemas = function () {
  * @param schemaname
  * this is the place to extend the schema by other modules in the preRegister phase
  */
-elements.prototype.registerSubSchema = function (schemaname) {
+elements.prototype.registerSubSchema = function registerSubSchema(schemaname) {
   molecuel.emit('mlcl::elements::registerSubSchema:pre', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
   molecuel.emit('mlcl::elements::registerSubSchema:pre::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
 
@@ -356,7 +356,7 @@ elements.prototype.registerSubSchema = function (schemaname) {
  * @param schemaname
  * this is the place to extend the schema by other modules in the preRegister phase
  */
-elements.prototype.registerSchema = function (schemaname) {
+elements.prototype.registerSchema = function registerSchema(schemaname) {
   var self = this;
   molecuel.emit('mlcl::elements::registerSchema:pre', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
   molecuel.emit('mlcl::elements::registerSchema:pre::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
@@ -402,7 +402,7 @@ elements.prototype.registerSchema = function (schemaname) {
  * Registers all schemas in schemadefinition registry
  * @param schemaname
  */
-elements.prototype.registerSchemas = function () {
+elements.prototype.registerSchemas = function registerSchemas() {
   for (var name in this.schemaDefinitionRegistry) {
     if(this.schemaDefinitionRegistry.hasOwnProperty(name)) {
       this.registerSchema(name);
@@ -413,21 +413,21 @@ elements.prototype.registerSchemas = function () {
 /**
  * Get all schemas of all defined elements
  */
-elements.prototype.getElementTypeSchemas = function () {
+elements.prototype.getElementTypeSchemas = function getElementTypeSchemas() {
 
 };
 
 /**
  * Get the schema config of a element
  */
-elements.prototype.getElementTypeSchemaConfig = function (elementtypename) {
+elements.prototype.getElementTypeSchemaConfig = function getElementTypeSchemaConfig(elementtypename) {
   return this.schemaRegistry[elementtypename];
 };
 
 /**
  * Get all definitions of all types
  */
-elements.prototype.getElementTypes = function () {
+elements.prototype.getElementTypes = function getElementTypes() {
 
 };
 
@@ -436,14 +436,14 @@ elements.prototype.getElementTypes = function () {
  * @param typename
  * @todo implement this
  */
-elements.prototype.getElementType = function (typename) {
+elements.prototype.getElementType = function getElementType(typename) {
   return this.modelRegistry[typename];
 };
 
 /**
  * Get All available type names
  */
-elements.prototype.getElementTypeNames = function () {
+elements.prototype.getElementTypeNames = function getElementTypeNames() {
 
 };
 
@@ -452,7 +452,7 @@ elements.prototype.getElementTypeNames = function () {
  * Register Schema definitions
  *
  */
-elements.prototype.setElementTypes = function () {
+elements.prototype.setElementTypes = function setElementTypes() {
   molecuel.emit('mlcl::elements::setElementTypes:pre', this);
   for (var name in this.schemaRegistry) {
     if (this.schemaRegistry[name].config && !this.schemaRegistry[name].config.noCollection) {
@@ -469,7 +469,7 @@ elements.prototype.setElementTypes = function () {
  * @param indexable Add to search engine?
  * @param coreSchema can be used to use the mongoose core schema
  */
-elements.prototype.setElementType = function (typeName) {
+elements.prototype.setElementType = function setElementType(typeName) {
   molecuel.emit('mlcl::elements::setElementType:pre', this, typeName, this.schemaRegistry[typeName]);
   molecuel.emit('mlcl::elements::setElementType:pre::' + typeName, this, this.schemaRegistry[typeName]);
 
@@ -488,7 +488,7 @@ elements.prototype.setElementType = function (typeName) {
 /**
  * Get the fields from the system
  */
-elements.prototype.getFields = function () {
+elements.prototype.getFields = function getFields() {
 
 };
 
