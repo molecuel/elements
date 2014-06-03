@@ -7,6 +7,7 @@ var formsAngular = require('forms-angular');
 var _ = require('underscore');
 var fs = require('fs');
 var async = require('async');
+var url = require('url');
 
 var molecuel;
 
@@ -219,7 +220,8 @@ elements.prototype.get = function get(req, res, next) {
   if (!req.language || req.language === 'dev') {
     req.language = 'en';
   }
-  self.searchByUrl(req.url, req.language, function (err, result) {
+  var urlObject = url.parse(req.url);
+  self.searchByUrl(urlObject.pathname, req.language, function (err, result) {
     if (result && result.hits && result.hits.hits && result.hits.hits[0]) {
       var myObject = result.hits.hits[0];
       var mySource = result.hits.hits[0]._source;
