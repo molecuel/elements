@@ -1,6 +1,6 @@
 {
   "name": "mlcl_elements",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "dependencies": {
     "mongoose": ">=0.0.1",
     "forms-angular": ">=0.0.1",
