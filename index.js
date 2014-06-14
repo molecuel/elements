@@ -187,7 +187,7 @@ elements.prototype.getBaseSchema = function getBaseSchema() {
  * Init function for the molecuel module
  * @param app the express app
  */
-elements.prototype.initApplication = function initApplication(app) {
+elements.prototype.initApplication = function initApplication() {
   // send init event
   molecuel.emit('mlcl::elements::initApplication:pre', this);
 
@@ -273,7 +273,7 @@ elements.prototype.getDefinitions = function getDefinitions() {
   var defFiles = fs.readdirSync(this.schemaDir);
   defFiles.forEach(function (entry) {
     var currentSchema = require(self.schemaDir + '/' + entry)(self);
-    self.registerSchemaDefinition(currentSchema.schemaName, currentSchema.schema, currentSchema.options);
+    self.registerSchemaDefinition(currentSchema);
   });
   molecuel.emit('mlcl::elements::postGetDefinitions', this);
 };
@@ -288,7 +288,7 @@ elements.prototype.getSubSchemaSchema = function getSubSchemaSchema(schemaname) 
     return this.subSchemaRegistry[schemaname].schema;
   } else {
     if (this.schemaDefinitionRegistry[schemaname].schema &&
-      this.schemaDefinitionRegistry[schemaname].config && this.schemaDefinitionRegistry[schemaname].config.subSchema) {
+      this.schemaDefinitionRegistry[schemaname].options && this.schemaDefinitionRegistry[schemaname].options.subSchema) {
       this.registerSubSchema(schemaname);
       if (this.subSchemaRegistry[schemaname] && this.subSchemaRegistry[schemaname].schema) {
         return this.subSchemaRegistry[schemaname].schema;
@@ -304,20 +304,20 @@ elements.prototype.getSubSchemaSchema = function getSubSchemaSchema(schemaname) 
  * @param schema
  * @param config
  */
-elements.prototype.registerSchemaDefinition = function registerSchemaDefinition(schemaname, schema, config, coreSchema) {
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre', this, schemaname, schema, config, coreSchema);
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre::' + schemaname, this, schema, config, coreSchema);
-  if (!this.schemaDefinitionRegistry[schemaname]) {
-    this.schemaDefinitionRegistry[schemaname] = {};
-    this.schemaDefinitionRegistry[schemaname].schema = schema;
-    this.schemaDefinitionRegistry[schemaname].config = config;
+elements.prototype.registerSchemaDefinition = function registerSchemaDefinition(schema, coreSchema) {
+  var schemaName = schema.schemaName;
+  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre', this, schema.schemaName, schema, coreSchema);
+  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre::' + schema.schemaName, this, schema, coreSchema);
+
+  if (!this.schemaDefinitionRegistry[schemaName]) {
+    this.schemaDefinitionRegistry[schemaName] = schema;
     if (coreSchema) {
-      this.schemaDefinitionRegistry[schemaname].coreSchema = coreSchema;
+      this.schemaDefinitionRegistry[schemaName].coreSchema = coreSchema;
     }
   }
 
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:post::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:post', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
+  molecuel.emit('mlcl::elements::registerSchemaDefinition:post::' + schemaName, this, this.schemaDefinitionRegistry[schema.schemaName]);
+  molecuel.emit('mlcl::elements::registerSchemaDefinition:post', this, schemaName, this.schemaDefinitionRegistry[schema.schemaName]);
 };
 
 /**
@@ -325,7 +325,7 @@ elements.prototype.registerSchemaDefinition = function registerSchemaDefinition(
  */
 elements.prototype.registerSubSchemas = function registerSubSchemas() {
   for (var name in this.schemaDefinitionRegistry) {
-    if (this.schemaDefinitionRegistry[name].config.subSchema === true) {
+    if (this.schemaDefinitionRegistry[name].options.subSchema === true) {
       this.registerSubSchema(name);
     }
   }
@@ -346,7 +346,7 @@ elements.prototype.registerSubSchema = function registerSubSchema(schemaname) {
   // add to schema registry
   this.subSchemaRegistry[schemaname] = {};
   this.subSchemaRegistry[schemaname].schema = modelSchema;
-  this.subSchemaRegistry[schemaname].config = this.schemaDefinitionRegistry[schemaname].config;
+  this.subSchemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
 
   // emit post register events
   molecuel.emit('mlcl::elements::registerSubSchema:post::' + schemaname, this, modelSchema);
@@ -372,19 +372,19 @@ elements.prototype.registerSchema = function registerSchema(schemaname) {
     currentSchema = this.coreSchema;
   }
 
-  var config = this.schemaDefinitionRegistry[schemaname].config;
+  var options = this.schemaDefinitionRegistry[schemaname].options;
 
-  var schemaoptions = {};
+  var schemaOptions = {};
 
-  if (config.collection) {
-    schemaoptions.collection = config.collection;
+  if (options.collection) {
+    schemaOptions.collection = options.collection;
   }
-  if (config.safe) {
-    schemaoptions.safe = config.safe;
+  if (options.safe) {
+    schemaOptions.safe = options.safe;
   }
 
   // create the schema
-  var modelSchema = new this.coreSchema(currentSchema, schemaoptions);
+  var modelSchema = new this.coreSchema(currentSchema, schemaOptions);
 
   // add default plugin
   modelSchema.plugin(self._defaultSchemaPlugin);
@@ -392,7 +392,7 @@ elements.prototype.registerSchema = function registerSchema(schemaname) {
   // add to schema registry
   this.schemaRegistry[schemaname] = {};
   this.schemaRegistry[schemaname].schema = modelSchema;
-  this.schemaRegistry[schemaname].config = this.schemaDefinitionRegistry[schemaname].config;
+  this.schemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
 
 
   // emit post register event and send the schemaRegistry for the current schema including the model
@@ -457,7 +457,7 @@ elements.prototype.getElementTypeNames = function getElementTypeNames() {
 elements.prototype.setElementTypes = function setElementTypes() {
   molecuel.emit('mlcl::elements::setElementTypes:pre', this);
   for (var name in this.schemaRegistry) {
-    if (this.schemaRegistry[name].config && !this.schemaRegistry[name].config.noCollection) {
+    if (this.schemaRegistry[name].options && !this.schemaRegistry[name].options.noCollection) {
       this.setElementType(name);
     }
   }
@@ -475,7 +475,11 @@ elements.prototype.setElementType = function setElementType(typeName) {
   molecuel.emit('mlcl::elements::setElementType:pre', this, typeName, this.schemaRegistry[typeName]);
   molecuel.emit('mlcl::elements::setElementType:pre::' + typeName, this, this.schemaRegistry[typeName]);
 
-  var model = this.database.registerModel(typeName, this.schemaRegistry[typeName].schema, this.schemaRegistry[typeName].config);
+  var model = this.database.registerModel(typeName, this.schemaRegistry[typeName].schema, this.schemaRegistry[typeName].options);
+
+  if(this.schemaDefinitionRegistry[typeName].search) {
+    model.elastic = this.schemaDefinitionRegistry[typeName].search;
+  }
 
   // add the model to the model registry
   this.modelRegistry[typeName] = model;
@@ -558,7 +562,7 @@ elements.prototype.searchByUrl = function searchByUrl(url, language, callback) {
 };
 
 elements.prototype.getModelNames = function getModelNames() {
-}
+};
 
 /**
  * Return the model from the model registry
@@ -610,7 +614,7 @@ elements.prototype.sync = function sync(modelName, callback) {
       callback(new Error('No Elasticsearch connection'));
     }
   }
-}
+};
 
 /* ************************************************************************
  SINGLETON CLASS DEFINITION

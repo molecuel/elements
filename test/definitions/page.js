@@ -10,12 +10,23 @@ var definition = function() {
   this.options = {
     indexable: true
   };
+  this.search = {
+    mapping: {
+      'location.geo': { type: 'geo_point', 'lat_lon': true }
+    }
+  };
   this.schema = {
     title: {type: String, required: true},
     body: {type: String},
-    url: {type: String},
+    url: {type: String, elastic: {mapping: {type: 'string', index: 'not_analyzed'}}},
     lang: {type: String},
-    file: {type: elements.coreSchema.Types.Mixed, form: {type: 'fileuploader'}}
+    file: {type: elements.coreSchema.Types.Mixed, form: {type: 'fileuploader'}},
+    'location': {
+      'geo': {
+        'lat': {type: Number},
+        'lon': {type: Number}
+      }
+    }
   };
   return this;
 };
