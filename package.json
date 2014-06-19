@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "dependencies": {
     "mongoose": ">=0.0.1",
-    "forms-angular": ">=0.0.1",
+    "forms-angular": "https://github.com/alexanderknapstein/forms-angular.git",
     "validator": ">=0.0.1",
     "uuid": ">=0.0.1",
     "underscore": ">=0.0.1",
@@ -39,10 +39,17 @@
     "abstraction",
     "elasticsearch"
   ],
-  "author": "Dominic Böttger <Dominic.Boettger@inspirationlabs.com>",
+  "author": {
+    "name": "Dominic Böttger",
+    "email": "Dominic.Boettger@inspirationlabs.com"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/molecuel/mlcl_elements/issues"
   },
-  "homepage": "https://github.com/molecuel/mlcl_elements"
+  "homepage": "https://github.com/molecuel/mlcl_elements",
+  "readme": "[![Build Status](https://travis-ci.org/molecuel/mlcl_elements.svg?branch=master)](https://travis-ci.org/molecuel/mlcl_elements)\n\n[![NPM](https://nodei.co/npm-dl/mlcl_elements.png?months=1)](https://nodei.co/npm/mlcl_elements/)\n\n[![NPM](https://nodei.co/npm/mlcl_elements.png?downloads=true&stars=true)](https://nodei.co/npm/mlcl_elements/)\n\n[![NPM version](https://badge.fury.io/js/mlcl_elements@2x.png)](http://badge.fury.io/js/mlcl_elements)\n\nmlcl_elements\n=============\n\nElements / Data type definition module for the molecuel CMS\n",
+  "readmeFilename": "README.md",
+  "_id": "mlcl_elements@0.3.0",
+  "_from": "mlcl_elements@>=0.0.1"
 }
