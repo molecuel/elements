@@ -347,6 +347,7 @@ elements.prototype.registerSubSchema = function registerSubSchema(schemaname) {
   this.subSchemaRegistry[schemaname] = {};
   this.subSchemaRegistry[schemaname].schema = modelSchema;
   this.subSchemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
+  this.subSchemaRegistry[schemaname].indexes = this.schemaDefinitionRegistry[schemaname].indexes;
 
   // emit post register events
   molecuel.emit('mlcl::elements::registerSubSchema:post::' + schemaname, this, modelSchema);
@@ -389,10 +390,16 @@ elements.prototype.registerSchema = function registerSchema(schemaname) {
   // add default plugin
   modelSchema.plugin(self._defaultSchemaPlugin);
 
+  // add indexes
+  _.each(this.schemaDefinitionRegistry[schemaname].indexes, function(index) {
+    modelSchema.index(index);
+  });
+
   // add to schema registry
   this.schemaRegistry[schemaname] = {};
   this.schemaRegistry[schemaname].schema = modelSchema;
   this.schemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
+  this.schemaRegistry[schemaname].indexes = this.schemaDefinitionRegistry[schemaname].indexes;
 
 
   // emit post register event and send the schemaRegistry for the current schema including the model
