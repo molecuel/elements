@@ -1,6 +1,6 @@
 {
   "name": "mlcl_elements",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "dependencies": {
     "mongoose": ">=0.0.1",
     "forms-angular": "git+ssh://git@gitlab.inspirationlabs.com:molecuel/forms-angular-server.git",
