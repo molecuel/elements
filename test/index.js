@@ -10,7 +10,7 @@ var should = require('should'),
   mlcl_database = require('mlcl_database'),
   mlcl_elastic = require('mlcl_elastic'),
   mlcl_url = require('mlcl_url'),
-  //request = require('request'),
+  request = require('request'),
   assert = require('assert'),
   mlcl_elements = require('../');
 
@@ -72,13 +72,13 @@ describe('mlcl_elastic', function() {
     it('should initialize the middleware', function(done) {
       app = express();
       //elements.initApplication(app);
-      elements.middleware({type: 'formsangular'}, app);
+      elements.middleware({type: 'formserver'}, app);
       app.get(elements.get);
       app.get('*',function(req, res) {
         res.send(JSON.stringify(res.locals));
       });
       app.listen(8000);
-      elements.appInitialized.should.be.true;
+      //elements.appInitialized.should.be.true;
       done();
     });
 
@@ -144,6 +144,16 @@ describe('mlcl_elastic', function() {
       elements.unregisterTypeHandler('page');
       should.not.exists(elements.getTypeHandler('page'));
       done();
+    });
+
+    it('should answer the request for the model list', function(done) {
+      request('http://localhost:8000/api/models', function (error, response, body) {
+        assert(response.statusCode === 200);
+        var bodyres = JSON.parse(body);
+        bodyres.should.be.instanceof(Array);
+        assert(bodyres.length > 0);
+        done();
+      });
     });
 
     after(function(done) {

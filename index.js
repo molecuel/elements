@@ -3,7 +3,7 @@
  * INSPIRATIONlabs GmbH
  * http://www.inspirationlabs.com
  */
-var formsAngular = require('forms-angular');
+var formServer = require('form-server');
 var _ = require('underscore');
 var fs = require('fs');
 var async = require('async');
@@ -231,7 +231,7 @@ elements.prototype.initApplication = function initApplication() {
 };
 
 elements.prototype.middleware = function middleware(config, app) {
-  if(config.type === 'formsangular') {
+  if(config.type === 'formserver') {
     /**
      * Form handler stuff
      */
@@ -239,7 +239,7 @@ elements.prototype.middleware = function middleware(config, app) {
     molecuel.emit('mlcl::elements::dataFormHandlerInit:pre', this);
 
     // initialize the form handler
-    this.dataFormHandler = new (formsAngular)(app);
+    this.dataFormHandler = new (formServer)(app, this);
 
     // set the initialized variable to true
     this.appInitialized = true;

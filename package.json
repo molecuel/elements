@@ -3,7 +3,7 @@
   "version": "0.3.3",
   "dependencies": {
     "mongoose": ">=0.0.1",
-    "forms-angular": "git+ssh://git@gitlab.inspirationlabs.com:molecuel/forms-angular-server.git",
+    "form-server": "git+ssh://git@github.com:molecuel/form-server.git",
     "validator": ">=0.0.1",
     "uuid": ">=0.0.1",
     "underscore": ">=0.0.1",
