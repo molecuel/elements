@@ -78,10 +78,14 @@ var elements = function () {
    * Execute after successful database connection
    */
   molecuel.on('mlcl::database::connection:success', function (database) {
+    // mlcl_database module instance
     self.database = database;
+    // make mongoose directly available
     self.mongoose = self.database.database;
+    // Make the mongoose schema instance available
     var Schema = self.mongoose.Schema;
     var ObjectId = self.mongoose.Schema.ObjectId;
+    // Make the ObjectId available as local variable
     self.ObjectId = ObjectId;
     self.Types = self.mongoose.Schema.Types;
     self.coreSchema = Schema;
@@ -113,7 +117,6 @@ var elements = function () {
               async.each(self.postApiQueue, function(queueElement, qcallback) {
                 queueElement(doc, req, qcallback);
               }, function() {
-                console.log('end');
                 callback(null);
               });
             }
@@ -139,6 +142,28 @@ var elements = function () {
   return this;
 };
 
+
+/* ************************************************************************
+ SINGLETON CLASS DEFINITION
+ ************************************************************************ */
+var instance = null;
+
+var getInstance = function(){
+  return instance || (instance = new elements());
+};
+
+/**
+* Empty findByUrl function until db layer init
+* Log error when db layer is not available
+*/
+elements.prototype.findByUrl = function find(url, lang, callback) {
+  molecuel.log.error('elements', 'Database url layer is not initialized');
+  callback(new Error('Database layer is not initialized'));
+};
+
+/**
+* api handler registration
+*/
 elements.prototype.registerPostApiHandler = function registerPostApiHandler(handlerFunction) {
   this.postApiQueue.push(handlerFunction);
 };
@@ -623,26 +648,10 @@ elements.prototype.sync = function sync(modelName, callback) {
   }
 };
 
-/* ************************************************************************
- SINGLETON CLASS DEFINITION
- ************************************************************************ */
-elements.instance = null;
-
-/**
- * Singleton getInstance definition
- * @return singleton class
- */
-elements.getInstance = function () {
-  if (this.instance === null) {
-    this.instance = new elements();
-  }
-  return this.instance;
-};
-
 var init = function (m) {
   // store molecuel instance
   molecuel = m;
-  return elements.getInstance();
+  return getInstance();
 };
 
 module.exports = init;

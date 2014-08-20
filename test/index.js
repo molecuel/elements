@@ -103,7 +103,7 @@ describe('mlcl_elastic', function() {
       }, 1000);
     });
 
-    it('should return a object via url and lang', function(done) {
+    it('should search and return a object via url and lang', function(done) {
       elements.searchByUrl('/test_my_url', 'en', function(err, result) {
         should.not.exists(err);
         should.exist(result);
@@ -111,6 +111,15 @@ describe('mlcl_elastic', function() {
         result.hits.should.be.an.Object;
         result.hits.hits.should.be.an.Array;
         result.hits.hits[0].should.be.an.Object;
+        done();
+      });
+    });
+
+    it('should find and return a object via url and lang', function(done) {
+      elements.findByUrl('/test_my_url', 'en', function(err, result) {
+        should.not.exists(err);
+        should.exist(result);
+        console.log(result);
         done();
       });
     });
