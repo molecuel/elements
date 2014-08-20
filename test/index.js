@@ -9,6 +9,7 @@ var should = require('should'),
   express = require('express'),
   mlcl_database = require('mlcl_database'),
   mlcl_elastic = require('mlcl_elastic'),
+  mlcl_url = require('mlcl_url'),
   //request = require('request'),
   assert = require('assert'),
   mlcl_elements = require('../');
@@ -50,6 +51,7 @@ describe('mlcl_elastic', function() {
     mongo = mlcl_database(molecuel);
     elastic = mlcl_elastic(molecuel);
     elements = mlcl_elements(molecuel);
+    mlcl_url(molecuel);
     done();
   });
 
@@ -86,12 +88,13 @@ describe('mlcl_elastic', function() {
       done();
     });
 
-    it('should save a object to database', function(done) {
+    var testobject;
+    it('should save a object to database and let the url generate', function(done) {
       var mypage = new pagemodel();
-      mypage.url = '/test_my_url';
       mypage.lang = 'en';
       mypage.title = 'This is a testpage';
-      mypage.save(function(err) {
+      elements.save(mypage, function(err, result) {
+        testobject = result;
         should.not.exist(err);
         done();
       });
@@ -104,7 +107,7 @@ describe('mlcl_elastic', function() {
     });
 
     it('should search and return a object via url and lang', function(done) {
-      elements.searchByUrl('/test_my_url', 'en', function(err, result) {
+      elements.searchByUrl(testobject.url, 'en', function(err, result) {
         should.not.exists(err);
         should.exist(result);
         result.should.be.an.Object;
@@ -116,26 +119,12 @@ describe('mlcl_elastic', function() {
     });
 
     it('should find and return a object via url and lang', function(done) {
-      elements.findByUrl('/test_my_url', 'en', function(err, result) {
+      elements.findByUrl(testobject.url, 'en', function(err, result) {
         should.not.exists(err);
         should.exist(result);
-        console.log(result);
         done();
       });
     });
-
-    /**
-    it('should answer the request with the correct page', function(done) {
-      request('http://localhost:8000/test_my_url', function (error, response, body) {
-        assert(response.statusCode === 200);
-        if (!error && response.statusCode === 200) {
-          var mybody = JSON.parse(body);
-          assert(mybody.data.main.title === 'This is a testpage');
-          done();
-        }
-      });
-    });
-     **/
 
     it('should register a type handler', function(done) {
       /**
@@ -148,17 +137,6 @@ describe('mlcl_elastic', function() {
       done();
     });
 
-    /**
-    it('should answer the request for the type', function(done) {
-      request('http://localhost:8000/test_my_url', function (error, response, body) {
-        assert(response.statusCode === 200);
-        if (!error && response.statusCode === 200) {
-          assert(body === 'special page message');
-          done();
-        }
-      });
-    });*/
-
     it('should unregister a type handler', function(done) {
       /**
        * register a function to handle a specific object type
@@ -167,18 +145,6 @@ describe('mlcl_elastic', function() {
       should.not.exists(elements.getTypeHandler('page'));
       done();
     });
-
-    /*
-    it('should answer the request with the correct page', function(done) {
-      request('http://localhost:8000/test_my_url', function (error, response, body) {
-        assert(response.statusCode === 200);
-        if (!error && response.statusCode === 200) {
-          var mybody = JSON.parse(body);
-          assert(mybody.data.main.title === 'This is a testpage');
-          done();
-        }
-      });
-    });*/
 
     after(function(done) {
       elements.database.database.connection.db.dropDatabase(function(error) {

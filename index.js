@@ -8,6 +8,7 @@ var _ = require('underscore');
 var fs = require('fs');
 var async = require('async');
 var url = require('url');
+var mongolastic = require('mongolastic');
 
 var molecuel;
 
@@ -159,6 +160,16 @@ var getInstance = function(){
 elements.prototype.findByUrl = function find(url, lang, callback) {
   molecuel.log.error('elements', 'Database url layer is not initialized');
   callback(new Error('Database layer is not initialized'));
+};
+
+
+/**
+ * Save middleware for elements
+ *
+ * @todo Emit events for molecuel
+ */
+elements.prototype.save = function(model, callback) {
+  mongolastic.save(model, callback);
 };
 
 /**
