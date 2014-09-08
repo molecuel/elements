@@ -267,7 +267,6 @@ elements.prototype.get = function get(req, res, next) {
         module: 'elements',
         type: myObject._type
       };
-      mySource._view = _.extend(mySource._view, { template: myObject._type});
       molecuel.setContent(res, 'main', mySource);
 
       // get the type handler if not default handling
