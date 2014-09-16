@@ -239,7 +239,7 @@ elements.prototype.middleware = function middleware(config, app) {
     molecuel.emit('mlcl::elements::dataFormHandlerInit:pre', this);
 
     // initialize the form handler
-    this.dataFormHandler = new (formServer)(app, this);
+    this.dataFormHandler = new (formServer)(app, this, molecuel);
 
     // set the initialized variable to true
     this.appInitialized = true;
