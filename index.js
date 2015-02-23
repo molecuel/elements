@@ -179,6 +179,11 @@ elements.prototype.registerPostApiHandler = function registerPostApiHandler(hand
   this.postApiQueue.push(handlerFunction);
 };
 
+elements.prototype.registerIndexPreprocessor = function registerIndexPreprocessor(handlerFunction) {
+  mongolastic.registerIndexPreprocessor(handlerFunction);
+}
+
+
 /**
  * Set the base schema this function is like the not yet available mongoose extend function
  * @param mySchema
