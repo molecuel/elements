@@ -13,7 +13,6 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
-        "./index.ts",
         "./typings/async/async.d.ts",
         "./typings/mongoose/mongoose.d.ts",
         "./typings/node/node.d.ts",
