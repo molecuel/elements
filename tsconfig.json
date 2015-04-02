@@ -1,0 +1,24 @@
+{
+    "version": "1.4.1",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false
+    },
+    "filesGlob": [
+        "./**/*.ts",
+        "!./node_modules/**/*.ts"
+    ],
+    "files": [
+        "./index.ts",
+        "./typings/async/async.d.ts",
+        "./typings/mongoose/mongoose.d.ts",
+        "./typings/node/node.d.ts",
+        "./typings/underscore/underscore.d.ts",
+        "./typings/uuid/UUID.d.ts",
+        "./typings/validator/validator.d.ts"
+    ]
+}
