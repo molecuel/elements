@@ -41,6 +41,18 @@ describe('mlcl_elastic', function() {
     molecuel.config.elements = {
       schemaDir: __dirname + '/definitions'
     };
+
+    molecuel.config.routes = [
+      {
+        url: '/api/maintenance/sync',
+        get: true,
+        callbacks: [{
+          module: 'elements',
+          function: 'syncMiddleware'
+        }]
+      },
+    ];
+
     molecuel.setContent  = function(res, region, data) {
       res.locals = res.locals || {};
       res.locals.data = res.locals.data || {};
@@ -155,6 +167,14 @@ describe('mlcl_elastic', function() {
         done();
       });
     });
+
+    it('should answer sync function', function(done) {
+      request('http://localhost:8000/api/maintenance/sync?model=page', function (error, response) {
+        assert(response.statusCode === 200);
+        done();
+      });
+    });
+
 
     after(function(done) {
       elements.database.database.connection.db.dropDatabase(function(error) {

@@ -23,7 +23,6 @@
   "laxcomma": true,
   "validthis": true,
   "sub": true,
-  "maxlen": 140,
   "-W084": true,
   "maxerr": 10,
   "globals"   : {
