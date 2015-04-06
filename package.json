@@ -1,6 +1,6 @@
 {
   "name": "mlcl_elements",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "dependencies": {
     "mongoose": ">=0.0.1",
     "form-server": "git+https://github.com/molecuel/form-server.git",

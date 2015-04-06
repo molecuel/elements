@@ -9,4 +9,8 @@
 mlcl_elements
 =============
 
-Elements / Data type definition module for the molecuel CMS
+Elements / Data type definition module for the molecuel CMS. It allows to define advanced data models for MongoDB
+and elasticsearch.
+
+## Important notice Typescript:
+Since version 0.4.0 mlcl_elements is using typescript compiler. Currently it is used for autocompletion. We will provide more advanced features in the future. We are using atom-typescript to compile the code when saving the sources.
