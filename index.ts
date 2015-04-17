@@ -25,7 +25,7 @@ var molecuel;
  */
 var elements = function (): void {
   var self = this;
-  
+
   // is application middleware already registered
   this.appInitialized = false;
 
@@ -308,13 +308,12 @@ elements.prototype.get = function get(req, res, next) {
  */
 elements.prototype.syncMiddleware = function syncMiddleware(req, res) {
   if(req.query.model) {
-    this.sync(req.query.model, function(err) {
-      if(!err) {
-        res.sendStatus(200);
-      } else {
-        res.sendStatus(500);
-      }
-    });
+    var elements = getInstance();
+    var model = elements.getModel(req.query.model);
+    model.resync(req.query.model);
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(404);
   }
 };
 

@@ -167,14 +167,13 @@ elements.prototype.get = function get(req, res, next) {
 };
 elements.prototype.syncMiddleware = function syncMiddleware(req, res) {
     if (req.query.model) {
-        this.sync(req.query.model, function (err) {
-            if (!err) {
-                res.sendStatus(200);
-            }
-            else {
-                res.sendStatus(500);
-            }
-        });
+        var elements = getInstance();
+        var model = elements.getModel(req.query.model);
+        model.resync(req.query.model);
+        res.sendStatus(200);
+    }
+    else {
+        res.sendStatus(404);
     }
 };
 elements.prototype.injectDefinition = function injectDefinition(name, definition, indexable) {
