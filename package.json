@@ -1,6 +1,6 @@
 {
   "name": "mlcl_elements",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "dependencies": {
     "mongoose": ">=0.0.1",
     "form-server": "git+https://github.com/molecuel/form-server.git",
@@ -20,7 +20,8 @@
     "mlcl_elastic": ">=0.0.1",
     "express": ">=4.0.0",
     "request": ">=0.0.1",
-    "mlcl_url": ">=0.0.1"
+    "mlcl_url": ">=0.0.1",
+    "mlcl_queue": ">=0.0.1"
   },
   "scripts": {
     "test": "mocha -R spec"

@@ -12,6 +12,7 @@ var should = require('should'),
   mlcl_url = require('mlcl_url'),
   request = require('request'),
   assert = require('assert'),
+  mlcl_queue = require('mlcl_queue'),
   mlcl_elements = require('../');
 
 describe('mlcl_elastic', function() {
@@ -42,6 +43,10 @@ describe('mlcl_elastic', function() {
       schemaDir: __dirname + '/definitions'
     };
 
+    molecuel.config.queue = {
+      uri: 'amqp://localhost'
+    };
+
     molecuel.config.routes = [
       {
         url: '/api/maintenance/sync',
@@ -61,6 +66,7 @@ describe('mlcl_elastic', function() {
     };
 
     mongo = mlcl_database(molecuel);
+    mlcl_queue(molecuel);
     elastic = mlcl_elastic(molecuel);
     elements = mlcl_elements(molecuel);
     mlcl_url(molecuel);
