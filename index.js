@@ -47,9 +47,7 @@ var elements = function () {
         self.Types = self.mongoose.Schema.Types;
         self.coreSchema = Schema;
         self.baseSchema = {
-            published: {
-                type: Boolean
-            }
+            published: { type: Boolean }
         };
         checkInit();
     });
@@ -165,6 +163,13 @@ elements.prototype.get = function get(req, res, next) {
         }
     });
 };
+elements.prototype.getById = function get(index, id, callback) {
+    this.elastic.connection.get({
+        'index': this.elastic.getIndexName(index),
+        'type': index,
+        'id': id
+    }, callback);
+};
 elements.prototype.syncMiddleware = function syncMiddleware(req, res) {
     if (req.query.model) {
         var elements = getInstance();
@@ -194,7 +199,9 @@ elements.prototype.getSubSchemaSchema = function getSubSchemaSchema(schemaname) 
         return this.subSchemaRegistry[schemaname].schema;
     }
     else {
-        if (this.schemaDefinitionRegistry[schemaname].schema && this.schemaDefinitionRegistry[schemaname].options && this.schemaDefinitionRegistry[schemaname].options.subSchema) {
+        if (this.schemaDefinitionRegistry[schemaname].schema
+            && this.schemaDefinitionRegistry[schemaname].options
+            && this.schemaDefinitionRegistry[schemaname].options.subSchema) {
             this.registerSubSchema(schemaname);
             if (this.subSchemaRegistry[schemaname] && this.subSchemaRegistry[schemaname].schema) {
                 return this.subSchemaRegistry[schemaname].schema;
@@ -307,26 +314,9 @@ elements.prototype.getFields = function getFields() {
 };
 elements.prototype._defaultSchemaPlugin = function _defaultSchemaPlugin(schema) {
     schema.add({
-        updatedat: {
-            type: Date,
-            default: Date.now,
-            form: {
-                readonly: true
-            }
-        },
-        createdat: {
-            type: Date,
-            default: Date.now,
-            form: {
-                readonly: true
-            }
-        },
-        publishedat: {
-            type: Date,
-            form: {
-                readonly: true
-            }
-        }
+        updatedat: { type: Date, default: Date.now, form: { readonly: true } },
+        createdat: { type: Date, default: Date.now, form: { readonly: true } },
+        publishedat: { type: Date, form: { readonly: true } }
     });
     schema.path('published').set(function (newval) {
         if (this.published === false && newval === true) {

@@ -295,6 +295,21 @@ elements.prototype.get = function get(req, res, next) {
 };
 
 /**
+ * getById returns a element based on the id from the search index
+ * @param  {[type]}   index    [description]
+ * @param  {[type]}   id       [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
+elements.prototype.getById = function get(index, id, callback) {
+  this.elastic.connection.get({
+    'index': this.elastic.getIndexName(index),
+    'type': index,
+    'id': id
+  }, callback)
+};
+
+/**
  * syncMiddleware - Sync function for the data model
  *
  * @param  {type} req description
