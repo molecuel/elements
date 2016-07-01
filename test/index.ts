@@ -4,12 +4,20 @@ import assert = require('assert');
 import elements = require('../dist')
 
 describe('mlcl', function() {
-
-  before(function(done) {
-
-  });
+  let el;
 
   describe('module', function() {
 
+    it('should connect mongodb', async function() {
+      this.timeout(15000);
+      el = new elements();
+      try {
+        await el.connect();
+      } catch (e) {
+        console.log('error');
+        console.log(e);
+        should.not.exist(e);
+      }
+    })
   })
 });
