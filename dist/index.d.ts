@@ -1,6 +1,6 @@
 declare class Elements {
     static loaderversion: number;
-    constructor();
+    constructor(mlcl?: any, config?: any);
     senor(): void;
 }
 export = Elements;

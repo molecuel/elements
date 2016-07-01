@@ -9,6 +9,7 @@ import * as tslint from 'gulp-tslint';
 import * as del from 'del';
 import * as fs from 'fs';
 import * as merge from 'merge2';
+import * as sourcemaps from 'gulp-sourcemaps';
 
 @Gulpclass()
 export class Gulpfile {
@@ -67,12 +68,14 @@ export class Gulpfile {
     let sourcepaths = ['typings/index.d.ts', 'typings/main.d.ts', 'typings_override/index.d.ts'];
     sourcepaths.push(this.config.paths.source);
     let tsResult = gulp.src(sourcepaths)
-      .pipe(plumber())
+      .pipe(sourcemaps.init())
       .pipe(ts(this.tsProject));
 
     return merge([
       tsResult.dts.pipe(gulp.dest(this.config.paths.dist)),
-      tsResult.js.pipe(gulp.dest(this.config.paths.dist))
+      tsResult.js
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest(this.config.paths.dist))
     ]);
   }
 

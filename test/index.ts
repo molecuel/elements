@@ -4,8 +4,6 @@ import assert = require('assert');
 import elements = require('../dist')
 
 describe('mlcl', function() {
-  let test = new elements();
-  test.senor();
 
   before(function(done) {
 

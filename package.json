@@ -4,15 +4,14 @@
   "description": "Elements ORM ",
   "main": "dist/index.js",
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha -R spec",
+    "postinstall": "typings install"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/molecuel/mlcl_elements.git"
   },
-  "keywords": [
-
-  ],
+  "keywords": [],
   "author": "Dominic Böttger <Dominic.Boettger@inspirationlabs.com>",
   "license": "MIT",
   "bugs": {
@@ -25,6 +24,7 @@
     "del": "^2.2.0",
     "gulp": "^3.9.1",
     "gulp-plumber": "^1.1.0",
+    "gulp-sourcemaps": "^1.6.0",
     "gulp-tsconfig-files": "^0.2.5",
     "gulp-tslint": "^4.3.2",
     "gulp-typescript": "^2.12.0",
@@ -38,6 +38,7 @@
     "typescript": "^1.8.2"
   },
   "dependencies": {
+    "elasticsearch": "^11.0.1"
   },
   "devconfig": {
     "paths": {
