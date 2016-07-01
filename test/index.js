@@ -12,7 +12,7 @@ const elements = require('../dist');
 describe('mlcl', function () {
     let el;
     describe('module', function () {
-        it('should connect mongodb', function () {
+        it('should connect the databases', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 this.timeout(15000);
                 el = new elements();
@@ -20,8 +20,6 @@ describe('mlcl', function () {
                     yield el.connect();
                 }
                 catch (e) {
-                    console.log('error');
-                    console.log(e);
                     should.not.exist(e);
                 }
             });

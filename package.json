@@ -4,8 +4,7 @@
   "description": "Elements ORM ",
   "main": "dist/index.js",
   "scripts": {
-    "test": "mocha -R spec",
-    "postinstall": "typings install"
+    "test": "mocha -R spec"
   },
   "repository": {
     "type": "git",

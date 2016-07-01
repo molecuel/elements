@@ -3,11 +3,12 @@ import mongodb = require('mongodb');
 import elasticsearch = require('elasticsearch');
 
 class Elements {
-  public mongoClient: mongodb.MongoClient;
   public static loaderversion = 2;
-  public mongoConnection: Promise<mongodb.Db>;
-  public elasticClient: elasticsearch.Client;
-  public elasticConnection: PromiseLike<elasticsearch.Client>;
+
+  private mongoClient: mongodb.MongoClient;
+  private mongoConnection: Promise<mongodb.Db>;
+  private elasticClient: elasticsearch.Client;
+  private elasticConnection: PromiseLike<elasticsearch.Client>;
 
   constructor(mlcl?: any, config?: any) {
     this.mongoClient = mongodb.MongoClient;

@@ -1,3 +1,8 @@
 language: node_js
 node_js:
   - "4"
+services:
+  - mongodb
+  - elasticsearch
+before_script:
+  - sleep 10
