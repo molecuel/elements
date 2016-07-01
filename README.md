@@ -1,16 +1,25 @@
-[![Build Status](https://travis-ci.org/molecuel/mlcl_elements.svg?branch=master)](https://travis-ci.org/molecuel/mlcl_elements)
+[![Build Status](https://travis-ci.org/molecuel/mlcl_mailer.svg?branch=master)](https://travis-ci.org/molecuel/mlcl_mailer)
 
-[![NPM](https://nodei.co/npm-dl/mlcl_elements.png?months=1)](https://nodei.co/npm/mlcl_elements/)
+[![NPM](https://nodei.co/npm-dl/mlcl_mailer.png?months=1)](https://nodei.co/npm/mlcl_mailer/)
 
-[![NPM](https://nodei.co/npm/mlcl_elements.png?downloads=true&stars=true)](https://nodei.co/npm/mlcl_elements/)
+[![NPM](https://nodei.co/npm/mlcl_mailer.png?downloads=true&stars=true)](https://nodei.co/npm/mlcl_mailer/)
 
-[![NPM version](https://badge.fury.io/js/mlcl_elements@2x.png)](http://badge.fury.io/js/mlcl_elements)
+[![NPM version](https://badge.fury.io/js/mlcl_mailer@2x.png)](http://badge.fury.io/js/mlcl_mailer)
 
-mlcl_elements
-=============
+# mlcl_mailer
+Mailer plugin for molecuel
 
-Elements / Data type definition module for the molecuel CMS. It allows to define advanced data models for MongoDB
-and elasticsearch.
+## Development Installation:
+git clone https://github.com/molecuel/mlcl_mailer.git
 
-## Important notice Typescript:
-Since version 0.4.0 mlcl_elements is using typescript compiler. Currently it is used for autocompletion. We will provide more advanced features in the future. We are using atom-typescript to compile the code when saving the sources.
+npm install
+
+typings install
+
+## API
+You can register own functions to process a mail response queue.
+
+The registerHandler expects **function(object)**.
+
+The function parameter
+*object* will become a stringified response object.

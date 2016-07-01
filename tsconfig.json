@@ -1,29 +1,39 @@
 {
-    "version": "1.4.1",
-    "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
-        "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
-        "noLib": false
-    },
-    "filesGlob": [
-        "./**/*.ts",
-        "!./node_modules/**/*.ts"
-    ],
-    "files": [
-        "./index.ts",
-        "./typings/async/async.d.ts",
-        "./typings/mongoose/mongoose.d.ts",
-        "./typings/node/node.d.ts",
-        "./typings/underscore/underscore.d.ts",
-        "./typings/uuid/UUID.d.ts",
-        "./typings/validator/validator.d.ts"
-    ],
-    "formatCodeOptions": {
-        "indentSize": 2,
-        "tabSize": 2,
-        "convertTabsToSpaces": true
-    }
+  "compileOnSave": false,
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "files": [
+    "typings/index.d.ts",
+    "test/index.ts",
+    "src/index.ts",
+    "src/config.ts",
+    "dist/index.d.ts"
+  ],
+  "exclude": [],
+  "atom": {
+    "rewriteTsconfig": false,
+    "formatOnSave": true
+  },
+  "formatCodeOptions": {
+    "indentSize": 2,
+    "tabSize": 2,
+    "newLineCharacter": "\r\n",
+    "convertTabsToSpaces": true,
+    "insertSpaceAfterCommaDelimiter": true,
+    "insertSpaceAfterSemicolonInForStatements": true,
+    "insertSpaceBeforeAndAfterBinaryOperators": true,
+    "insertSpaceAfterKeywordsInControlFlowStatements": true,
+    "insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+    "insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": false,
+    "placeOpenBraceOnNewLineForFunctions": false,
+    "placeOpenBraceOnNewLineForControlBlocks": false
+  }
 }
