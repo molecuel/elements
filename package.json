@@ -37,7 +37,8 @@
     "typescript": "^1.8.2"
   },
   "dependencies": {
-    "elasticsearch": "^11.0.1"
+    "elasticsearch": "^11.0.1",
+    "mongodb": "^2.1.18"
   },
   "devconfig": {
     "paths": {
