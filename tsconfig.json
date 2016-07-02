@@ -15,7 +15,10 @@
     "test/index.ts",
     "src/index.ts",
     "src/config.ts",
-    "dist/index.d.ts"
+    "dist/index.d.ts",
+    "classes/ElasticOptions.ts",
+    "interfaces/IElement.ts",
+    "classes/Element.ts"
   ],
   "exclude": [],
   "atom": {

@@ -1,0 +1,1 @@
+{"version":3,"sources":["classes/ElasticOptions.ts"],"names":[],"mappings":";AAAA,QAAO,kBAAkB,CAAC,CAAA;AAC1B;AAIA,CAAC;AAJY,sBAAc,iBAI1B,CAAA","file":"classes/ElasticOptions.js","sourcesContent":["import 'reflect-metadata';\nexport class ElasticOptions {\n  public url: string;\n  public timeout: number;\n  public loglevel: string;\n}\n"],"sourceRoot":"/source/"}
