@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { IElement } from './interfaces/IElement';
 export { Element as Element } from './classes/Element';
+import { ValidationError } from 'class-validator';
 export declare class Elements {
     static loaderversion: number;
     private mongoClient;
@@ -19,5 +20,5 @@ export declare class Elements {
     registerClass(name: string, definition: any): void;
     getClass(name: string): IElement;
     getClassInstance(name: string): any;
-    validate(instance: IElement): Promise<void>;
+    validate(instance: any): Promise<ValidationError[]>;
 }

@@ -16,12 +16,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
+require('reflect-metadata');
 const should = require('should');
 const assert = require('assert');
 const dist_1 = require('../dist');
-require('reflect-metadata');
-const class_validator_1 = require("class-validator");
-class Post extends dist_1.Element {
+const Element_1 = require('../dist/classes/Element');
+const class_validator_1 = require('class-validator');
+class Post extends Element_1.Element {
 }
 __decorate([
     class_validator_1.Contains('hello'), 
@@ -56,7 +57,34 @@ describe('mlcl', function () {
         });
         it('should have a instance of Elements as static', function () {
             let mymodel = el.getClass('post');
-            console.log(mymodel.elements);
+            assert(mymodel.elements instanceof dist_1.Elements);
+        });
+        it('should not validate the object', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'huhu';
+                let errors = yield testclass.validate();
+                assert(errors.length > 0);
+            });
+        });
+        it('should validate the object', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                let errors = yield testclass.validate();
+                assert(errors.length === 0);
+            });
+        });
+        it('should strip a object to the allowed values only', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass.myundefinedattr = 'huhu';
+                let errors = yield testclass.validate({ skipMissingProperties: true });
+                console.log(Reflect.getMetadata('design:type', testclass, '_id'));
+                console.log(errors);
+                console.log(testclass.toDbObject());
+            });
         });
     });
 });

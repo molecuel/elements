@@ -6,7 +6,7 @@ import 'reflect-metadata';
 import {ElasticOptions} from './classes/ElasticOptions';
 import {IElement} from './interfaces/IElement';
 export {Element as Element} from './classes/Element';
-import {Validator} from 'class-validator';
+import {Validator, ValidationError} from 'class-validator';
 
 export class Elements {
   public static loaderversion = 2;
@@ -28,6 +28,8 @@ export class Elements {
     this.elasticOptions.url = 'http://localhost:9200';
     this.elasticOptions.loglevel = 'trace';
     this.elasticOptions.timeout = 5000;
+
+    this.validator = new Validator();
 
     this.mongoClient = mongodb.MongoClient;
     this.elasticClient = new elasticsearch.Client({
@@ -107,7 +109,7 @@ export class Elements {
   public getClassInstance(name: string): any {
     let elementClass: any = this.elementStore.get(name);
     let classInstance: IElement = new elementClass();
-    classInstance.elements = this;
+    classInstance.setFactory(this);
     return classInstance;
   }
 
@@ -116,7 +118,7 @@ export class Elements {
    * @param  {IElement}      instance [description]
    * @return {Promise<void>}          [description]
    */
-  public async validate(instance: IElement): Promise<void> {
-    this.validator.validate(instance);
+  public validate(instance: any): Promise<ValidationError[]> {
+    return this.validator.validate(instance);
   }
 }

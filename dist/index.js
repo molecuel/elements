@@ -13,6 +13,7 @@ require('reflect-metadata');
 const ElasticOptions_1 = require('./classes/ElasticOptions');
 var Element_1 = require('./classes/Element');
 exports.Element = Element_1.Element;
+const class_validator_1 = require('class-validator');
 class Elements {
     constructor(mlcl, config) {
         this.elementStore = new Map();
@@ -20,6 +21,7 @@ class Elements {
         this.elasticOptions.url = 'http://localhost:9200';
         this.elasticOptions.loglevel = 'trace';
         this.elasticOptions.timeout = 5000;
+        this.validator = new class_validator_1.Validator();
         this.mongoClient = mongodb.MongoClient;
         this.elasticClient = new elasticsearch.Client({
             host: 'localhost:9200',
@@ -61,13 +63,11 @@ class Elements {
     getClassInstance(name) {
         let elementClass = this.elementStore.get(name);
         let classInstance = new elementClass();
-        classInstance.elements = this;
+        classInstance.setFactory(this);
         return classInstance;
     }
     validate(instance) {
-        return __awaiter(this, void 0, Promise, function* () {
-            this.validator.validate(instance);
-        });
+        return this.validator.validate(instance);
     }
 }
 Elements.loaderversion = 2;
