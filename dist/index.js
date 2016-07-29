@@ -10,10 +10,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 const mongodb = require('mongodb');
 const elasticsearch = require('elasticsearch');
 require('reflect-metadata');
+const TSV = require('tsvalidate');
 const ElasticOptions_1 = require('./classes/ElasticOptions');
 var Element_1 = require('./classes/Element');
 exports.Element = Element_1.Element;
-const class_validator_1 = require('class-validator');
 class Elements {
     constructor(mlcl, config) {
         this.elementStore = new Map();
@@ -21,7 +21,6 @@ class Elements {
         this.elasticOptions.url = 'http://localhost:9200';
         this.elasticOptions.loglevel = 'trace';
         this.elasticOptions.timeout = 5000;
-        this.validator = new class_validator_1.Validator();
         this.mongoClient = mongodb.MongoClient;
         this.elasticClient = new elasticsearch.Client({
             host: 'localhost:9200',
@@ -67,7 +66,8 @@ class Elements {
         return classInstance;
     }
     validate(instance) {
-        return this.validator.validate(instance);
+        let validator = new TSV.Validator();
+        return validator.validate(instance);
     }
 }
 Elements.loaderversion = 2;

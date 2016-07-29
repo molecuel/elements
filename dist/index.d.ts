@@ -1,7 +1,7 @@
 import 'reflect-metadata';
+import * as TSV from 'tsvalidate';
 import { IElement } from './interfaces/IElement';
 export { Element as Element } from './classes/Element';
-import { ValidationError } from 'class-validator';
 export declare class Elements {
     static loaderversion: number;
     private mongoClient;
@@ -10,7 +10,6 @@ export declare class Elements {
     private elasticConnection;
     private elasticOptions;
     private elementStore;
-    private validator;
     constructor(mlcl?: any, config?: any);
     protected mongoConnectWrapper(): Promise<any>;
     protected connectMongo(): Promise<void>;
@@ -20,5 +19,5 @@ export declare class Elements {
     registerClass(name: string, definition: any): void;
     getClass(name: string): IElement;
     getClassInstance(name: string): any;
-    validate(instance: any): Promise<ValidationError[]>;
+    validate(instance: Object): TSV.IValidatorError[];
 }

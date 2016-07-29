@@ -1,8 +1,8 @@
 'use strict';
 import 'reflect-metadata';
-import {Elements} from '../index';
-import {IElement} from '../interfaces/IElement';
-import {ValidationError, IsDefined} from 'class-validator';
+import { Elements } from '../index';
+import { IElement } from '../interfaces/IElement';
+import { IValidatorError, IsDefined } from 'tsvalidate';
 import _ = require('lodash');
 
 function val() {
@@ -24,7 +24,7 @@ export class Element implements IElement {
   public setFactory(elements) {
     this.elements = elements;
   }
-  public validate(): Promise<ValidationError[]> {
+  public validate(): IValidatorError[] {
     return this.elements.validate(this);
   }
   public toDbObject(): any {

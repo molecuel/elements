@@ -2,12 +2,12 @@
 import 'reflect-metadata';
 import should = require('should');
 import assert = require('assert');
-import {Elements} from '../dist';
-import {Element} from '../dist/classes/Element';
-import {Contains, IsDefined} from 'class-validator';
+import { Elements } from '../dist';
+import { Element } from '../dist/classes/Element';
+import * as V from 'tsvalidate';
 
 class Post extends Element {
-  @Contains('hello')
+  @V.Contains('hello')
   text: string;
 }
 
@@ -45,28 +45,19 @@ describe('mlcl', function() {
       assert(mymodel.elements instanceof Elements);
     });
 
-    it('should not validate the object', async function() {
+    it('should not validate the object', function() {
       let testclass: any = el.getClassInstance('post');
       testclass.text = 'huhu';
-      let errors = await testclass.validate();
+      let errors = testclass.validate();
       assert(errors.length > 0);
     });
 
-    it('should validate the object', async function() {
+    it('should validate the object', function() {
       let testclass: any = el.getClassInstance('post');
       testclass.text = 'hello';
-      let errors = await testclass.validate();
+      let errors = testclass.validate();
       assert(errors.length === 0);
     });
 
-    it('should strip a object to the allowed values only', async function() {
-      let testclass: any = el.getClassInstance('post');
-      testclass.text = 'hello';
-      testclass.myundefinedattr = 'huhu';
-      let errors = await testclass.validate({ skipMissingProperties: true });
-      console.log(Reflect.getMetadata('design:type', testclass, '_id'));
-      console.log(errors);
-      console.log(testclass.toDbObject());
-    })
   })
 });

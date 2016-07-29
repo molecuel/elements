@@ -21,11 +21,11 @@ const should = require('should');
 const assert = require('assert');
 const dist_1 = require('../dist');
 const Element_1 = require('../dist/classes/Element');
-const class_validator_1 = require('class-validator');
+const V = require('tsvalidate');
 class Post extends Element_1.Element {
 }
 __decorate([
-    class_validator_1.Contains('hello'), 
+    V.Contains('hello'), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
 describe('mlcl', function () {
@@ -60,31 +60,16 @@ describe('mlcl', function () {
             assert(mymodel.elements instanceof dist_1.Elements);
         });
         it('should not validate the object', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'huhu';
-                let errors = yield testclass.validate();
-                assert(errors.length > 0);
-            });
+            let testclass = el.getClassInstance('post');
+            testclass.text = 'huhu';
+            let errors = testclass.validate();
+            assert(errors.length > 0);
         });
         it('should validate the object', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                let errors = yield testclass.validate();
-                assert(errors.length === 0);
-            });
-        });
-        it('should strip a object to the allowed values only', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                testclass.myundefinedattr = 'huhu';
-                let errors = yield testclass.validate({ skipMissingProperties: true });
-                console.log(Reflect.getMetadata('design:type', testclass, '_id'));
-                console.log(errors);
-                console.log(testclass.toDbObject());
-            });
+            let testclass = el.getClassInstance('post');
+            testclass.text = 'hello';
+            let errors = testclass.validate();
+            assert(errors.length === 0);
         });
     });
 });

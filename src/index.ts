@@ -2,11 +2,12 @@
 import mongodb = require('mongodb');
 import elasticsearch = require('elasticsearch');
 import 'reflect-metadata';
+import * as TSV from 'tsvalidate';
 
-import {ElasticOptions} from './classes/ElasticOptions';
-import {IElement} from './interfaces/IElement';
-export {Element as Element} from './classes/Element';
-import {Validator, ValidationError} from 'class-validator';
+import { ElasticOptions } from './classes/ElasticOptions';
+import { IElement } from './interfaces/IElement';
+export { Element as Element } from './classes/Element';
+
 
 export class Elements {
   public static loaderversion = 2;
@@ -19,8 +20,6 @@ export class Elements {
   private elasticOptions: ElasticOptions;
   private elementStore: Map<string, IElement>;
 
-  private validator: Validator;
-
   constructor(mlcl?: any, config?: any) {
     this.elementStore = new Map();
     // @todo Get from config object
@@ -28,8 +27,6 @@ export class Elements {
     this.elasticOptions.url = 'http://localhost:9200';
     this.elasticOptions.loglevel = 'trace';
     this.elasticOptions.timeout = 5000;
-
-    this.validator = new Validator();
 
     this.mongoClient = mongodb.MongoClient;
     this.elasticClient = new elasticsearch.Client({
@@ -118,7 +115,8 @@ export class Elements {
    * @param  {IElement}      instance [description]
    * @return {Promise<void>}          [description]
    */
-  public validate(instance: any): Promise<ValidationError[]> {
-    return this.validator.validate(instance);
+  public validate(instance: Object): TSV.IValidatorError[] {
+    let validator = new TSV.Validator();
+    return validator.validate(instance);
   }
 }

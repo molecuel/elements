@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 require('reflect-metadata');
-const class_validator_1 = require('class-validator');
+const tsvalidate_1 = require('tsvalidate');
 const _ = require('lodash');
 function val() {
     console.log('koko');
@@ -45,7 +45,7 @@ let Element = Element_1 = class Element {
     }
 };
 __decorate([
-    class_validator_1.IsDefined(), 
+    tsvalidate_1.IsDefined(), 
     __metadata('design:type', Object)
 ], Element.prototype, "_id", void 0);
 Element = Element_1 = __decorate([
