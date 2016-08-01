@@ -1,3 +1,4 @@
+import mongodb = require('mongodb');
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import { IElement } from './interfaces/IElement';
@@ -20,4 +21,6 @@ export declare class Elements {
     getClass(name: string): IElement;
     getClassInstance(name: string): any;
     validate(instance: Object): TSV.IValidatorError[];
+    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any>;
+    saveInstance(instances: IElement[]): Promise<void>;
 }

@@ -71,5 +71,19 @@ describe('mlcl', function () {
             let errors = testclass.validate();
             assert(errors.length === 0);
         });
+        it('should validate an array of objects and sort them into collections', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                try {
+                    let result = yield el.saveInstance([testclass]);
+                    console.log(result);
+                }
+                catch (e) {
+                    console.log(e);
+                    should.not.exist(e);
+                }
+            });
+        });
     });
 });

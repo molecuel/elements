@@ -119,4 +119,46 @@ export class Elements {
     let validator = new TSV.Validator();
     return validator.validate(instance);
   }
+
+  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+    let errors: TSV.IValidatorError[] = [];
+    let collections: any = {};
+    let connectedDb: mongodb.Db;
+    for (let instance of instances) {
+      if (!instance.validate()) {
+        if (!collections[instance.constructor.name]) {
+          collections[instance.constructor.name] = <IElement[]>[instance];
+        }
+        else {
+          collections[instance.constructor.name].push(<IElement>instance);
+        }
+      }
+      else {
+        errors.concat(instance.validate());
+      }
+    }
+    if (this.mongoConnection
+      && errors.length === 0) {
+      this.mongoConnection.then((thatDb) => {
+        connectedDb = thatDb;
+      });
+      // for (let collection of collections) {
+      //   let instanceCollection = connectedDb.collection('config.projectPrefix' + collection[0].constructor.name);
+      //   instanceCollection.insertMany(collection, options);
+      // }
+      return connectedDb.collections();
+      // return new Promise((resolve, reject) => {
+      //   resolve('success');
+      // });
+    }
+    else if (errors) {
+      return new Promise((resolve, reject) => {
+        reject(errors);
+      });
+    }
+  }
+
+  public async saveInstance(instances: IElement[]): Promise<void> {
+    await this.instanceSaveWrapper(instances);
+  }
 }

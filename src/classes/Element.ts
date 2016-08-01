@@ -9,7 +9,7 @@ function val() {
   console.log('koko');
   return function(target: any) {
     console.log('gere');
-  }
+  };
 }
 
 @val()

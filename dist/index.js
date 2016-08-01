@@ -69,6 +69,41 @@ class Elements {
         let validator = new TSV.Validator();
         return validator.validate(instance);
     }
+    instanceSaveWrapper(instances, options) {
+        let errors = [];
+        let collections = {};
+        let connectedDb;
+        for (let instance of instances) {
+            if (!instance.validate()) {
+                if (!collections[instance.constructor.name]) {
+                    collections[instance.constructor.name] = [instance];
+                }
+                else {
+                    collections[instance.constructor.name].push(instance);
+                }
+            }
+            else {
+                errors.concat(instance.validate());
+            }
+        }
+        if (this.mongoConnection
+            && errors.length === 0) {
+            this.mongoConnection.then((thatDb) => {
+                connectedDb = thatDb;
+            });
+            return connectedDb.collections();
+        }
+        else if (errors) {
+            return new Promise((resolve, reject) => {
+                reject(errors);
+            });
+        }
+    }
+    saveInstance(instances) {
+        return __awaiter(this, void 0, Promise, function* () {
+            yield this.instanceSaveWrapper(instances);
+        });
+    }
 }
 Elements.loaderversion = 2;
 exports.Elements = Elements;
