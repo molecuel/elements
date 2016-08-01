@@ -37,11 +37,12 @@
     "typescript": "^1.8.2"
   },
   "dependencies": {
-    "class-validator": "^0.4.0-alpha.3",
+    "validator": "^5.4.0",
     "elasticsearch": "^11.0.1",
     "lodash": "^4.13.1",
     "mongodb": "^2.1.18",
-    "reflect-metadata": "^0.1.3"
+    "reflect-metadata": "^0.1.3",
+    "tsvalidate": "^>=0.0.1"
   },
   "devconfig": {
     "paths": {
