@@ -59,19 +59,19 @@ describe('mlcl', function() {
       assert(errors.length === 0);
     });
 
-    it('should validate an array of objects and sort them into collections', async function() {
-      let testclass: any = el.getClassInstance('post');
-      testclass.text = 'hello';
-      try {
-        let result = await el.saveInstance([testclass]);
-        console.log(result);
-        // assert(result.isArray());
-      }
-      catch (e) {
-        console.log(e);
-        should.not.exist(e);
-      }
-    });
+    // it('should validate an array of objects and sort them into collections', async function() {
+    //   let testclass: any = el.getClassInstance('post');
+    //   testclass.text = 'hello';
+    //   try {
+    //     let result = await el.saveInstance([testclass]);
+    //     console.log(result);
+    //     // assert(result.isArray());
+    //   }
+    //   catch (e) {
+    //     console.log(e);
+    //     should.not.exist(e);
+    //   }
+    // });
 
   })
 });
