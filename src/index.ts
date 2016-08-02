@@ -120,12 +120,44 @@ export class Elements {
     return validator.validate(instance);
   }
 
-  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+  public mongoClose(): Promise<any> {
+    let activeDb: any = this.mongoConnection;
+    return activeDb.close();
+  }
+
+  protected async createCollection(name: string): Promise<any> {
+    let activeDb: any = this.mongoConnection;
+    return await activeDb.createCollection(name);
+  }
+
+  protected async getCollections(): Promise<any> {
+    let activeDb: any = this.mongoConnection;
+    return await activeDb.collections();
+  }
+
+  protected async insertElements(instances: IElement[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+    let activeDb: any = this.mongoConnection;
+    let prom: any;
+    try {
+      let col: any = await activeDb.collection(collectionName);
+      if (col) {
+        prom = await col.insert(instances, options);
+      }
+    }
+    catch (e) {
+      prom = e;
+    }
+    console.log(prom);
+    return prom;
+  }
+
+  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<void> {
     let errors: TSV.IValidatorError[] = [];
     let collections: any = {};
-    let connectedDb: mongodb.Db;
+
+    // validate all instances and pre- sort into array based collections per model name;
     for (let instance of instances) {
-      if (!instance.validate()) {
+      if (instance.validate().length === 0) {
         if (!collections[instance.constructor.name]) {
           collections[instance.constructor.name] = <IElement[]>[instance];
         }
@@ -137,19 +169,20 @@ export class Elements {
         errors.concat(instance.validate());
       }
     }
+    // every instance ok?: create non-existent DB-collections, then save instances to respective collection
     if (this.mongoConnection
       && errors.length === 0) {
-      this.mongoConnection.then((thatDb) => {
-        connectedDb = thatDb;
-      });
-      // for (let collection of collections) {
-      //   let instanceCollection = connectedDb.collection('config.projectPrefix' + collection[0].constructor.name);
-      //   instanceCollection.insertMany(collection, options);
-      // }
-      return connectedDb.collections();
-      // return new Promise((resolve, reject) => {
-      //   resolve('success');
-      // });
+      for (let collectionName in collections) {
+        try {
+          let collectionFullName: string = 'config.projectPrefix_' + collectionName;
+          // this.createCollection(collectionFullName);
+          this.insertElements(collections[collectionName], collectionFullName, options);
+        }
+        catch (e) {
+          return e;
+        }
+      }
+      // return this.getCollections();
     }
     else if (errors) {
       return new Promise((resolve, reject) => {
@@ -158,7 +191,7 @@ export class Elements {
     }
   }
 
-  public async saveInstance(instances: IElement[]): Promise<void> {
-    await this.instanceSaveWrapper(instances);
+  public async saveInstances(instances: IElement[]): Promise<void> {
+    return await this.instanceSaveWrapper(instances);
   }
 }

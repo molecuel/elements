@@ -14,7 +14,6 @@ function val() {
 
 @val()
 export class Element implements IElement {
-  @IsDefined()
   public _id: any;
   public elements: Elements;
   public static elements: Elements;
@@ -27,9 +26,11 @@ export class Element implements IElement {
   public validate(): IValidatorError[] {
     return this.elements.validate(this);
   }
-  public toDbObject(): any {
-    let that = _.clone(this);
-    Object.keys(that).forEach((key) => {
+  public toDbObject(subElement?: any): any {
+    let that = _.clone(subElement) || _.clone(this);
+
+    // Object.keys(that).forEach((key) => {
+    for (let key in that) {
       // check if the property is a reference
       let isReference = Reflect.getMetadata('elements:modelref', that, key);
       if (isReference && that[key] && that[key]._id) {
@@ -37,11 +38,17 @@ export class Element implements IElement {
       }
       // check if is defined
       let isDefined = Reflect.getMetadata('design:type', that, key);
-      console.log(key, isDefined);
-      if (!isDefined) {
+      // console.log(key, isDefined);
+      if (that[key] !== undefined &&
+        typeof that[key] === 'object') {
+        that[key] = this.toDbObject(that[key]);
+      }
+      else if (!that[key] || typeof that[key] === 'function') {
         delete that[key];
       }
-    });
+    }
+
+    // });
     return that;
   }
 }

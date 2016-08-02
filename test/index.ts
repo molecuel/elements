@@ -59,19 +59,34 @@ describe('mlcl', function() {
       assert(errors.length === 0);
     });
 
-    // it('should validate an array of objects and sort them into collections', async function() {
-    //   let testclass: any = el.getClassInstance('post');
-    //   testclass.text = 'hello';
-    //   try {
-    //     let result = await el.saveInstance([testclass]);
-    //     console.log(result);
-    //     // assert(result.isArray());
-    //   }
-    //   catch (e) {
-    //     console.log(e);
-    //     should.not.exist(e);
-    //   }
-    // });
+    it('should validate an array of objects, create required and get all collections of an active mongoConnection', async function() { // , sort them into collections and create missing collections
+      let testclass1: any = el.getClassInstance('post');
+      let testclass2: any = el.getClassInstance('post');
+      testclass1.text = 'hello';
+      testclass2.text = 'world';
+
+
+      // try {
+      //   await el.saveInstances([testclass1, testclass2]).catch((err) => {
+      //     console.log(err);
+      //     return err;
+      //   });
+      //   el.mongoClose();
+      // el.getCollections().then((data) => {
+      //   console.log(data);
+      //   return data;
+      // });
+      // let collection: any = await el.mongoConnection.collection('config.projectPrefix_Post');
+      // await collection.count().then((qty) => {
+      //   console.log(qty);
+      //   return qty;
+      // });
+      // }
+      // catch (e) {
+      //   console.log(e);
+      //   should.not.exist(e);
+      // }
+    });
 
   })
 });

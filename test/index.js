@@ -71,18 +71,12 @@ describe('mlcl', function () {
             let errors = testclass.validate();
             assert(errors.length === 0);
         });
-        it('should validate an array of objects and sort them into collections', function () {
+        it('should validate an array of objects, create required and get all collections of an active mongoConnection', function () {
             return __awaiter(this, void 0, void 0, function* () {
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                try {
-                    let result = yield el.saveInstance([testclass]);
-                    console.log(result);
-                }
-                catch (e) {
-                    console.log(e);
-                    should.not.exist(e);
-                }
+                let testclass1 = el.getClassInstance('post');
+                let testclass2 = el.getClassInstance('post');
+                testclass1.text = 'hello';
+                testclass2.text = 'world';
             });
         });
     });

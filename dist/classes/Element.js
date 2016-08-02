@@ -9,7 +9,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 require('reflect-metadata');
-const tsvalidate_1 = require('tsvalidate');
 const _ = require('lodash');
 function val() {
     console.log('koko');
@@ -28,26 +27,25 @@ let Element = Element_1 = class Element {
     validate() {
         return this.elements.validate(this);
     }
-    toDbObject() {
-        let that = _.clone(this);
-        Object.keys(that).forEach((key) => {
+    toDbObject(subElement) {
+        let that = _.clone(subElement) || _.clone(this);
+        for (let key in that) {
             let isReference = Reflect.getMetadata('elements:modelref', that, key);
             if (isReference && that[key] && that[key]._id) {
                 that[key] = that[key]._id;
             }
             let isDefined = Reflect.getMetadata('design:type', that, key);
-            console.log(key, isDefined);
-            if (!isDefined) {
+            if (that[key] !== undefined &&
+                typeof that[key] === 'object') {
+                that[key] = this.toDbObject(that[key]);
+            }
+            else if (!that[key] || typeof that[key] === 'function') {
                 delete that[key];
             }
-        });
+        }
         return that;
     }
 };
-__decorate([
-    tsvalidate_1.IsDefined(), 
-    __metadata('design:type', Object)
-], Element.prototype, "_id", void 0);
 Element = Element_1 = __decorate([
     val(), 
     __metadata('design:paramtypes', [])

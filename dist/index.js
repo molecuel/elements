@@ -69,12 +69,44 @@ class Elements {
         let validator = new TSV.Validator();
         return validator.validate(instance);
     }
+    mongoClose() {
+        let activeDb = this.mongoConnection;
+        return activeDb.close();
+    }
+    createCollection(name) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let activeDb = this.mongoConnection;
+            return yield activeDb.createCollection(name);
+        });
+    }
+    getCollections() {
+        return __awaiter(this, void 0, Promise, function* () {
+            let activeDb = this.mongoConnection;
+            return yield activeDb.collections();
+        });
+    }
+    insertElements(instances, collectionName, options) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let activeDb = this.mongoConnection;
+            let prom;
+            try {
+                let col = yield activeDb.collection(collectionName);
+                if (col) {
+                    prom = yield col.insert(instances, options);
+                }
+            }
+            catch (e) {
+                prom = e;
+            }
+            console.log(prom);
+            return prom;
+        });
+    }
     instanceSaveWrapper(instances, options) {
         let errors = [];
         let collections = {};
-        let connectedDb;
         for (let instance of instances) {
-            if (!instance.validate()) {
+            if (instance.validate().length === 0) {
                 if (!collections[instance.constructor.name]) {
                     collections[instance.constructor.name] = [instance];
                 }
@@ -88,10 +120,15 @@ class Elements {
         }
         if (this.mongoConnection
             && errors.length === 0) {
-            this.mongoConnection.then((thatDb) => {
-                connectedDb = thatDb;
-            });
-            return connectedDb.collections();
+            for (let collectionName in collections) {
+                try {
+                    let collectionFullName = 'config.projectPrefix_' + collectionName;
+                    this.insertElements(collections[collectionName], collectionFullName, options);
+                }
+                catch (e) {
+                    return e;
+                }
+            }
         }
         else if (errors) {
             return new Promise((resolve, reject) => {
@@ -99,9 +136,9 @@ class Elements {
             });
         }
     }
-    saveInstance(instances) {
+    saveInstances(instances) {
         return __awaiter(this, void 0, Promise, function* () {
-            yield this.instanceSaveWrapper(instances);
+            return yield this.instanceSaveWrapper(instances);
         });
     }
 }
