@@ -28,6 +28,21 @@ __decorate([
     V.Contains('hello'), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
+class SmallTestClass extends Element_1.Element {
+    constructor(value, obj) {
+        super();
+        this.func = function () { };
+        this.prop = value || true;
+        this.obj = obj || {};
+    }
+    meth() {
+    }
+}
+__decorate([
+    V.ValidateType(),
+    V.Equals(true), 
+    __metadata('design:type', Object)
+], SmallTestClass.prototype, "prop", void 0);
 describe('mlcl', function () {
     let el;
     describe('module', function () {
@@ -45,6 +60,7 @@ describe('mlcl', function () {
         });
         it('should register a new data model', function () {
             el.registerClass('post', Post);
+            el.registerClass('test', Post);
         });
         it('should get a class for a model name', function () {
             let myclass = el.getClass('post');
@@ -53,10 +69,11 @@ describe('mlcl', function () {
         });
         it('should get a instance of a class', function () {
             let mymodel = el.getClassInstance('post');
+            console.log('prop' in mymodel);
             assert(mymodel instanceof Post);
         });
         it('should have a instance of Elements as static', function () {
-            let mymodel = el.getClass('post');
+            let mymodel = el.getClass('test');
             assert(mymodel.elements instanceof dist_1.Elements);
         });
         it('should not validate the object', function () {
@@ -71,13 +88,18 @@ describe('mlcl', function () {
             let errors = testclass.validate();
             assert(errors.length === 0);
         });
-        it('should validate an array of objects, create required and get all collections of an active mongoConnection', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let testclass1 = el.getClassInstance('post');
-                let testclass2 = el.getClassInstance('post');
-                testclass1.text = 'hello';
-                testclass2.text = 'world';
-            });
+        it('should serialize an Element-object', function () {
+            let testclass = el.getClassInstance('post');
+            testclass.text = 'hello';
+            testclass._id = 'someId';
+            try {
+                testclass = testclass.toDbObject();
+                console.log(testclass);
+            }
+            catch (err) {
+                console.log(err.message);
+                should.not.exist(err);
+            }
         });
     });
 });

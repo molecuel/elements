@@ -9,17 +9,10 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 require('reflect-metadata');
-const _ = require('lodash');
-function val() {
-    console.log('koko');
-    return function (target) {
-        console.log('gere');
-    };
-}
-let Element_1;
-let Element = Element_1 = class Element {
+const tsvalidate_1 = require('tsvalidate');
+class Element {
     getElements() {
-        return Element_1.elements;
+        return Element.elements;
     }
     setFactory(elements) {
         this.elements = elements;
@@ -28,28 +21,35 @@ let Element = Element_1 = class Element {
         return this.elements.validate(this);
     }
     toDbObject(subElement) {
-        let that = _.clone(subElement) || _.clone(this);
+        let that = subElement || this;
+        let result = {};
         for (let key in that) {
-            let isReference = Reflect.getMetadata('elements:modelref', that, key);
-            if (isReference && that[key] && that[key]._id) {
-                that[key] = that[key]._id;
-            }
-            let isDefined = Reflect.getMetadata('design:type', that, key);
-            if (that[key] !== undefined &&
-                typeof that[key] === 'object') {
-                that[key] = this.toDbObject(that[key]);
-            }
-            else if (!that[key] || typeof that[key] === 'function') {
-                delete that[key];
+            if (({}).hasOwnProperty.call(that, key)) {
+                if (typeof that['_id'] !== 'undefined'
+                    && typeof subElement === 'undefined') {
+                    result._id = that['_id'];
+                }
+                if (that[key] !== undefined
+                    && typeof that[key] === 'object') {
+                    let isDecorated = Reflect.getMetadata('design:type', that, key);
+                    if (isDecorated !== undefined) {
+                        result[key] = Element.prototype.toDbObject(that[key]);
+                    }
+                }
+                else if (that[key] !== undefined
+                    && typeof that[key] !== 'function') {
+                    result[key] = that[key];
+                }
             }
         }
-        return that;
+        return result;
     }
-};
-Element = Element_1 = __decorate([
-    val(), 
-    __metadata('design:paramtypes', [])
-], Element);
+}
+__decorate([
+    tsvalidate_1.ValidateType(),
+    tsvalidate_1.MongoID(), 
+    __metadata('design:type', Object)
+], Element.prototype, "_id", void 0);
 exports.Element = Element;
 
 //# sourceMappingURL=Element.js.map
