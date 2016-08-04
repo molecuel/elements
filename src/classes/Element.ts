@@ -2,11 +2,12 @@
 import 'reflect-metadata';
 import { Elements } from '../index';
 import { IElement } from '../interfaces/IElement';
-import { IValidatorError, ValidateType, MongoID } from 'tsvalidate';
+import { IValidatorError, ValidateType, MongoID, Equals } from 'tsvalidate';
 // import _ = require('lodash');
 
 export class Element implements IElement {
-  @ValidateType()
+  // @ValidateType()
+  // @Equals(false)
   @MongoID()
   public _id: any;
   public elements: Elements;
@@ -20,43 +21,32 @@ export class Element implements IElement {
   public validate(): IValidatorError[] {
     return this.elements.validate(this);
   }
+  public save(): Promise<any> {
+    return this.elements.saveInstances([this]);
+  }
   public toDbObject(subElement?: any): any {
     let that = subElement || this;
-    let result: any = {};
-    // try {
-    //   if (Element.prototype.validate().length > 0) {
-    //     return Element.prototype.validate();
-    //   }
-    // }
-    // catch (err) {
-    //   return err;
-    // }
+    let result: any = Object.create(that);
 
     for (let key in that) {
-      if (({}).hasOwnProperty.call(that, key)) {
+      let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
+      // check for non-prototype, validator-decorated property
+      if (({}).hasOwnProperty.call(that, key)
+        && that[key] !== undefined
+        && typeof hasValidatorDecorator !== 'undefined') {
 
-        // check if the property is a reference
-        // let isReference = Reflect.getMetadata('elements:modelref', that, key);
-        // if (isReference && that[key] && that[key]._id) {
-        //   result[key] = that[key]._id;
-        // }
-        if (typeof that['_id'] !== 'undefined'
+        // check for _id
+        if (key === '_id'
           && typeof subElement === 'undefined') {
 
-          result._id = that['_id'];
+          result[that.constructor.name] = that[key];
         }
-        // check if is defined
-        if (that[key] !== undefined
-          && typeof that[key] === 'object') {
+        // check if the property is an object
+        else if (typeof that[key] === 'object') {
 
-          // check if the property is decorated
-          let isDecorated = Reflect.getMetadata('design:type', that, key);
-          if (isDecorated !== undefined) {
-            result[key] = Element.prototype.toDbObject(that[key]);
-          }
+          result[key] = Element.prototype.toDbObject(that[key]);
         }
-        else if (that[key] !== undefined
-          && typeof that[key] !== 'function') {
+        else if (typeof that[key] !== 'function') {
           result[key] = that[key];
         }
       }

@@ -105,6 +105,7 @@ class Elements {
     instanceSaveWrapper(instances, options) {
         let errors = [];
         let collections = {};
+        let resultArray = [];
         for (let instance of instances) {
             if (instance.validate().length === 0) {
                 if (!collections[instance.constructor.name]) {
@@ -115,7 +116,7 @@ class Elements {
                 }
             }
             else {
-                errors.concat(instance.validate());
+                errors = errors.concat(instance.validate());
             }
         }
         if (this.mongoConnection
@@ -123,15 +124,16 @@ class Elements {
             for (let collectionName in collections) {
                 try {
                     let collectionFullName = 'config.projectPrefix_' + collectionName;
-                    this.insertElements(collections[collectionName], collectionFullName, options);
+                    resultArray.concat(collections[collectionName]);
                 }
                 catch (e) {
                     return e;
                 }
             }
+            return resultArray;
         }
         else if (errors) {
-            return new Promise((resolve, reject) => {
+            return new Promise((reject, resolve) => {
                 reject(errors);
             });
         }

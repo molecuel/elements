@@ -23,7 +23,7 @@ export declare class Elements {
     validate(instance: Object): TSV.IValidatorError[];
     mongoClose(): Promise<any>;
     protected createCollection(name: string): Promise<any>;
-    protected getCollections(): Promise<any>;
+    getCollections(): Promise<any>;
     protected insertElements(instances: IElement[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
     protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<void>;
     saveInstances(instances: IElement[]): Promise<void>;

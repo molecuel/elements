@@ -39,8 +39,7 @@ class SmallTestClass extends Element_1.Element {
     }
 }
 __decorate([
-    V.ValidateType(),
-    V.Equals(true), 
+    V.MongoID(), 
     __metadata('design:type', Object)
 ], SmallTestClass.prototype, "prop", void 0);
 describe('mlcl', function () {
@@ -60,7 +59,7 @@ describe('mlcl', function () {
         });
         it('should register a new data model', function () {
             el.registerClass('post', Post);
-            el.registerClass('test', Post);
+            el.registerClass('test', SmallTestClass);
         });
         it('should get a class for a model name', function () {
             let myclass = el.getClass('post');
@@ -69,7 +68,6 @@ describe('mlcl', function () {
         });
         it('should get a instance of a class', function () {
             let mymodel = el.getClassInstance('post');
-            console.log('prop' in mymodel);
             assert(mymodel instanceof Post);
         });
         it('should have a instance of Elements as static', function () {
@@ -90,16 +88,40 @@ describe('mlcl', function () {
         });
         it('should serialize an Element-object', function () {
             let testclass = el.getClassInstance('post');
+            let secondarytestclass = el.getClassInstance('post');
             testclass.text = 'hello';
-            testclass._id = 'someId';
+            testclass._id = 'someIdValue';
+            secondarytestclass.text = 'world';
+            secondarytestclass._id = 'someOtherIdValue';
             try {
                 testclass = testclass.toDbObject();
-                console.log(testclass);
             }
             catch (err) {
                 console.log(err.message);
                 should.not.exist(err);
             }
+        });
+        it('should validate an array of objects and sort them into collections', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testclass1 = el.getClassInstance('test');
+                let testclass2 = el.getClassInstance('post');
+                testclass1.prop = 'hello';
+                testclass2.text = 'world';
+                testclass1._id = 'nonononotanobjectidatall';
+                try {
+                    yield testclass1.save().catch((err) => {
+                        console.log(err);
+                        should.not.exist(err);
+                        return err;
+                    }).then((res) => {
+                        console.log(res);
+                    });
+                }
+                catch (e) {
+                    console.log(e);
+                    should.not.exist(e);
+                }
+            });
         });
     });
 });

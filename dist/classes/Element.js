@@ -20,24 +20,25 @@ class Element {
     validate() {
         return this.elements.validate(this);
     }
+    save() {
+        return this.elements.saveInstances([this]);
+    }
     toDbObject(subElement) {
         let that = subElement || this;
-        let result = {};
+        let result = Object.create(that);
         for (let key in that) {
-            if (({}).hasOwnProperty.call(that, key)) {
-                if (typeof that['_id'] !== 'undefined'
+            let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
+            if (({}).hasOwnProperty.call(that, key)
+                && that[key] !== undefined
+                && typeof hasValidatorDecorator !== 'undefined') {
+                if (key === '_id'
                     && typeof subElement === 'undefined') {
-                    result._id = that['_id'];
+                    result[that.constructor.name] = that[key];
                 }
-                if (that[key] !== undefined
-                    && typeof that[key] === 'object') {
-                    let isDecorated = Reflect.getMetadata('design:type', that, key);
-                    if (isDecorated !== undefined) {
-                        result[key] = Element.prototype.toDbObject(that[key]);
-                    }
+                else if (typeof that[key] === 'object') {
+                    result[key] = Element.prototype.toDbObject(that[key]);
                 }
-                else if (that[key] !== undefined
-                    && typeof that[key] !== 'function') {
+                else if (typeof that[key] !== 'function') {
                     result[key] = that[key];
                 }
             }
@@ -46,7 +47,6 @@ class Element {
     }
 }
 __decorate([
-    tsvalidate_1.ValidateType(),
     tsvalidate_1.MongoID(), 
     __metadata('design:type', Object)
 ], Element.prototype, "_id", void 0);

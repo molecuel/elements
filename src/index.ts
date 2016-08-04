@@ -130,7 +130,7 @@ export class Elements {
     return await activeDb.createCollection(name);
   }
 
-  protected async getCollections(): Promise<any> {
+  public async getCollections(): Promise<any> {
     let activeDb: any = this.mongoConnection;
     return await activeDb.collections();
   }
@@ -154,9 +154,14 @@ export class Elements {
   protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<void> {
     let errors: TSV.IValidatorError[] = [];
     let collections: any = {};
+    let resultArray: any = [];
 
     // validate all instances and pre- sort into array based collections per model name;
     for (let instance of instances) {
+      // let temp = Reflect.getMetadata('tsvalidate:validators', instance, '_id');
+      // let val = new TSV.Validator();
+      // val.validate(instance);
+
       if (instance.validate().length === 0) {
         if (!collections[instance.constructor.name]) {
           collections[instance.constructor.name] = <IElement[]>[instance];
@@ -166,26 +171,26 @@ export class Elements {
         }
       }
       else {
-        errors.concat(instance.validate());
+        errors = errors.concat(instance.validate());
       }
     }
-    // every instance ok?: create non-existent DB-collections, then save instances to respective collection
+    // every instance ok?: save instances to respective collection
     if (this.mongoConnection
       && errors.length === 0) {
       for (let collectionName in collections) {
         try {
           let collectionFullName: string = 'config.projectPrefix_' + collectionName;
-          // this.createCollection(collectionFullName);
-          this.insertElements(collections[collectionName], collectionFullName, options);
+          resultArray.concat(collections[collectionName]);
+          // this.insertElements(collections[collectionName], collectionFullName, options);
         }
         catch (e) {
           return e;
         }
       }
-      // return this.getCollections();
+      return resultArray;
     }
     else if (errors) {
-      return new Promise((resolve, reject) => {
+      return new Promise((reject, resolve) => {
         reject(errors);
       });
     }
