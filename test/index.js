@@ -39,7 +39,7 @@ class SmallTestClass extends Element_1.Element {
     }
 }
 __decorate([
-    V.MongoID(), 
+    V.Contains('hello'), 
     __metadata('design:type', Object)
 ], SmallTestClass.prototype, "prop", void 0);
 describe('mlcl', function () {
@@ -101,26 +101,26 @@ describe('mlcl', function () {
                 should.not.exist(err);
             }
         });
-        it('should validate an array of objects and sort them into collections', function () {
+        it('should validate an array of objects and save them into their respective MongoDB collection(s)', function () {
             return __awaiter(this, void 0, void 0, function* () {
-                let testclass1 = el.getClassInstance('test');
-                let testclass2 = el.getClassInstance('post');
-                testclass1.prop = 'hello';
-                testclass2.text = 'world';
-                testclass1._id = 'nonononotanobjectidatall';
-                try {
-                    yield testclass1.save().catch((err) => {
-                        console.log(err);
-                        should.not.exist(err);
-                        return err;
-                    }).then((res) => {
-                        console.log(res);
-                    });
-                }
-                catch (e) {
-                    console.log(e);
-                    should.not.exist(e);
-                }
+                let testclass1 = el.getClassInstance('post');
+                let testclass2 = el.getClassInstance('test');
+                testclass1.text = 'hello';
+                testclass2.prop = 'world';
+                testclass1._id = '000000000000000000000001';
+                testclass2._id = '000000000000000000000002';
+                yield testclass1.save().then((res) => {
+                    assert(res === 'Success');
+                    return res;
+                }).catch((err) => {
+                    should.not.exist(err);
+                    return err;
+                });
+                let col = yield el.mongoConnection.collection('config.projectPrefix_Post');
+                yield col.count().then((qty) => {
+                    assert(qty > 0);
+                    return qty;
+                });
             });
         });
     });

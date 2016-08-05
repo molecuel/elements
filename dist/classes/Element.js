@@ -47,6 +47,7 @@ class Element {
     }
 }
 __decorate([
+    tsvalidate_1.ValidateType(),
     tsvalidate_1.MongoID(), 
     __metadata('design:type', Object)
 ], Element.prototype, "_id", void 0);

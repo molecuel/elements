@@ -17,7 +17,7 @@ class SmallTestClass extends Element {
     this.prop = value || true;
     this.obj = obj || {};
   }
-  @V.MongoID()
+  @V.Contains('hello')
   prop: any;
   obj: Object;
   func: any = function() { };
@@ -92,36 +92,30 @@ describe('mlcl', function() {
       }
     });
 
-    it('should validate an array of objects and sort them into collections', async function() { // , sort them into collections and create missing collections
-      let testclass1: any = el.getClassInstance('test');
-      let testclass2: any = el.getClassInstance('post');
-      testclass1.prop = 'hello';
-      testclass2.text = 'world';
-      testclass1._id = 'nonononotanobjectidatall';
-      try {
-        await testclass1.save().catch((err) => {
-          console.log(err);
+    it('should validate an array of objects and save them into their respective MongoDB collection(s)',
+      async function() { // , sort them into collections and create missing collections
+        let testclass1: any = el.getClassInstance('post');
+        let testclass2: any = el.getClassInstance('test');
+        testclass1.text = 'hello';
+        testclass2.prop = 'world';
+        testclass1._id = '000000000000000000000001';
+        testclass2._id = '000000000000000000000002';
+
+        await testclass1.save().then((res) => {
+          assert(res === 'Success');
+          return res;
+        }).catch((err) => {
           should.not.exist(err);
           return err;
-        }).then((res) => {
-          console.log(res);
         });
-        // el.mongoClose();
-        // el.getCollections().then((data) => {
-        //   console.log(data);
-        //   return data;
-        // });
-        // let collection: any = await el.mongoConnection.collection('config.projectPrefix_Post');
-        // await collection.count().then((qty) => {
-        //   console.log(qty);
-        //   return qty;
-        // });
-      }
-      catch (e) {
-        console.log(e);
-        should.not.exist(e);
-      }
-    });
+        let col: any = await el.mongoConnection.collection('config.projectPrefix_Post');
+        // console.log(col);
+        await col.count().then((qty) => {
+          // console.log(qty);
+          assert(qty > 0);
+          return qty;
+        });
+      });
 
   })
 });

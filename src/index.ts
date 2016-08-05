@@ -135,39 +135,32 @@ export class Elements {
     return await activeDb.collections();
   }
 
-  protected async insertElements(instances: IElement[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+  protected async insertElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     let activeDb: any = this.mongoConnection;
-    let prom: any;
     try {
       let col: any = await activeDb.collection(collectionName);
       if (col) {
-        prom = await col.insert(instances, options);
+        return await col.insert(instances, options);
       }
     }
     catch (e) {
-      prom = e;
+      return Promise.reject(e);
     }
-    console.log(prom);
-    return prom;
   }
 
-  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<void> {
+  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     let errors: TSV.IValidatorError[] = [];
     let collections: any = {};
-    let resultArray: any = [];
 
-    // validate all instances and pre- sort into array based collections per model name;
+    // validate all instances and pre-sort transformed objects into array based collections per model name;
     for (let instance of instances) {
-      // let temp = Reflect.getMetadata('tsvalidate:validators', instance, '_id');
-      // let val = new TSV.Validator();
-      // val.validate(instance);
 
       if (instance.validate().length === 0) {
         if (!collections[instance.constructor.name]) {
-          collections[instance.constructor.name] = <IElement[]>[instance];
+          collections[instance.constructor.name] = [instance.toDbObject()];
         }
         else {
-          collections[instance.constructor.name].push(<IElement>instance);
+          collections[instance.constructor.name].push(instance.toDbObject());
         }
       }
       else {
@@ -180,23 +173,20 @@ export class Elements {
       for (let collectionName in collections) {
         try {
           let collectionFullName: string = 'config.projectPrefix_' + collectionName;
-          resultArray.concat(collections[collectionName]);
-          // this.insertElements(collections[collectionName], collectionFullName, options);
+          this.insertElements(collections[collectionName], collectionFullName, options);
         }
         catch (e) {
-          return e;
+          return Promise.reject(e);
         }
       }
-      return resultArray;
+      return Promise.resolve('Success');
     }
-    else if (errors) {
-      return new Promise((reject, resolve) => {
-        reject(errors);
-      });
+    else if (errors.length > 0) {
+      return Promise.reject(errors);
     }
   }
 
-  public async saveInstances(instances: IElement[]): Promise<void> {
-    return await this.instanceSaveWrapper(instances);
+  public saveInstances(instances: IElement[]): Promise<void> {
+    return this.instanceSaveWrapper(instances);
   }
 }

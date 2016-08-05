@@ -88,31 +88,27 @@ class Elements {
     insertElements(instances, collectionName, options) {
         return __awaiter(this, void 0, Promise, function* () {
             let activeDb = this.mongoConnection;
-            let prom;
             try {
                 let col = yield activeDb.collection(collectionName);
                 if (col) {
-                    prom = yield col.insert(instances, options);
+                    return yield col.insert(instances, options);
                 }
             }
             catch (e) {
-                prom = e;
+                return Promise.reject(e);
             }
-            console.log(prom);
-            return prom;
         });
     }
     instanceSaveWrapper(instances, options) {
         let errors = [];
         let collections = {};
-        let resultArray = [];
         for (let instance of instances) {
             if (instance.validate().length === 0) {
                 if (!collections[instance.constructor.name]) {
-                    collections[instance.constructor.name] = [instance];
+                    collections[instance.constructor.name] = [instance.toDbObject()];
                 }
                 else {
-                    collections[instance.constructor.name].push(instance);
+                    collections[instance.constructor.name].push(instance.toDbObject());
                 }
             }
             else {
@@ -124,24 +120,20 @@ class Elements {
             for (let collectionName in collections) {
                 try {
                     let collectionFullName = 'config.projectPrefix_' + collectionName;
-                    resultArray.concat(collections[collectionName]);
+                    this.insertElements(collections[collectionName], collectionFullName, options);
                 }
                 catch (e) {
-                    return e;
+                    return Promise.reject(e);
                 }
             }
-            return resultArray;
+            return Promise.resolve('Success');
         }
-        else if (errors) {
-            return new Promise((reject, resolve) => {
-                reject(errors);
-            });
+        else if (errors.length > 0) {
+            return Promise.reject(errors);
         }
     }
     saveInstances(instances) {
-        return __awaiter(this, void 0, Promise, function* () {
-            return yield this.instanceSaveWrapper(instances);
-        });
+        return this.instanceSaveWrapper(instances);
     }
 }
 Elements.loaderversion = 2;

@@ -4,4 +4,5 @@ export interface IElement {
     elements: Elements;
     setFactory(elements: any): any;
     validate(): any;
+    toDbObject(): any;
 }

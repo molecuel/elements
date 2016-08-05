@@ -24,7 +24,7 @@ export declare class Elements {
     mongoClose(): Promise<any>;
     protected createCollection(name: string): Promise<any>;
     getCollections(): Promise<any>;
-    protected insertElements(instances: IElement[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
-    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<void>;
+    protected insertElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
+    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any>;
     saveInstances(instances: IElement[]): Promise<void>;
 }

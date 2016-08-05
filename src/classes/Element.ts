@@ -2,12 +2,12 @@
 import 'reflect-metadata';
 import { Elements } from '../index';
 import { IElement } from '../interfaces/IElement';
-import { IValidatorError, ValidateType, MongoID, Equals } from 'tsvalidate';
+import { IValidatorError, ValidateType, MongoID } from 'tsvalidate';
 // import _ = require('lodash');
 
 export class Element implements IElement {
-  // @ValidateType()
-  // @Equals(false)
+  @ValidateType()
+  // @Equals(false)cd..
   @MongoID()
   public _id: any;
   public elements: Elements;
