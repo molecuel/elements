@@ -20,7 +20,7 @@ class Elements {
         this.elasticOptions = new ElasticOptions_1.ElasticOptions();
         this.elasticOptions.url = 'http://localhost:9200';
         this.elasticOptions.loglevel = 'trace';
-        this.elasticOptions.timeout = 10000;
+        this.elasticOptions.timeout = 5000;
         this.mongoClient = mongodb.MongoClient;
         this.elasticClient = new elasticsearch.Client({
             host: 'localhost:9200',
@@ -85,17 +85,21 @@ class Elements {
             return yield this.getMongoConnection().collection(collectionName).insertMany(instances, options);
         });
     }
+    insertMongoElementSingle(instance, collectionName, options) {
+        return __awaiter(this, void 0, Promise, function* () {
+            return yield this.getMongoConnection().collection(collectionName).insertOne(instance, options);
+        });
+    }
     getMongoCollectionCount(collectionName) {
         return __awaiter(this, void 0, Promise, function* () {
             return yield this.getMongoConnection().collection(collectionName).count();
         });
     }
-    saveInstances(instances) {
+    saveInstances(instances, options) {
         return this.instanceSaveWrapper(instances);
     }
-    instanceSaveWrapper(instances, options) {
+    validateAndSort(instances) {
         let errors = [];
-        let insertions = 3;
         let collections = {};
         for (let instance of instances) {
             if (instance.validate().length === 0) {
@@ -110,38 +114,37 @@ class Elements {
                 errors = errors.concat(instance.validate());
             }
         }
-        if (this.mongoConnection
-            && errors.length === 0) {
-            for (let collectionName in collections) {
-                try {
-                    let collectionFullName = 'config.projectPrefix_' + collectionName;
-                    this.getMongoCollectionCount(collectionFullName).then((res) => {
-                        if (typeof res === 'number'
-                            && res !== NaN) {
-                            insertions -= res;
-                            console.log('pre-insert value: ' + insertions);
-                            return res;
-                        }
-                    });
-                    this.insertMongoElements(collections[collectionName], collectionFullName, options);
-                    this.getMongoCollectionCount(collectionFullName).then((res) => {
-                        if (typeof res === 'number'
-                            && res !== NaN) {
-                            insertions += res;
-                            console.log('post-insert value: ' + insertions);
-                            return res;
-                        }
-                    });
-                }
-                catch (err) {
-                    return Promise.reject(err);
-                }
-            }
-            return Promise.resolve(insertions);
-        }
-        else if (errors.length > 0) {
+        if (errors.length > 0) {
             return Promise.reject(errors);
         }
+        else {
+            return Promise.resolve(collections);
+        }
+    }
+    mongoInsertionWrapper(collections, options) {
+        let result = [];
+        for (let collectionName in collections) {
+            let collectionFullName = 'config.projectPrefix_' + collectionName;
+            result.push(this.insertMongoElements(collections[collectionName], collectionFullName, options));
+        }
+        return Promise.resolve(result);
+    }
+    instanceSaveWrapper(instances, options) {
+        return __awaiter(this, void 0, Promise, function* () {
+            if (instances.length === 1) {
+                if (instances[0].validate().length > 0) {
+                    return Promise.reject(instances[0].validate());
+                }
+                else {
+                    return this.insertMongoElementSingle(instances[0].toDbObject(), 'config.projectPrefix_' + instances[0].constructor.name, options);
+                }
+            }
+            else {
+                return yield this.validateAndSort(instances).then((res) => {
+                    return this.mongoInsertionWrapper(res, options);
+                });
+            }
+        });
     }
 }
 Elements.loaderversion = 2;

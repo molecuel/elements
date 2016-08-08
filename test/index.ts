@@ -105,9 +105,37 @@ describe('mlcl', function() {
 
     it('should validate an Element-object and save it into its respective MongoDB collection',
       async function() {
+        let testclass: any = el.getClassInstance('post');
+        testclass.text = 'hello';
+        testclass._id = 1;
+
+        try {
+          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+        }
+        catch (err) {
+          if (!(err instanceof mongodb.MongoError)) {
+            throw err;
+          }
+        }
+
+        await testclass.save().then((res) => {
+          assert(typeof res === 'object');
+          if (typeof res === 'object') {
+            assert(res.result.ok === 1
+              && res.result.n === 1);
+          }
+          return res;
+        }).catch((err) => {
+          should.not.exist(err);
+          return err;
+        });
+      });
+
+    it('should validate an array of Element-objects and save the into their respective MongoDB collection(s)',
+      async function() {
         let col: any;
         let testclass1: any = el.getClassInstance('post');
-        let testclass2: any = el.getClassInstance('test');
+        let testclass2: any = el.getClassInstance('post');
         testclass1.text = 'hello';
         testclass2.prop = 'world';
         testclass1._id = 1;
@@ -122,21 +150,13 @@ describe('mlcl', function() {
           }
         }
 
-        await testclass1.save().then((res) => {
-          assert(typeof res === 'number'
-            && res > 0);
-          console.log('return value: ' + res);
+        await el.saveInstances([testclass1, testclass2]).then((res) => {
+          console.log('return value: ');
+          console.log(res);
           return res;
         }).catch((err) => {
           should.not.exist(err);
           return err;
-        });
-        // await col.insertOne(testclass1.toDbObject());
-        // await col.insertOne({ text: 'hello', _id: 9 });
-        await el.getMongoConnection().collection('config.projectPrefix_Post').count().then((qty) => {
-          // console.log(qty);
-          assert(qty > 0);
-          return qty;
         });
       });
 

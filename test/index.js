@@ -106,9 +106,35 @@ describe('mlcl', function () {
         });
         it('should validate an Element-object and save it into its respective MongoDB collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass._id = 1;
+                try {
+                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+                }
+                catch (err) {
+                    if (!(err instanceof mongodb.MongoError)) {
+                        throw err;
+                    }
+                }
+                yield testclass.save().then((res) => {
+                    assert(typeof res === 'object');
+                    if (typeof res === 'object') {
+                        assert(res.result.ok === 1
+                            && res.result.n === 1);
+                    }
+                    return res;
+                }).catch((err) => {
+                    should.not.exist(err);
+                    return err;
+                });
+            });
+        });
+        it('should validate an array of Element-objects and save the into their respective MongoDB collection(s)', function () {
+            return __awaiter(this, void 0, void 0, function* () {
                 let col;
                 let testclass1 = el.getClassInstance('post');
-                let testclass2 = el.getClassInstance('test');
+                let testclass2 = el.getClassInstance('post');
                 testclass1.text = 'hello';
                 testclass2.prop = 'world';
                 testclass1._id = 1;
@@ -121,18 +147,13 @@ describe('mlcl', function () {
                         throw err;
                     }
                 }
-                yield testclass1.save().then((res) => {
-                    assert(typeof res === 'number'
-                        && res > 0);
-                    console.log('return value: ' + res);
+                yield el.saveInstances([testclass1, testclass2]).then((res) => {
+                    console.log('return value: ');
+                    console.log(res);
                     return res;
                 }).catch((err) => {
                     should.not.exist(err);
                     return err;
-                });
-                yield el.getMongoConnection().collection('config.projectPrefix_Post').count().then((qty) => {
-                    assert(qty > 0);
-                    return qty;
                 });
             });
         });

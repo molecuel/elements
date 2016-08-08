@@ -26,7 +26,7 @@ export class Elements {
     this.elasticOptions = new ElasticOptions();
     this.elasticOptions.url = 'http://localhost:9200';
     this.elasticOptions.loglevel = 'trace';
-    this.elasticOptions.timeout = 10000;
+    this.elasticOptions.timeout = 5000;
 
     this.mongoClient = mongodb.MongoClient;
     this.elasticClient = new elasticsearch.Client({
@@ -136,20 +136,23 @@ export class Elements {
     return await this.getMongoConnection().collection(collectionName).insertMany(instances, options);
   }
 
+  protected async insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any> {
+    return await this.getMongoConnection().collection(collectionName).insertOne(instance, options);
+  }
+
   protected async getMongoCollectionCount(collectionName: string): Promise<any> {
     return await this.getMongoConnection().collection(collectionName).count();
   }
 
-  public saveInstances(instances: IElement[]): Promise<void> {
+  public saveInstances(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
     return this.instanceSaveWrapper(instances);
   }
 
-  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+  protected validateAndSort(instances: IElement[]): Promise<any> {
     let errors: TSV.IValidatorError[] = [];
-    let insertions: number = 3;
     let collections: any = {};
 
-    // validate all instances and pre-sort transformed objects into array based collections per model name;
+    // validate all instances and sort transformed objects into array based collections per model name;
     for (let instance of instances) {
 
       if (instance.validate().length === 0) {
@@ -164,39 +167,44 @@ export class Elements {
         errors = errors.concat(instance.validate());
       }
     }
-    // every instance ok?: save instances to respective collection
-    if (this.mongoConnection
-      && errors.length === 0) {
-      for (let collectionName in collections) {
-        try {
-          let collectionFullName: string = 'config.projectPrefix_' + collectionName;
-          this.getMongoCollectionCount(collectionFullName).then((res) => {
-            if (typeof res === 'number'
-              && res !== NaN) {
-              insertions -= res;
-              console.log('pre-insert value: ' + insertions);
-              return res;
-            }
-          });
-          this.insertMongoElements(collections[collectionName], collectionFullName, options);
-          this.getMongoCollectionCount(collectionFullName).then((res) => {
-            if (typeof res === 'number'
-              && res !== NaN) {
-              insertions += res;
-              console.log('post-insert value: ' + insertions);
-              return res;
-            }
-          });
-        }
-        catch (err) {
-          return Promise.reject(err);
-        }
-      }
-      return Promise.resolve(insertions);
-    }
-    else if (errors.length > 0) {
+    if (errors.length > 0) {
       return Promise.reject(errors);
     }
+    else {
+      return Promise.resolve(collections);
+    }
+  }
+
+  protected mongoInsertionWrapper(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+    let result: any[] = [];
+
+    // every instance ok?: save instances to respective collection
+    for (let collectionName in collections) {
+      let collectionFullName: string = 'config.projectPrefix_' + collectionName;
+      result.push(this.insertMongoElements(collections[collectionName], collectionFullName, options));
+    }
+    return Promise.resolve(result);
+  }
+
+  protected async instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
+    if (instances.length === 1) {
+      if (instances[0].validate().length > 0) {
+        return Promise.reject(instances[0].validate());
+      }
+      else {
+        return this.insertMongoElementSingle(
+          instances[0].toDbObject(),
+          'config.projectPrefix_' + instances[0].constructor.name,
+          options);
+      }
+    }
+    else {
+      return await this.validateAndSort(instances).then((res) => {
+        return this.mongoInsertionWrapper(res, options);
+      });
+    }
+
+
   }
 
 }
