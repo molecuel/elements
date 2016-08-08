@@ -104,7 +104,7 @@ describe('mlcl', function () {
                 should.not.exist(err);
             }
         });
-        it('should validate an array of objects and save them into their respective MongoDB collection(s)', function () {
+        it('should validate an Element-object and save it into its respective MongoDB collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let col;
                 let testclass1 = el.getClassInstance('post');
@@ -114,7 +114,7 @@ describe('mlcl', function () {
                 testclass1._id = 1;
                 testclass2._id = 2;
                 try {
-                    yield el.getConnection().dropCollection('config.projectPrefix_Post');
+                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
                 }
                 catch (err) {
                     if (!(err instanceof mongodb.MongoError)) {
@@ -122,13 +122,15 @@ describe('mlcl', function () {
                     }
                 }
                 yield testclass1.save().then((res) => {
-                    assert(res === 'Success');
+                    assert(typeof res === 'number'
+                        && res > 0);
+                    console.log('return value: ' + res);
                     return res;
                 }).catch((err) => {
                     should.not.exist(err);
                     return err;
                 });
-                yield el.getConnection().collection('config.projectPrefix_Post').count().then((qty) => {
+                yield el.getMongoConnection().collection('config.projectPrefix_Post').count().then((qty) => {
                     assert(qty > 0);
                     return qty;
                 });

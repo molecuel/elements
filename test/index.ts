@@ -93,6 +93,7 @@ describe('mlcl', function() {
         // // locally defined instance
         // console.log(secondarytestclass);
         // console.log(bson.serialize(secondarytestclass));
+
         assert(_.isEqual(testclass.toDbObject(), secondarytestclass));
         assert(_.isEqual(bson.serialize(testclass.toDbObject()), bson.serialize(secondarytestclass)));
       }
@@ -102,8 +103,8 @@ describe('mlcl', function() {
       }
     });
 
-    it('should validate an array of objects and save them into their respective MongoDB collection(s)',
-      async function() { // , sort them into collections and create missing collections
+    it('should validate an Element-object and save it into its respective MongoDB collection',
+      async function() {
         let col: any;
         let testclass1: any = el.getClassInstance('post');
         let testclass2: any = el.getClassInstance('test');
@@ -113,7 +114,7 @@ describe('mlcl', function() {
         testclass2._id = 2;
 
         try {
-          await el.getConnection().dropCollection('config.projectPrefix_Post');
+          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
         }
         catch (err) {
           if (!(err instanceof mongodb.MongoError)) {
@@ -122,7 +123,9 @@ describe('mlcl', function() {
         }
 
         await testclass1.save().then((res) => {
-          assert(res === 'Success');
+          assert(typeof res === 'number'
+            && res > 0);
+          console.log('return value: ' + res);
           return res;
         }).catch((err) => {
           should.not.exist(err);
@@ -130,7 +133,7 @@ describe('mlcl', function() {
         });
         // await col.insertOne(testclass1.toDbObject());
         // await col.insertOne({ text: 'hello', _id: 9 });
-        await el.getConnection().collection('config.projectPrefix_Post').count().then((qty) => {
+        await el.getMongoConnection().collection('config.projectPrefix_Post').count().then((qty) => {
           // console.log(qty);
           assert(qty > 0);
           return qty;

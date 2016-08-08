@@ -22,9 +22,10 @@ export declare class Elements {
     getClassInstance(name: string): any;
     validate(instance: Object): TSV.IValidatorError[];
     mongoClose(): Promise<any>;
-    getConnection(): any;
-    getCollections(): Promise<any>;
-    protected insertElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
-    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any>;
+    getMongoConnection(): any;
+    getMongoCollections(): Promise<any>;
+    protected insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
+    protected getMongoCollectionCount(collectionName: string): Promise<any>;
     saveInstances(instances: IElement[]): Promise<void>;
+    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any>;
 }

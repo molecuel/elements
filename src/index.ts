@@ -121,34 +121,32 @@ export class Elements {
   }
 
   public mongoClose(): Promise<any> {
-    let activeDb: any = this.mongoConnection;
-    return activeDb.close();
+    return this.getMongoConnection().close();
   }
 
-  public getConnection(): any {
+  public getMongoConnection(): any {
     return this.mongoConnection;
   }
 
-  public async getCollections(): Promise<any> {
-    let activeDb: any = this.mongoConnection;
-    return await activeDb.collections();
+  public async getMongoCollections(): Promise<any> {
+    return await this.getMongoConnection().collections();
   }
 
-  protected async insertElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
-    let activeDb: any = this.mongoConnection;
-    try {
-      let col: any = await activeDb.collection(collectionName);
-      if (col) {
-        return await col.insert(instances, options);
-      }
-    }
-    catch (e) {
-      return Promise.reject(e);
-    }
+  protected async insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+    return await this.getMongoConnection().collection(collectionName).insertMany(instances, options);
+  }
+
+  protected async getMongoCollectionCount(collectionName: string): Promise<any> {
+    return await this.getMongoConnection().collection(collectionName).count();
+  }
+
+  public saveInstances(instances: IElement[]): Promise<void> {
+    return this.instanceSaveWrapper(instances);
   }
 
   protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     let errors: TSV.IValidatorError[] = [];
+    let insertions: number = 3;
     let collections: any = {};
 
     // validate all instances and pre-sort transformed objects into array based collections per model name;
@@ -172,20 +170,33 @@ export class Elements {
       for (let collectionName in collections) {
         try {
           let collectionFullName: string = 'config.projectPrefix_' + collectionName;
-          this.insertElements(collections[collectionName], collectionFullName, options);
+          this.getMongoCollectionCount(collectionFullName).then((res) => {
+            if (typeof res === 'number'
+              && res !== NaN) {
+              insertions -= res;
+              console.log('pre-insert value: ' + insertions);
+              return res;
+            }
+          });
+          this.insertMongoElements(collections[collectionName], collectionFullName, options);
+          this.getMongoCollectionCount(collectionFullName).then((res) => {
+            if (typeof res === 'number'
+              && res !== NaN) {
+              insertions += res;
+              console.log('post-insert value: ' + insertions);
+              return res;
+            }
+          });
         }
-        catch (e) {
-          return Promise.reject(e);
+        catch (err) {
+          return Promise.reject(err);
         }
       }
-      return Promise.resolve('Success');
+      return Promise.resolve(insertions);
     }
     else if (errors.length > 0) {
       return Promise.reject(errors);
     }
   }
 
-  public saveInstances(instances: IElement[]): Promise<void> {
-    return this.instanceSaveWrapper(instances);
-  }
 }
