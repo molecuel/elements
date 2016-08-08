@@ -25,7 +25,7 @@ class Element {
     }
     toDbObject(subElement) {
         let that = subElement || this;
-        let result = Object.create(that);
+        let result = {};
         for (let key in that) {
             let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
             if (({}).hasOwnProperty.call(that, key)
@@ -33,7 +33,7 @@ class Element {
                 && typeof hasValidatorDecorator !== 'undefined') {
                 if (key === '_id'
                     && typeof subElement === 'undefined') {
-                    result[that.constructor.name] = that[key];
+                    result[key] = that[key];
                 }
                 else if (typeof that[key] === 'object') {
                     result[key] = Element.prototype.toDbObject(that[key]);

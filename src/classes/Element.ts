@@ -3,11 +3,9 @@ import 'reflect-metadata';
 import { Elements } from '../index';
 import { IElement } from '../interfaces/IElement';
 import { IValidatorError, ValidateType, MongoID } from 'tsvalidate';
-// import _ = require('lodash');
 
 export class Element implements IElement {
   @ValidateType()
-  // @Equals(false)cd..
   @MongoID()
   public _id: any;
   public elements: Elements;
@@ -26,7 +24,7 @@ export class Element implements IElement {
   }
   public toDbObject(subElement?: any): any {
     let that = subElement || this;
-    let result: any = Object.create(that);
+    let result: any = {};
 
     for (let key in that) {
       let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
@@ -39,7 +37,8 @@ export class Element implements IElement {
         if (key === '_id'
           && typeof subElement === 'undefined') {
 
-          result[that.constructor.name] = that[key];
+          result[key] = that[key];
+          // result[that.constructor.name] = that[key];
         }
         // check if the property is an object
         else if (typeof that[key] === 'object') {
@@ -51,7 +50,6 @@ export class Element implements IElement {
         }
       }
     }
-
     return result;
   }
 }

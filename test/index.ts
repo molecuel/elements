@@ -1,13 +1,16 @@
 'use strict'
+let BSON = require('bson');
 import 'reflect-metadata';
+import mongodb = require('mongodb');
 import should = require('should');
 import assert = require('assert');
+import _ = require('lodash');
 import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
 import * as V from 'tsvalidate';
 
 class Post extends Element {
-  @V.Contains('hello')
+  @V.InArray(['hello', 'world'])
   text: string;
 }
 
@@ -28,6 +31,7 @@ class SmallTestClass extends Element {
 
 describe('mlcl', function() {
   let el: Elements;
+  let bson = new BSON.BSONPure.BSON();
 
   describe('module', function() {
     it('should connect the databases', async function() {
@@ -75,31 +79,47 @@ describe('mlcl', function() {
       assert(errors.length === 0);
     });
 
-    it('should serialize an Element-object', function() {
+    it('should ready an Element-object for serialization', function() {
+      let secondarytestclass: any = { text: 'hello', _id: 1 };
       let testclass: any = el.getClassInstance('post');
-      let secondarytestclass: any = el.getClassInstance('post');
       testclass.text = 'hello';
-      testclass._id = 'someIdValue';
-      secondarytestclass.text = 'world';
-      secondarytestclass._id = 'someOtherIdValue';
+      testclass._id = 1;
 
       try {
-        testclass = testclass.toDbObject();
+        // // factory-generated instance
+        // console.log(testclass.toDbObject());
+        // console.log(bson.serialize(testclass.toDbObject()));
+        //
+        // // locally defined instance
+        // console.log(secondarytestclass);
+        // console.log(bson.serialize(secondarytestclass));
+        assert(_.isEqual(testclass.toDbObject(), secondarytestclass));
+        assert(_.isEqual(bson.serialize(testclass.toDbObject()), bson.serialize(secondarytestclass)));
       }
       catch (err) {
-        console.log(err.message);
+        console.log(err);
         should.not.exist(err);
       }
     });
 
     it('should validate an array of objects and save them into their respective MongoDB collection(s)',
       async function() { // , sort them into collections and create missing collections
+        let col: any;
         let testclass1: any = el.getClassInstance('post');
         let testclass2: any = el.getClassInstance('test');
         testclass1.text = 'hello';
         testclass2.prop = 'world';
-        testclass1._id = '000000000000000000000001';
-        testclass2._id = '000000000000000000000002';
+        testclass1._id = 1;
+        testclass2._id = 2;
+
+        try {
+          await el.getConnection().dropCollection('config.projectPrefix_Post');
+        }
+        catch (err) {
+          if (!(err instanceof mongodb.MongoError)) {
+            throw err;
+          }
+        }
 
         await testclass1.save().then((res) => {
           assert(res === 'Success');
@@ -108,9 +128,9 @@ describe('mlcl', function() {
           should.not.exist(err);
           return err;
         });
-        let col: any = await el.mongoConnection.collection('config.projectPrefix_Post');
-        // console.log(col);
-        await col.count().then((qty) => {
+        // await col.insertOne(testclass1.toDbObject());
+        // await col.insertOne({ text: 'hello', _id: 9 });
+        await el.getConnection().collection('config.projectPrefix_Post').count().then((qty) => {
           // console.log(qty);
           assert(qty > 0);
           return qty;

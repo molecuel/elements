@@ -16,16 +16,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
+let BSON = require('bson');
 require('reflect-metadata');
+const mongodb = require('mongodb');
 const should = require('should');
 const assert = require('assert');
+const _ = require('lodash');
 const dist_1 = require('../dist');
 const Element_1 = require('../dist/classes/Element');
 const V = require('tsvalidate');
 class Post extends Element_1.Element {
 }
 __decorate([
-    V.Contains('hello'), 
+    V.InArray(['hello', 'world']), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
 class SmallTestClass extends Element_1.Element {
@@ -44,6 +47,7 @@ __decorate([
 ], SmallTestClass.prototype, "prop", void 0);
 describe('mlcl', function () {
     let el;
+    let bson = new BSON.BSONPure.BSON();
     describe('module', function () {
         it('should connect the databases', function () {
             return __awaiter(this, void 0, void 0, function* () {
@@ -86,29 +90,37 @@ describe('mlcl', function () {
             let errors = testclass.validate();
             assert(errors.length === 0);
         });
-        it('should serialize an Element-object', function () {
+        it('should ready an Element-object for serialization', function () {
+            let secondarytestclass = { text: 'hello', _id: 1 };
             let testclass = el.getClassInstance('post');
-            let secondarytestclass = el.getClassInstance('post');
             testclass.text = 'hello';
-            testclass._id = 'someIdValue';
-            secondarytestclass.text = 'world';
-            secondarytestclass._id = 'someOtherIdValue';
+            testclass._id = 1;
             try {
-                testclass = testclass.toDbObject();
+                assert(_.isEqual(testclass.toDbObject(), secondarytestclass));
+                assert(_.isEqual(bson.serialize(testclass.toDbObject()), bson.serialize(secondarytestclass)));
             }
             catch (err) {
-                console.log(err.message);
+                console.log(err);
                 should.not.exist(err);
             }
         });
         it('should validate an array of objects and save them into their respective MongoDB collection(s)', function () {
             return __awaiter(this, void 0, void 0, function* () {
+                let col;
                 let testclass1 = el.getClassInstance('post');
                 let testclass2 = el.getClassInstance('test');
                 testclass1.text = 'hello';
                 testclass2.prop = 'world';
-                testclass1._id = '000000000000000000000001';
-                testclass2._id = '000000000000000000000002';
+                testclass1._id = 1;
+                testclass2._id = 2;
+                try {
+                    yield el.getConnection().dropCollection('config.projectPrefix_Post');
+                }
+                catch (err) {
+                    if (!(err instanceof mongodb.MongoError)) {
+                        throw err;
+                    }
+                }
                 yield testclass1.save().then((res) => {
                     assert(res === 'Success');
                     return res;
@@ -116,8 +128,7 @@ describe('mlcl', function () {
                     should.not.exist(err);
                     return err;
                 });
-                let col = yield el.mongoConnection.collection('config.projectPrefix_Post');
-                yield col.count().then((qty) => {
+                yield el.getConnection().collection('config.projectPrefix_Post').count().then((qty) => {
                     assert(qty > 0);
                     return qty;
                 });

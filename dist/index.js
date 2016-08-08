@@ -20,7 +20,7 @@ class Elements {
         this.elasticOptions = new ElasticOptions_1.ElasticOptions();
         this.elasticOptions.url = 'http://localhost:9200';
         this.elasticOptions.loglevel = 'trace';
-        this.elasticOptions.timeout = 5000;
+        this.elasticOptions.timeout = 10000;
         this.mongoClient = mongodb.MongoClient;
         this.elasticClient = new elasticsearch.Client({
             host: 'localhost:9200',
@@ -73,11 +73,8 @@ class Elements {
         let activeDb = this.mongoConnection;
         return activeDb.close();
     }
-    createCollection(name) {
-        return __awaiter(this, void 0, Promise, function* () {
-            let activeDb = this.mongoConnection;
-            return yield activeDb.createCollection(name);
-        });
+    getConnection() {
+        return this.mongoConnection;
     }
     getCollections() {
         return __awaiter(this, void 0, Promise, function* () {

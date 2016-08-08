@@ -26,7 +26,7 @@ export class Elements {
     this.elasticOptions = new ElasticOptions();
     this.elasticOptions.url = 'http://localhost:9200';
     this.elasticOptions.loglevel = 'trace';
-    this.elasticOptions.timeout = 5000;
+    this.elasticOptions.timeout = 10000;
 
     this.mongoClient = mongodb.MongoClient;
     this.elasticClient = new elasticsearch.Client({
@@ -125,9 +125,8 @@ export class Elements {
     return activeDb.close();
   }
 
-  protected async createCollection(name: string): Promise<any> {
-    let activeDb: any = this.mongoConnection;
-    return await activeDb.createCollection(name);
+  public getConnection(): any {
+    return this.mongoConnection;
   }
 
   public async getCollections(): Promise<any> {
