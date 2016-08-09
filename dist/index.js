@@ -27,25 +27,6 @@ class Elements {
             log: 'trace'
         });
     }
-    mongoConnectWrapper() {
-        return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
-    }
-    connectMongo() {
-        return __awaiter(this, void 0, Promise, function* () {
-            this.mongoConnection = yield this.mongoConnectWrapper();
-        });
-    }
-    elasticConnectWrapper() {
-        return this.elasticClient.ping({
-            requestTimeout: this.elasticOptions.timeout,
-            hello: 'elasticsearch'
-        });
-    }
-    connectElastic() {
-        return __awaiter(this, void 0, Promise, function* () {
-            this.elasticConnection = yield this.elasticConnectWrapper();
-        });
-    }
     connect() {
         return __awaiter(this, void 0, Promise, function* () {
             yield this.connectElastic();
@@ -69,6 +50,28 @@ class Elements {
         let validator = new TSV.Validator();
         return validator.validate(instance);
     }
+    toDbObject(subElement) {
+        let that = subElement;
+        let result = {};
+        for (let key in that) {
+            let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
+            if (({}).hasOwnProperty.call(that, key)
+                && that[key] !== undefined
+                && typeof hasValidatorDecorator !== 'undefined') {
+                if (key === '_id'
+                    && typeof subElement === 'undefined') {
+                    result[key] = that[key];
+                }
+                else if (typeof that[key] === 'object') {
+                    result[key] = Elements.prototype.toDbObject(that[key]);
+                }
+                else if (typeof that[key] !== 'function') {
+                    result[key] = that[key];
+                }
+            }
+        }
+        return result;
+    }
     mongoClose() {
         return this.getMongoConnection().close();
     }
@@ -80,6 +83,36 @@ class Elements {
             return yield this.getMongoConnection().collections();
         });
     }
+    saveInstances(instances, options) {
+        return this.instanceSaveWrapper(instances);
+    }
+    getMongoDocuments(model, query) {
+        return __awaiter(this, void 0, Promise, function* () {
+            return yield this.mongoDocumentsGetWrapper(model, query);
+        });
+    }
+    mongoDocumentsGetWrapper(model, query) {
+        return this.getMongoConnection().collection('config.projectPrefix_' + model.constructor.name).find(query);
+    }
+    mongoConnectWrapper() {
+        return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
+    }
+    connectMongo() {
+        return __awaiter(this, void 0, Promise, function* () {
+            this.mongoConnection = yield this.mongoConnectWrapper();
+        });
+    }
+    elasticConnectWrapper() {
+        return this.elasticClient.ping({
+            requestTimeout: this.elasticOptions.timeout,
+            hello: 'elasticsearch'
+        });
+    }
+    connectElastic() {
+        return __awaiter(this, void 0, Promise, function* () {
+            this.elasticConnection = yield this.elasticConnectWrapper();
+        });
+    }
     insertMongoElements(instances, collectionName, options) {
         return __awaiter(this, void 0, Promise, function* () {
             return yield this.getMongoConnection().collection(collectionName).insertMany(instances, options);
@@ -89,14 +122,6 @@ class Elements {
         return __awaiter(this, void 0, Promise, function* () {
             return yield this.getMongoConnection().collection(collectionName).insertOne(instance, options);
         });
-    }
-    getMongoCollectionCount(collectionName) {
-        return __awaiter(this, void 0, Promise, function* () {
-            return yield this.getMongoConnection().collection(collectionName).count();
-        });
-    }
-    saveInstances(instances, options) {
-        return this.instanceSaveWrapper(instances);
     }
     validateAndSort(instances) {
         let errors = [];
@@ -121,30 +146,32 @@ class Elements {
             return Promise.resolve(collections);
         }
     }
-    mongoInsertionWrapper(collections, options) {
-        let result = [];
-        for (let collectionName in collections) {
-            let collectionFullName = 'config.projectPrefix_' + collectionName;
-            result.push(this.insertMongoElements(collections[collectionName], collectionFullName, options));
-        }
-        return Promise.resolve(result);
+    mongoInsertion(collections, options) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let result = [];
+            for (let collectionName in collections) {
+                let collectionFullName = 'config.projectPrefix_' + collectionName;
+                result.push(yield this.insertMongoElements(collections[collectionName], collectionFullName, options));
+            }
+            return Promise.resolve(result);
+        });
     }
     instanceSaveWrapper(instances, options) {
-        return __awaiter(this, void 0, Promise, function* () {
-            if (instances.length === 1) {
-                if (instances[0].validate().length > 0) {
-                    return Promise.reject(instances[0].validate());
-                }
-                else {
-                    return this.insertMongoElementSingle(instances[0].toDbObject(), 'config.projectPrefix_' + instances[0].constructor.name, options);
-                }
+        if (instances.length === 1) {
+            if (instances[0].validate().length > 0) {
+                return Promise.reject(instances[0].validate());
             }
             else {
-                return yield this.validateAndSort(instances).then((res) => {
-                    return this.mongoInsertionWrapper(res, options);
+                return this.insertMongoElementSingle(instances[0].toDbObject(), 'config.projectPrefix_' + instances[0].constructor.name, options).then((res) => {
+                    return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
                 });
             }
-        });
+        }
+        else {
+            return this.validateAndSort(instances).then((res) => {
+                return this.mongoInsertion(res, options);
+            });
+        }
     }
 }
 Elements.loaderversion = 2;

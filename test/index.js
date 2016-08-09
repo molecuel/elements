@@ -78,7 +78,7 @@ describe('mlcl', function () {
             let mymodel = el.getClass('test');
             assert(mymodel.elements instanceof dist_1.Elements);
         });
-        it('should not validate the object', function () {
+        it('should NOT validate the object', function () {
             let testclass = el.getClassInstance('post');
             testclass.text = 'huhu';
             let errors = testclass.validate();
@@ -91,10 +91,10 @@ describe('mlcl', function () {
             assert(errors.length === 0);
         });
         it('should ready an Element-object for serialization', function () {
-            let secondarytestclass = { text: 'hello', _id: 1 };
+            let secondarytestclass = { _id: 1, text: 'hello' };
             let testclass = el.getClassInstance('post');
-            testclass.text = 'hello';
             testclass._id = 1;
+            testclass.text = 'hello';
             try {
                 assert(_.isEqual(testclass.toDbObject(), secondarytestclass));
                 assert(_.isEqual(bson.serialize(testclass.toDbObject()), bson.serialize(secondarytestclass)));
@@ -118,11 +118,9 @@ describe('mlcl', function () {
                     }
                 }
                 yield testclass.save().then((res) => {
-                    assert(typeof res === 'object');
-                    if (typeof res === 'object') {
-                        assert(res.result.ok === 1
-                            && res.result.n === 1);
-                    }
+                    (res.length).should.be.above(0);
+                    assert.equal(res[0].result.ok, 1);
+                    assert.equal(res[0].result.n, 1);
                     return res;
                 }).catch((err) => {
                     should.not.exist(err);
@@ -130,13 +128,35 @@ describe('mlcl', function () {
                 });
             });
         });
-        it('should validate an array of Element-objects and save the into their respective MongoDB collection(s)', function () {
+        it('should NOT validate an Element-object, thus not saving it into its respective MongoDB collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
-                let col;
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass._id = 'invalidId';
+                try {
+                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+                }
+                catch (err) {
+                    if (!(err instanceof mongodb.MongoError)) {
+                        throw err;
+                    }
+                }
+                yield testclass.save().then((res) => {
+                    should.not.exist(res);
+                    return res;
+                }).catch((err) => {
+                    should.exist(err);
+                    (err.length).should.be.above(0);
+                    return err;
+                });
+            });
+        });
+        it('should validate an array of Element-objects and save them into their respective MongoDB collection(s)', function () {
+            return __awaiter(this, void 0, void 0, function* () {
                 let testclass1 = el.getClassInstance('post');
                 let testclass2 = el.getClassInstance('post');
                 testclass1.text = 'hello';
-                testclass2.prop = 'world';
+                testclass2.text = 'world';
                 testclass1._id = 1;
                 testclass2._id = 2;
                 try {
@@ -148,12 +168,26 @@ describe('mlcl', function () {
                     }
                 }
                 yield el.saveInstances([testclass1, testclass2]).then((res) => {
-                    console.log('return value: ');
-                    console.log(res);
+                    if (typeof res === 'object') {
+                        assert.equal(res[0].result.ok, 1);
+                        (res[0].result.n).should.be.above(1);
+                    }
                     return res;
                 }).catch((err) => {
                     should.not.exist(err);
                     return err;
+                });
+            });
+        });
+        it('should get a document based off an Element-object as query from the respective collection', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testmodel = el.getClass('post');
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass._id = 1;
+                console.log(yield el.getMongoConnection().collection('config.projectPrefix_' + testclass.constructor.name).count());
+                yield el.getMongoDocuments(testclass).then((res) => {
+                    return res;
                 });
             });
         });

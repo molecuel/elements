@@ -65,7 +65,7 @@ describe('mlcl', function() {
       assert(mymodel.elements instanceof Elements);
     });
 
-    it('should not validate the object', function() {
+    it('should NOT validate the object', function() {
       let testclass: any = el.getClassInstance('post');
       testclass.text = 'huhu';
       let errors = testclass.validate();
@@ -80,10 +80,10 @@ describe('mlcl', function() {
     });
 
     it('should ready an Element-object for serialization', function() {
-      let secondarytestclass: any = { text: 'hello', _id: 1 };
+      let secondarytestclass: any = { _id: 1, text: 'hello' };
       let testclass: any = el.getClassInstance('post');
-      testclass.text = 'hello';
       testclass._id = 1;
+      testclass.text = 'hello';
 
       try {
         // // factory-generated instance
@@ -119,11 +119,9 @@ describe('mlcl', function() {
         }
 
         await testclass.save().then((res) => {
-          assert(typeof res === 'object');
-          if (typeof res === 'object') {
-            assert(res.result.ok === 1
-              && res.result.n === 1);
-          }
+          (res.length).should.be.above(0);
+          assert.equal(res[0].result.ok, 1);
+          assert.equal(res[0].result.n, 1);
           return res;
         }).catch((err) => {
           should.not.exist(err);
@@ -131,13 +129,37 @@ describe('mlcl', function() {
         });
       });
 
-    it('should validate an array of Element-objects and save the into their respective MongoDB collection(s)',
+    it('should NOT validate an Element-object, thus not saving it into its respective MongoDB collection',
       async function() {
-        let col: any;
+        let testclass: any = el.getClassInstance('post');
+        testclass.text = 'hello';
+        testclass._id = 'invalidId';
+
+        try {
+          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+        }
+        catch (err) {
+          if (!(err instanceof mongodb.MongoError)) {
+            throw err;
+          }
+        }
+
+        await testclass.save().then((res) => {
+          should.not.exist(res);
+          return res;
+        }).catch((err) => {
+          should.exist(err);
+          (err.length).should.be.above(0);
+          return err;
+        });
+      });
+
+    it('should validate an array of Element-objects and save them into their respective MongoDB collection(s)',
+      async function() {
         let testclass1: any = el.getClassInstance('post');
         let testclass2: any = el.getClassInstance('post');
         testclass1.text = 'hello';
-        testclass2.prop = 'world';
+        testclass2.text = 'world';
         testclass1._id = 1;
         testclass2._id = 2;
 
@@ -151,14 +173,29 @@ describe('mlcl', function() {
         }
 
         await el.saveInstances([testclass1, testclass2]).then((res) => {
-          console.log('return value: ');
-          console.log(res);
+          if (typeof res === 'object') {
+            assert.equal(res[0].result.ok, 1);
+            (res[0].result.n).should.be.above(1);
+          }
           return res;
         }).catch((err) => {
           should.not.exist(err);
           return err;
         });
       });
+
+    it('should get a document based off an Element-object as query from the respective collection', async function() {
+      let testmodel: any = el.getClass('post');
+      let testclass: any = el.getClassInstance('post');
+      testclass.text = 'hello';
+      testclass._id = 1;
+
+      console.log(await el.getMongoConnection().collection('config.projectPrefix_' + testclass.constructor.name).count());
+      await el.getMongoDocuments(testclass).then((res) => {
+        // console.log(res);
+        return res;
+      });
+    });
 
   })
 });

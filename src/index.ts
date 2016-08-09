@@ -16,7 +16,6 @@ export class Elements {
   private mongoConnection: Promise<mongodb.Db>;
   private elasticClient: elasticsearch.Client;
   private elasticConnection: PromiseLike<elasticsearch.Client>;
-
   private elasticOptions: ElasticOptions;
   private elementStore: Map<string, IElement>;
 
@@ -33,41 +32,6 @@ export class Elements {
       host: 'localhost:9200',
       log: 'trace'
     });
-  }
-
-  /**
-   * Wrapper for mongodb to return a promise needed by the async function
-   * @return {Promise<any>} [Returns the connection promise]
-   */
-  protected mongoConnectWrapper(): Promise<any> {
-    return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
-  }
-
-  /**
-   * Async function for the mongo database connection
-   * @return {[type]} [description]
-   */
-  protected async connectMongo(): Promise<void> {
-    this.mongoConnection = await this.mongoConnectWrapper();
-  }
-
-  /**
-   * Return the elasticsearch connection
-   * @return {PromiseLike<any>} [description]
-   */
-  protected elasticConnectWrapper(): PromiseLike<any> {
-    return this.elasticClient.ping({
-      requestTimeout: this.elasticOptions.timeout,
-      hello: 'elasticsearch'
-    });
-  }
-
-  /**
-   * Async elasticsearch connection function
-   * @return {Promise<void>} [Return the promise for the elasticsearch connection]
-   */
-  protected async connectElastic(): Promise<void> {
-    this.elasticConnection = await this.elasticConnectWrapper();
   }
 
   /**
@@ -120,6 +84,37 @@ export class Elements {
     return validator.validate(instance);
   }
 
+  public toDbObject(subElement: IElement): any {
+    let that = subElement;
+    let result: any = {};
+
+    for (let key in that) {
+      let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
+      // check for non-prototype, validator-decorated property
+      if (({}).hasOwnProperty.call(that, key)
+        && that[key] !== undefined
+        && typeof hasValidatorDecorator !== 'undefined') {
+
+        // check for _id
+        if (key === '_id'
+          && typeof subElement === 'undefined') {
+
+          result[key] = that[key];
+          // result[that.constructor.name] = that[key];
+        }
+        // check if the property is an object
+        else if (typeof that[key] === 'object') {
+
+          result[key] = Elements.prototype.toDbObject(that[key]);
+        }
+        else if (typeof that[key] !== 'function') {
+          result[key] = that[key];
+        }
+      }
+    }
+    return result;
+  }
+
   public mongoClose(): Promise<any> {
     return this.getMongoConnection().close();
   }
@@ -132,20 +127,59 @@ export class Elements {
     return await this.getMongoConnection().collections();
   }
 
+  public saveInstances(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
+    return this.instanceSaveWrapper(instances);
+  }
+
+  public async getMongoDocuments(model: IElement, query?: any): Promise<any> {
+    return await this.mongoDocumentsGetWrapper(model, query);
+  }
+
+  protected mongoDocumentsGetWrapper(model: IElement, query?: any): Promise<any> {
+    return this.getMongoConnection().collection('config.projectPrefix_' + model.constructor.name).find(query);
+  }
+
+  /**
+   * Wrapper for mongodb to return a promise needed by the async function
+   * @return {Promise<any>} [Returns the connection promise]
+   */
+  protected mongoConnectWrapper(): Promise<any> {
+    return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
+  }
+
+  /**
+   * Async function for the mongo database connection
+   * @return {[type]} [description]
+   */
+  protected async connectMongo(): Promise<void> {
+    this.mongoConnection = await this.mongoConnectWrapper();
+  }
+
+  /**
+   * Return the elasticsearch connection
+   * @return {PromiseLike<any>} [description]
+   */
+  protected elasticConnectWrapper(): PromiseLike<any> {
+    return this.elasticClient.ping({
+      requestTimeout: this.elasticOptions.timeout,
+      hello: 'elasticsearch'
+    });
+  }
+
+  /**
+   * Async elasticsearch connection function
+   * @return {Promise<void>} [Return the promise for the elasticsearch connection]
+   */
+  protected async connectElastic(): Promise<void> {
+    this.elasticConnection = await this.elasticConnectWrapper();
+  }
+
   protected async insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     return await this.getMongoConnection().collection(collectionName).insertMany(instances, options);
   }
 
   protected async insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any> {
     return await this.getMongoConnection().collection(collectionName).insertOne(instance, options);
-  }
-
-  protected async getMongoCollectionCount(collectionName: string): Promise<any> {
-    return await this.getMongoConnection().collection(collectionName).count();
-  }
-
-  public saveInstances(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
-    return this.instanceSaveWrapper(instances);
   }
 
   protected validateAndSort(instances: IElement[]): Promise<any> {
@@ -175,18 +209,17 @@ export class Elements {
     }
   }
 
-  protected mongoInsertionWrapper(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+  protected async mongoInsertion(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     let result: any[] = [];
 
-    // every instance ok?: save instances to respective collection
     for (let collectionName in collections) {
       let collectionFullName: string = 'config.projectPrefix_' + collectionName;
-      result.push(this.insertMongoElements(collections[collectionName], collectionFullName, options));
+      result.push(await this.insertMongoElements(collections[collectionName], collectionFullName, options));
     }
     return Promise.resolve(result);
   }
 
-  protected async instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
+  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
     if (instances.length === 1) {
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
@@ -195,12 +228,14 @@ export class Elements {
         return this.insertMongoElementSingle(
           instances[0].toDbObject(),
           'config.projectPrefix_' + instances[0].constructor.name,
-          options);
+          options).then((res) => {
+            return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
+          });
       }
     }
     else {
-      return await this.validateAndSort(instances).then((res) => {
-        return this.mongoInsertionWrapper(res, options);
+      return this.validateAndSort(instances).then((res) => {
+        return this.mongoInsertion(res, options);
       });
     }
 

@@ -23,31 +23,11 @@ class Element {
     save() {
         return this.elements.saveInstances([this]);
     }
-    toDbObject(subElement) {
-        let that = subElement || this;
-        let result = {};
-        for (let key in that) {
-            let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
-            if (({}).hasOwnProperty.call(that, key)
-                && that[key] !== undefined
-                && typeof hasValidatorDecorator !== 'undefined') {
-                if (key === '_id'
-                    && typeof subElement === 'undefined') {
-                    result[key] = that[key];
-                }
-                else if (typeof that[key] === 'object') {
-                    result[key] = Element.prototype.toDbObject(that[key]);
-                }
-                else if (typeof that[key] !== 'function') {
-                    result[key] = that[key];
-                }
-            }
-        }
-        return result;
+    toDbObject() {
+        return this.elements.toDbObject(this);
     }
 }
 __decorate([
-    tsvalidate_1.ValidateType(),
     tsvalidate_1.MongoID(), 
     __metadata('design:type', Object)
 ], Element.prototype, "_id", void 0);

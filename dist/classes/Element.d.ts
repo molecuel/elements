@@ -10,5 +10,5 @@ export declare class Element implements IElement {
     setFactory(elements: any): void;
     validate(): IValidatorError[];
     save(): Promise<any>;
-    toDbObject(subElement?: any): any;
+    toDbObject(): any;
 }
