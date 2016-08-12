@@ -2,6 +2,7 @@
 import mongodb = require('mongodb');
 import elasticsearch = require('elasticsearch');
 import 'reflect-metadata';
+import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
 
 import { ElasticOptions } from './classes/ElasticOptions';
@@ -84,23 +85,29 @@ export class Elements {
     return validator.validate(instance);
   }
 
+  /**
+   * Convert object which can be saved in database
+   * @param  {IElement} subElement [description]
+   * @return {any}                 [description]
+   */
   public toDbObject(subElement: IElement): any {
     let that = subElement;
     let result: any = {};
+    let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that);
+    let validatorMap = _.keyBy(hasValidatorDecorator, function(o: any) {
+      return o.property;
+    });
 
     for (let key in that) {
-      let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
       // check for non-prototype, validator-decorated property
       if (({}).hasOwnProperty.call(that, key)
         && that[key] !== undefined
-        && typeof hasValidatorDecorator !== 'undefined') {
-
+        && validatorMap[key]) {
         // check for _id
         if (key === '_id'
           && typeof subElement === 'undefined') {
 
           result[key] = that[key];
-          // result[that.constructor.name] = that[key];
         }
         // check if the property is an object
         else if (typeof that[key] === 'object') {
@@ -115,28 +122,48 @@ export class Elements {
     return result;
   }
 
+  /**
+   * Close mongo connection
+   * @return {Promise<any>} [description]
+   */
   public mongoClose(): Promise<any> {
     return this.getMongoConnection().close();
   }
 
+  /**
+   * Return the mongo connection
+   * @return {any} [description]
+   */
   public getMongoConnection(): any {
     return this.mongoConnection;
   }
 
+  /**
+   * Get a specific mongo collection
+   * @return {Promise<any>} [description]
+   */
   public async getMongoCollections(): Promise<any> {
     return await this.getMongoConnection().collections();
   }
 
-  public saveInstances(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
-    return this.instanceSaveWrapper(instances);
-  }
-
+  /**
+   * Get documents based on query
+   * @param  {IElement}     model [description]
+   * @param  {any}          query [description]
+   * @return {Promise<any>}       [description]
+   */
   public async getMongoDocuments(model: IElement, query?: any): Promise<any> {
     return await this.mongoDocumentsGetWrapper(model, query);
   }
 
+  /**
+   * Save wrapper for a elements instance
+   * @param  {IElement}     model [description]
+   * @param  {any}          query [description]
+   * @return {Promise<any>}       [description]
+   */
   protected mongoDocumentsGetWrapper(model: IElement, query?: any): Promise<any> {
-    return this.getMongoConnection().collection('config.projectPrefix_' + model.constructor.name).find(query);
+    return this.getMongoConnection().collection(model.constructor.name).find(query);
   }
 
   /**
@@ -174,14 +201,33 @@ export class Elements {
     this.elasticConnection = await this.elasticConnectWrapper();
   }
 
+  /**
+   * Bulk insert of mongodb documents
+   * @param  {Object[]}                            instances      [description]
+   * @param  {string}                              collectionName [description]
+   * @param  {mongodb.CollectionInsertManyOptions} options        [description]
+   * @return {Promise<any>}                                       [description]
+   */
   protected async insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     return await this.getMongoConnection().collection(collectionName).insertMany(instances, options);
   }
 
+  /**
+   * Insert single mongodb document
+   * @param  {Object}                             instance       [description]
+   * @param  {string}                             collectionName [description]
+   * @param  {mongodb.CollectionInsertOneOptions} options        [description]
+   * @return {Promise<any>}                                      [description]
+   */
   protected async insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any> {
     return await this.getMongoConnection().collection(collectionName).insertOne(instance, options);
   }
 
+  /**
+   * validate multiple instances of IElement
+   * @param  {IElement[]}   instances [Array of instances which implements IElement]
+   * @return {Promise<any>}           [description]
+   */
   protected validateAndSort(instances: IElement[]): Promise<any> {
     let errors: TSV.IValidatorError[] = [];
     let collections: any = {};
@@ -209,17 +255,29 @@ export class Elements {
     }
   }
 
+  /**
+   * Bulk insert of elements into respective collection
+   * @param  {Object}                              collections [description]
+   * @param  {mongodb.CollectionInsertManyOptions} options     [description]
+   * @return {Promise<any>}                                    [description]
+   */
   protected async mongoInsertion(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
     let result: any[] = [];
 
     for (let collectionName in collections) {
-      let collectionFullName: string = 'config.projectPrefix_' + collectionName;
+      let collectionFullName: string = collectionName;
       result.push(await this.insertMongoElements(collections[collectionName], collectionFullName, options));
     }
     return Promise.resolve(result);
   }
 
-  protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
+  /**
+   * Wrapper for instance save
+   * @param  {IElement[]}                             instances [description]
+   * @param  {mongodb.CollectionInsertManyOptions |         mongodb.CollectionInsertOneOptions} options [description]
+   * @return {Promise<any>}                                     [description]
+   */
+  public instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
     if (instances.length === 1) {
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
@@ -227,7 +285,7 @@ export class Elements {
       else {
         return this.insertMongoElementSingle(
           instances[0].toDbObject(),
-          'config.projectPrefix_' + instances[0].constructor.name,
+          instances[0].constructor.name,
           options).then((res) => {
             return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
           });

@@ -21,7 +21,7 @@ class Element {
         return this.elements.validate(this);
     }
     save() {
-        return this.elements.saveInstances([this]);
+        return this.elements.instanceSaveWrapper([this]);
     }
     toDbObject() {
         return this.elements.toDbObject(this);

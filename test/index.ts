@@ -10,6 +10,9 @@ import { Element } from '../dist/classes/Element';
 import * as V from 'tsvalidate';
 
 class Post extends Element {
+  @V.ValidateType(String)
+  @V.ClearValidators()
+  _id: number;
   @V.InArray(['hello', 'world'])
   text: string;
 }
@@ -110,7 +113,7 @@ describe('mlcl', function() {
         testclass._id = 1;
 
         try {
-          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+          await el.getMongoConnection().dropCollection('Post');
         }
         catch (err) {
           if (!(err instanceof mongodb.MongoError)) {
@@ -136,7 +139,7 @@ describe('mlcl', function() {
         testclass._id = 'invalidId';
 
         try {
-          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+          await el.getMongoConnection().dropCollection('Post');
         }
         catch (err) {
           if (!(err instanceof mongodb.MongoError)) {
@@ -164,7 +167,7 @@ describe('mlcl', function() {
         testclass2._id = 2;
 
         try {
-          await el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+          await el.getMongoConnection().dropCollection('Post');
         }
         catch (err) {
           if (!(err instanceof mongodb.MongoError)) {
@@ -172,7 +175,7 @@ describe('mlcl', function() {
           }
         }
 
-        await el.saveInstances([testclass1, testclass2]).then((res) => {
+        await el.instanceSaveWrapper([testclass1, testclass2]).then((res) => {
           if (typeof res === 'object') {
             assert.equal(res[0].result.ok, 1);
             (res[0].result.n).should.be.above(1);
@@ -190,7 +193,7 @@ describe('mlcl', function() {
       testclass.text = 'hello';
       testclass._id = 1;
 
-      console.log(await el.getMongoConnection().collection('config.projectPrefix_' + testclass.constructor.name).count());
+      console.log(await el.getMongoConnection().collection(testclass.constructor.name).count());
       await el.getMongoDocuments(testclass).then((res) => {
         // console.log(res);
         return res;

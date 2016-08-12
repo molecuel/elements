@@ -19,7 +19,7 @@ export class Element implements IElement {
     return this.elements.validate(this);
   }
   public save(): Promise<any> {
-    return this.elements.saveInstances([this]);
+    return this.elements.instanceSaveWrapper([this]);
   }
   public toDbObject(): any {
     return this.elements.toDbObject(this);

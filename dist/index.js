@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 const mongodb = require('mongodb');
 const elasticsearch = require('elasticsearch');
 require('reflect-metadata');
+const _ = require('lodash');
 const TSV = require('tsvalidate');
 const ElasticOptions_1 = require('./classes/ElasticOptions');
 var Element_1 = require('./classes/Element');
@@ -53,11 +54,14 @@ class Elements {
     toDbObject(subElement) {
         let that = subElement;
         let result = {};
+        let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that);
+        let validatorMap = _.keyBy(hasValidatorDecorator, function (o) {
+            return o.property;
+        });
         for (let key in that) {
-            let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that, key);
             if (({}).hasOwnProperty.call(that, key)
                 && that[key] !== undefined
-                && typeof hasValidatorDecorator !== 'undefined') {
+                && validatorMap[key]) {
                 if (key === '_id'
                     && typeof subElement === 'undefined') {
                     result[key] = that[key];
@@ -83,16 +87,13 @@ class Elements {
             return yield this.getMongoConnection().collections();
         });
     }
-    saveInstances(instances, options) {
-        return this.instanceSaveWrapper(instances);
-    }
     getMongoDocuments(model, query) {
         return __awaiter(this, void 0, Promise, function* () {
             return yield this.mongoDocumentsGetWrapper(model, query);
         });
     }
     mongoDocumentsGetWrapper(model, query) {
-        return this.getMongoConnection().collection('config.projectPrefix_' + model.constructor.name).find(query);
+        return this.getMongoConnection().collection(model.constructor.name).find(query);
     }
     mongoConnectWrapper() {
         return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
@@ -150,7 +151,7 @@ class Elements {
         return __awaiter(this, void 0, Promise, function* () {
             let result = [];
             for (let collectionName in collections) {
-                let collectionFullName = 'config.projectPrefix_' + collectionName;
+                let collectionFullName = collectionName;
                 result.push(yield this.insertMongoElements(collections[collectionName], collectionFullName, options));
             }
             return Promise.resolve(result);
@@ -162,7 +163,7 @@ class Elements {
                 return Promise.reject(instances[0].validate());
             }
             else {
-                return this.insertMongoElementSingle(instances[0].toDbObject(), 'config.projectPrefix_' + instances[0].constructor.name, options).then((res) => {
+                return this.insertMongoElementSingle(instances[0].toDbObject(), instances[0].constructor.name, options).then((res) => {
                     return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
                 });
             }

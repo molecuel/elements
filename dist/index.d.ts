@@ -21,7 +21,6 @@ export declare class Elements {
     mongoClose(): Promise<any>;
     getMongoConnection(): any;
     getMongoCollections(): Promise<any>;
-    saveInstances(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any>;
     getMongoDocuments(model: IElement, query?: any): Promise<any>;
     protected mongoDocumentsGetWrapper(model: IElement, query?: any): Promise<any>;
     protected mongoConnectWrapper(): Promise<any>;
@@ -32,5 +31,5 @@ export declare class Elements {
     protected insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any>;
     protected validateAndSort(instances: IElement[]): Promise<any>;
     protected mongoInsertion(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
-    protected instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any>;
+    instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any>;
 }

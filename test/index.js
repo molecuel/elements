@@ -28,6 +28,11 @@ const V = require('tsvalidate');
 class Post extends Element_1.Element {
 }
 __decorate([
+    V.ValidateType(String),
+    V.ClearValidators(), 
+    __metadata('design:type', Number)
+], Post.prototype, "_id", void 0);
+__decorate([
     V.InArray(['hello', 'world']), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
@@ -110,7 +115,7 @@ describe('mlcl', function () {
                 testclass.text = 'hello';
                 testclass._id = 1;
                 try {
-                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+                    yield el.getMongoConnection().dropCollection('Post');
                 }
                 catch (err) {
                     if (!(err instanceof mongodb.MongoError)) {
@@ -134,7 +139,7 @@ describe('mlcl', function () {
                 testclass.text = 'hello';
                 testclass._id = 'invalidId';
                 try {
-                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+                    yield el.getMongoConnection().dropCollection('Post');
                 }
                 catch (err) {
                     if (!(err instanceof mongodb.MongoError)) {
@@ -160,14 +165,14 @@ describe('mlcl', function () {
                 testclass1._id = 1;
                 testclass2._id = 2;
                 try {
-                    yield el.getMongoConnection().dropCollection('config.projectPrefix_Post');
+                    yield el.getMongoConnection().dropCollection('Post');
                 }
                 catch (err) {
                     if (!(err instanceof mongodb.MongoError)) {
                         throw err;
                     }
                 }
-                yield el.saveInstances([testclass1, testclass2]).then((res) => {
+                yield el.instanceSaveWrapper([testclass1, testclass2]).then((res) => {
                     if (typeof res === 'object') {
                         assert.equal(res[0].result.ok, 1);
                         (res[0].result.n).should.be.above(1);
@@ -185,7 +190,7 @@ describe('mlcl', function () {
                 let testclass = el.getClassInstance('post');
                 testclass.text = 'hello';
                 testclass._id = 1;
-                console.log(yield el.getMongoConnection().collection('config.projectPrefix_' + testclass.constructor.name).count());
+                console.log(yield el.getMongoConnection().collection(testclass.constructor.name).count());
                 yield el.getMongoDocuments(testclass).then((res) => {
                     return res;
                 });
