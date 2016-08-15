@@ -39,10 +39,10 @@ class Elements {
         this.elementStore.set(name, definition);
     }
     getClass(name) {
-        return this.elementStore.get(name);
+        return this.elementStore.get(name || 'element');
     }
     getClassInstance(name) {
-        let elementClass = this.elementStore.get(name);
+        let elementClass = this.elementStore.get(name || 'element');
         let classInstance = new elementClass();
         classInstance.setFactory(this);
         return classInstance;
@@ -51,23 +51,26 @@ class Elements {
         let validator = new TSV.Validator();
         return validator.validate(instance);
     }
-    toDbObject(subElement) {
-        let that = subElement;
+    toDbObject(element) {
+        return this.toDbObjRecursive(element, false);
+    }
+    toDbObjRecursive(obj, nested) {
+        let that = obj;
         let result = {};
-        let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that);
-        let validatorMap = _.keyBy(hasValidatorDecorator, function (o) {
+        let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
+        let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function (o) {
             return o.property;
         });
         for (let key in that) {
             if (({}).hasOwnProperty.call(that, key)
                 && that[key] !== undefined
-                && validatorMap[key]) {
+                && propertiesValidatorDecorators[key]) {
                 if (key === '_id'
-                    && typeof subElement === 'undefined') {
+                    && !nested) {
                     result[key] = that[key];
                 }
                 else if (typeof that[key] === 'object') {
-                    result[key] = Elements.prototype.toDbObject(that[key]);
+                    result[key] = this.toDbObjRecursive(that[key], true);
                 }
                 else if (typeof that[key] !== 'function') {
                     result[key] = that[key];
@@ -87,13 +90,25 @@ class Elements {
             return yield this.getMongoConnection().collections();
         });
     }
-    getMongoDocuments(model, query) {
-        return __awaiter(this, void 0, Promise, function* () {
-            return yield this.mongoDocumentsGetWrapper(model, query);
-        });
+    containsIDocuments(obj) {
+        let template = {
+            collection: 'collectionName',
+            documents: []
+        };
+        for (let prop in template) {
+            if (!(prop in obj)) {
+                return false;
+            }
+        }
+        return true;
     }
-    mongoDocumentsGetWrapper(model, query) {
-        return this.getMongoConnection().collection(model.constructor.name).find(query);
+    getMongoDocuments(model, query, limit) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let collectionName = ('prototype' in model) ? model.prototype.constructor.name : model.constructor.name;
+            return yield this.getMongoConnection().collection(collectionName).find(query).limit(limit || 0).toArray().then((res) => {
+                return { collection: collectionName, documents: res };
+            });
+        });
     }
     mongoConnectWrapper() {
         return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
@@ -114,14 +129,14 @@ class Elements {
             this.elasticConnection = yield this.elasticConnectWrapper();
         });
     }
-    insertMongoElements(instances, collectionName, options) {
+    updateMongoElements(instances, collectionName, upsert = false) {
         return __awaiter(this, void 0, Promise, function* () {
-            return yield this.getMongoConnection().collection(collectionName).insertMany(instances, options);
+            return yield this.getMongoConnection().collection(collectionName).updateMany(instances, { upsert: upsert });
         });
     }
-    insertMongoElementSingle(instance, collectionName, options) {
+    updateMongoElementSingle(instance, collectionName, upsert = false) {
         return __awaiter(this, void 0, Promise, function* () {
-            return yield this.getMongoConnection().collection(collectionName).insertOne(instance, options);
+            return yield this.getMongoConnection().collection(collectionName).updateOne(instance, { upsert: upsert });
         });
     }
     validateAndSort(instances) {
@@ -147,31 +162,48 @@ class Elements {
             return Promise.resolve(collections);
         }
     }
-    mongoInsertion(collections, options) {
+    mongoUpdate(collections, upsert = false) {
         return __awaiter(this, void 0, Promise, function* () {
             let result = [];
             for (let collectionName in collections) {
                 let collectionFullName = collectionName;
-                result.push(yield this.insertMongoElements(collections[collectionName], collectionFullName, options));
+                result.push(yield this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
             }
             return Promise.resolve(result);
         });
     }
-    instanceSaveWrapper(instances, options) {
+    instanceSaveWrapper(instances, upsert = false) {
         if (instances.length === 1) {
             if (instances[0].validate().length > 0) {
                 return Promise.reject(instances[0].validate());
             }
             else {
-                return this.insertMongoElementSingle(instances[0].toDbObject(), instances[0].constructor.name, options).then((res) => {
+                return this.updateMongoElementSingle(instances[0].toDbObject(), instances[0].constructor.name, upsert).then((res) => {
                     return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
                 });
             }
         }
         else {
             return this.validateAndSort(instances).then((res) => {
-                return this.mongoInsertion(res, options);
+                return this.mongoUpdate(res, upsert);
             });
+        }
+    }
+    toElementArray(collection) {
+        let that = this;
+        let result = [];
+        if (that.containsIDocuments(collection)) {
+            for (let i = 0; i < collection.documents.length; i++) {
+                let currDoc = collection.documents[i];
+                result.push(that.getClassInstance(collection.collection.toString().toLowerCase()));
+                for (let key in currDoc) {
+                    result[i][key] = currDoc[key];
+                }
+            }
+            return Promise.resolve(result);
+        }
+        else {
+            return Promise.reject(new Error('Could not determine class'));
         }
     }
 }

@@ -7,6 +7,8 @@ import * as TSV from 'tsvalidate';
 
 import { ElasticOptions } from './classes/ElasticOptions';
 import { IElement } from './interfaces/IElement';
+import { IDocuments } from './interfaces/IDocuments';
+import { Element } from './classes/Element';
 export { Element as Element } from './classes/Element';
 
 
@@ -60,7 +62,7 @@ export class Elements {
    * @return {IElement}      [description]
    */
   public getClass(name: string): IElement {
-    return this.elementStore.get(name);
+    return this.elementStore.get(name || 'element');
   }
 
   /**
@@ -69,7 +71,7 @@ export class Elements {
    * @return {IElement}      [description]
    */
   public getClassInstance(name: string): any {
-    let elementClass: any = this.elementStore.get(name);
+    let elementClass: any = this.elementStore.get(name || 'element');
     let classInstance: IElement = new elementClass();
     classInstance.setFactory(this);
     return classInstance;
@@ -90,11 +92,15 @@ export class Elements {
    * @param  {IElement} subElement [description]
    * @return {any}                 [description]
    */
-  public toDbObject(subElement: IElement): any {
-    let that = subElement;
+  public toDbObject(element: IElement): any {
+    return this.toDbObjRecursive(element, false);
+  }
+
+  protected toDbObjRecursive(obj: Object, nested: boolean): any {
+    let that = obj;
     let result: any = {};
-    let hasValidatorDecorator = Reflect.getMetadata('tsvalidate:validators', that);
-    let validatorMap = _.keyBy(hasValidatorDecorator, function(o: any) {
+    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
+    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
       return o.property;
     });
 
@@ -102,17 +108,17 @@ export class Elements {
       // check for non-prototype, validator-decorated property
       if (({}).hasOwnProperty.call(that, key)
         && that[key] !== undefined
-        && validatorMap[key]) {
+        && propertiesValidatorDecorators[key]) {
         // check for _id
         if (key === '_id'
-          && typeof subElement === 'undefined') {
+          && !nested) {
 
           result[key] = that[key];
         }
         // check if the property is an object
         else if (typeof that[key] === 'object') {
 
-          result[key] = Elements.prototype.toDbObject(that[key]);
+          result[key] = this.toDbObjRecursive(that[key], true);
         }
         else if (typeof that[key] !== 'function') {
           result[key] = that[key];
@@ -147,23 +153,34 @@ export class Elements {
   }
 
   /**
+   * Check object for defined IDocuments properties
+   * @param  {any}          obj   [description]
+   * @return {boolean}            [description]
+   */
+  public containsIDocuments(obj: any): boolean {
+    let template: IDocuments = {
+      collection: 'collectionName',
+      documents: []
+    };
+    for (let prop in template) {
+      if (!(prop in obj)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Get documents based on query
    * @param  {IElement}     model [description]
    * @param  {any}          query [description]
    * @return {Promise<any>}       [description]
    */
-  public async getMongoDocuments(model: IElement, query?: any): Promise<any> {
-    return await this.mongoDocumentsGetWrapper(model, query);
-  }
-
-  /**
-   * Save wrapper for a elements instance
-   * @param  {IElement}     model [description]
-   * @param  {any}          query [description]
-   * @return {Promise<any>}       [description]
-   */
-  protected mongoDocumentsGetWrapper(model: IElement, query?: any): Promise<any> {
-    return this.getMongoConnection().collection(model.constructor.name).find(query);
+  public async getMongoDocuments(model: IElement | any, query?: any, limit?: number): Promise<IDocuments> {
+    let collectionName = ('prototype' in model) ? model.prototype.constructor.name : model.constructor.name;
+    return await this.getMongoConnection().collection(collectionName).find(query).limit(limit || 0).toArray().then((res) => {
+      return { collection: collectionName, documents: res };
+    });
   }
 
   /**
@@ -208,8 +225,8 @@ export class Elements {
    * @param  {mongodb.CollectionInsertManyOptions} options        [description]
    * @return {Promise<any>}                                       [description]
    */
-  protected async insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
-    return await this.getMongoConnection().collection(collectionName).insertMany(instances, options);
+  protected async updateMongoElements(instances: Object[], collectionName: string, upsert: boolean = false): Promise<any> {
+    return await this.getMongoConnection().collection(collectionName).updateMany(instances, { upsert: upsert });
   }
 
   /**
@@ -219,8 +236,8 @@ export class Elements {
    * @param  {mongodb.CollectionInsertOneOptions} options        [description]
    * @return {Promise<any>}                                      [description]
    */
-  protected async insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any> {
-    return await this.getMongoConnection().collection(collectionName).insertOne(instance, options);
+  protected async updateMongoElementSingle(instance: Object, collectionName: string, upsert: boolean = false): Promise<any> {
+    return await this.getMongoConnection().collection(collectionName).updateOne(instance, { upsert: upsert });
   }
 
   /**
@@ -256,48 +273,66 @@ export class Elements {
   }
 
   /**
-   * Bulk insert of elements into respective collection
+   * Bulk update/upsert of elements into respective collection
    * @param  {Object}                              collections [description]
-   * @param  {mongodb.CollectionInsertManyOptions} options     [description]
+   * @param  {boolean}                             upsert      [description]
    * @return {Promise<any>}                                    [description]
    */
-  protected async mongoInsertion(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any> {
+  protected async mongoUpdate(collections: Object, upsert: boolean = false): Promise<any> {
     let result: any[] = [];
 
     for (let collectionName in collections) {
       let collectionFullName: string = collectionName;
-      result.push(await this.insertMongoElements(collections[collectionName], collectionFullName, options));
+      result.push(await this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
     }
     return Promise.resolve(result);
   }
 
   /**
    * Wrapper for instance save
-   * @param  {IElement[]}                             instances [description]
-   * @param  {mongodb.CollectionInsertManyOptions |         mongodb.CollectionInsertOneOptions} options [description]
-   * @return {Promise<any>}                                     [description]
+   * @param  {IElement[]}                          instances [description]
+   * @param  {boolean}                             upsert    [description]
+   * @return {Promise<any>}                                  [description]
    */
-  public instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any> {
+  public instanceSaveWrapper(instances: IElement[], upsert: boolean = false): Promise<any> {
     if (instances.length === 1) {
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
       }
       else {
-        return this.insertMongoElementSingle(
+        return this.updateMongoElementSingle(
           instances[0].toDbObject(),
           instances[0].constructor.name,
-          options).then((res) => {
+          upsert).then((res) => {
             return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
           });
       }
     }
     else {
       return this.validateAndSort(instances).then((res) => {
-        return this.mongoInsertion(res, options);
+        return this.mongoUpdate(res, upsert);
       });
     }
+  }
 
-
+  protected toElementArray(collection: IDocuments): Promise<IElement[]> {
+    let that: any = this;
+    let result: any[] = [];
+    // check wether or not obj is { collection:'collectionName'; documents:[...doc] } or single document
+    if (that.containsIDocuments(collection)) {
+      // build array of collection based elements
+      for (let i = 0; i < collection.documents.length; i++) {
+        let currDoc: any = collection.documents[i];
+        result.push(that.getClassInstance(collection.collection.toString().toLowerCase()));
+        for (let key in currDoc) {
+          result[i][key] = currDoc[key];
+        }
+      }
+      return Promise.resolve(result);
+    }
+    else {
+      return Promise.reject(new Error('Could not determine class'))
+    }
   }
 
 }

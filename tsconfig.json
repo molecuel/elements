@@ -18,6 +18,7 @@
     "dist/index.d.ts",
     "classes/ElasticOptions.ts",
     "interfaces/IElement.ts",
+    "interfaces/IDocuments.ts",
     "classes/Element.ts"
   ],
   "exclude": [],

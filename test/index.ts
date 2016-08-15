@@ -7,10 +7,11 @@ import assert = require('assert');
 import _ = require('lodash');
 import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
+import { IElement } from '../dist/interfaces/IElement';
 import * as V from 'tsvalidate';
 
 class Post extends Element {
-  @V.ValidateType(String)
+  @V.ValidateType()
   @V.ClearValidators()
   _id: number;
   @V.InArray(['hello', 'world'])
@@ -82,7 +83,7 @@ describe('mlcl', function() {
       assert(errors.length === 0);
     });
 
-    it('should ready an Element-object for serialization', function() {
+    it('should serialize an Element-object', function() {
       let secondarytestclass: any = { _id: 1, text: 'hello' };
       let testclass: any = el.getClassInstance('post');
       testclass._id = 1;
@@ -90,7 +91,7 @@ describe('mlcl', function() {
 
       try {
         // // factory-generated instance
-        // console.log(testclass.toDbObject());
+        // console.log((testclass).toDbObject());
         // console.log(bson.serialize(testclass.toDbObject()));
         //
         // // locally defined instance
@@ -187,15 +188,48 @@ describe('mlcl', function() {
         });
       });
 
-    it('should get a document based off an Element-object as query from the respective collection', async function() {
+    it('should get a document based off an Element-object/-model as query from the respective collection', async function() {
       let testmodel: any = el.getClass('post');
-      let testclass: any = el.getClassInstance('post');
-      testclass.text = 'hello';
-      testclass._id = 1;
 
-      console.log(await el.getMongoConnection().collection(testclass.constructor.name).count());
-      await el.getMongoDocuments(testclass).then((res) => {
-        // console.log(res);
+      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+        (res).should.be.above(0);
+      })
+      await el.getMongoDocuments(testmodel, {}).then((res) => {
+        (res.documents.length).should.be.above(0);
+        return res;
+      });
+    });
+
+    it('should deserialize an array of DbObjects', async function() {
+      let result: IElement[] = [];
+      let testmodel: any = el.getClass('post');
+
+      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+        (res).should.be.above(0);
+      })
+      await el.getMongoDocuments(testmodel, {}).then((res) => {
+        for (let doc of res.documents) {
+          result.push(el.toElementArray(doc)[0]);
+          (result[(result.length - 1)]).should.be.instanceOf(Element);
+        }
+        (result.length).should.be.above(0);
+        return res;
+      });
+    });
+
+    it('should deserialize an IDocuments-based object', async function() {
+      let result: IElement[] = [];
+      let testmodel: any = el.getClass('post');
+
+      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+        (res).should.be.above(0);
+      })
+      await el.getMongoDocuments(testmodel, {}).then((res) => {
+        result = el.toElementArray(res);
+        for (let doc of result) {
+          (doc).should.be.instanceOf(testmodel);
+        }
+        (result.length).should.be.above(0);
         return res;
       });
     });

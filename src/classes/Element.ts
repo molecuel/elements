@@ -18,8 +18,8 @@ export class Element implements IElement {
   public validate(): IValidatorError[] {
     return this.elements.validate(this);
   }
-  public save(): Promise<any> {
-    return this.elements.instanceSaveWrapper([this]);
+  public save(upsert: boolean = false): Promise<any> {
+    return this.elements.instanceSaveWrapper([this], upsert);
   }
   public toDbObject(): any {
     return this.elements.toDbObject(this);

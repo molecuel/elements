@@ -28,7 +28,7 @@ const V = require('tsvalidate');
 class Post extends Element_1.Element {
 }
 __decorate([
-    V.ValidateType(String),
+    V.ValidateType(),
     V.ClearValidators(), 
     __metadata('design:type', Number)
 ], Post.prototype, "_id", void 0);
@@ -95,7 +95,7 @@ describe('mlcl', function () {
             let errors = testclass.validate();
             assert(errors.length === 0);
         });
-        it('should ready an Element-object for serialization', function () {
+        it('should serialize an Element-object', function () {
             let secondarytestclass = { _id: 1, text: 'hello' };
             let testclass = el.getClassInstance('post');
             testclass._id = 1;
@@ -184,14 +184,48 @@ describe('mlcl', function () {
                 });
             });
         });
-        it('should get a document based off an Element-object as query from the respective collection', function () {
+        it('should get a document based off an Element-object/-model as query from the respective collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let testmodel = el.getClass('post');
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                testclass._id = 1;
-                console.log(yield el.getMongoConnection().collection(testclass.constructor.name).count());
-                yield el.getMongoDocuments(testclass).then((res) => {
+                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+                    (res).should.be.above(0);
+                });
+                yield el.getMongoDocuments(testmodel, {}).then((res) => {
+                    (res.documents.length).should.be.above(0);
+                    return res;
+                });
+            });
+        });
+        it('should deserialize an array of DbObjects', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let result = [];
+                let testmodel = el.getClass('post');
+                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+                    (res).should.be.above(0);
+                });
+                yield el.getMongoDocuments(testmodel, {}).then((res) => {
+                    for (let doc of res.documents) {
+                        result.push(el.toElementArray(doc)[0]);
+                        (result[(result.length - 1)]).should.be.instanceOf(Element_1.Element);
+                    }
+                    (result.length).should.be.above(0);
+                    return res;
+                });
+            });
+        });
+        it('should deserialize an IDocuments-based object', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let result = [];
+                let testmodel = el.getClass('post');
+                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
+                    (res).should.be.above(0);
+                });
+                yield el.getMongoDocuments(testmodel, {}).then((res) => {
+                    result = el.toElementArray(res);
+                    for (let doc of result) {
+                        (doc).should.be.instanceOf(testmodel);
+                    }
+                    (result.length).should.be.above(0);
                     return res;
                 });
             });

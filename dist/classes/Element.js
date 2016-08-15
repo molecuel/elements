@@ -20,8 +20,8 @@ class Element {
     validate() {
         return this.elements.validate(this);
     }
-    save() {
-        return this.elements.instanceSaveWrapper([this]);
+    save(upsert = false) {
+        return this.elements.instanceSaveWrapper([this], upsert);
     }
     toDbObject() {
         return this.elements.toDbObject(this);

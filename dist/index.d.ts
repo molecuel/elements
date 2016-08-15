@@ -1,7 +1,7 @@
-import mongodb = require('mongodb');
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import { IElement } from './interfaces/IElement';
+import { IDocuments } from './interfaces/IDocuments';
 export { Element as Element } from './classes/Element';
 export declare class Elements {
     static loaderversion: number;
@@ -17,19 +17,21 @@ export declare class Elements {
     getClass(name: string): IElement;
     getClassInstance(name: string): any;
     validate(instance: Object): TSV.IValidatorError[];
-    toDbObject(subElement: IElement): any;
+    toDbObject(element: IElement): any;
+    protected toDbObjRecursive(obj: Object, nested: boolean): any;
     mongoClose(): Promise<any>;
     getMongoConnection(): any;
     getMongoCollections(): Promise<any>;
-    getMongoDocuments(model: IElement, query?: any): Promise<any>;
-    protected mongoDocumentsGetWrapper(model: IElement, query?: any): Promise<any>;
+    containsIDocuments(obj: any): boolean;
+    getMongoDocuments(model: IElement | any, query?: any, limit?: number): Promise<IDocuments>;
     protected mongoConnectWrapper(): Promise<any>;
     protected connectMongo(): Promise<void>;
     protected elasticConnectWrapper(): PromiseLike<any>;
     protected connectElastic(): Promise<void>;
-    protected insertMongoElements(instances: Object[], collectionName: string, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
-    protected insertMongoElementSingle(instance: Object, collectionName: string, options?: mongodb.CollectionInsertOneOptions): Promise<any>;
+    protected updateMongoElements(instances: Object[], collectionName: string, upsert?: boolean): Promise<any>;
+    protected updateMongoElementSingle(instance: Object, collectionName: string, upsert?: boolean): Promise<any>;
     protected validateAndSort(instances: IElement[]): Promise<any>;
-    protected mongoInsertion(collections: Object, options?: mongodb.CollectionInsertManyOptions): Promise<any>;
-    instanceSaveWrapper(instances: IElement[], options?: mongodb.CollectionInsertManyOptions | mongodb.CollectionInsertOneOptions): Promise<any>;
+    protected mongoUpdate(collections: Object, upsert?: boolean): Promise<any>;
+    instanceSaveWrapper(instances: IElement[], upsert?: boolean): Promise<any>;
+    protected toElementArray(collection: IDocuments): Promise<IElement[]>;
 }
