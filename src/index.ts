@@ -140,7 +140,7 @@ export class Elements {
    * Return the mongo connection
    * @return {any} [description]
    */
-  public getMongoConnection(): any {
+  protected getMongoConnection(): any {
     return this.mongoConnection;
   }
 
@@ -194,32 +194,33 @@ export class Elements {
   }
 
   public async findById(id: number | string | IElement, collection?: string | IElement): Promise<any> {
-    let input: any = collection;
+    let inputColl: any = collection;
+    let inputId: any = id;
     let collectionName: string;
     if (typeof collection !== 'undefined') {
-      if (typeof input === 'string') {
-        collectionName = input;
+      if (typeof inputColl === 'string') {
+        collectionName = inputColl;
       }
-      else if ('prototype' in input) {
-        collectionName = input.prototype.constructor.name;
+      else if ('prototype' in inputColl) {
+        collectionName = inputColl.prototype.constructor.name;
       }
       else {
-        collectionName = input.constructor.name;
+        collectionName = inputColl.constructor.name;
       }
     }
-    else if (typeof id !== 'number'
-      && typeof id !== 'string') {
-      if ('constructor' in id) {
+    else if (typeof inputId !== 'number'
+      && typeof inputId !== 'string') {
+      if ('constructor' in inputId) {
         collectionName = id.constructor.name;
       }
-      if ('_id' in id) {
-        id = id._id;
+      if ('_id' in inputId) {
+        inputId = inputId._id;
       }
       else {
         return Promise.reject(new Error('No valid id supplied.'));
       }
     }
-    return await this.findByQuery(collectionName, { _id: id }, 1);
+    return await this.findByQuery(collectionName, { _id: inputId }, 1);
   }
 
   /**
@@ -264,8 +265,9 @@ export class Elements {
    * @param  {mongodb.CollectionInsertManyOptions} options        [description]
    * @return {Promise<any>}                                       [description]
    */
-  protected async updateMongoElements(instances: Object[], collectionName: string, upsert: boolean = false): Promise<any> {
-    return await this.getMongoConnection().collection(collectionName).updateMany(instances, { upsert: upsert });
+  protected async updateMongoElements(instances: IElement[], collectionName: string, upsert: boolean = false): Promise<any> {
+    console.log(instances);
+    return await this.getMongoConnection().collection(collectionName).updateMany({}, instances, { upsert: upsert }); // does NOT upsert documents with predefined _id via array; find->insert?? / bulk.find({ _id : { $in : instancesIdArray } }).update(instances).exec(); ??
   }
 
   /**
@@ -275,8 +277,14 @@ export class Elements {
    * @param  {mongodb.CollectionInsertOneOptions} options        [description]
    * @return {Promise<any>}                                      [description]
    */
-  protected async updateMongoElementSingle(instance: Object, collectionName: string, upsert: boolean = false): Promise<any> {
-    return await this.getMongoConnection().collection(collectionName).updateOne(instance, { upsert: upsert });
+  protected async updateMongoElementSingle(instance: IElement, collectionName: string, upsert?: boolean): Promise<any> {
+    if (!upsert) {
+      upsert = false;
+    }
+    return await this.getMongoConnection().collection(collectionName).updateOne({}, instance, { upsert: upsert });
+    // console.log(prom);
+    // console.log(collectionName);
+    // console.log(upsert);
   }
 
   /**
@@ -317,9 +325,11 @@ export class Elements {
    * @param  {boolean}                             upsert      [description]
    * @return {Promise<any>}                                    [description]
    */
-  protected async mongoUpdate(collections: Object, upsert: boolean = false): Promise<any> {
+  protected async mongoUpdate(collections: Object, upsert?: boolean): Promise<any> {
     let result: any[] = [];
-
+    if (!upsert) {
+      upsert = false;
+    }
     for (let collectionName in collections) {
       let collectionFullName: string = collectionName;
       result.push(await this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
@@ -333,7 +343,10 @@ export class Elements {
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public instancesSave(instances: IElement[], upsert: boolean = false): Promise<any> {
+  public saveInstances(instances: IElement[], upsert?: boolean): Promise<any> {
+    if (!upsert) {
+      upsert = false;
+    }
     if (instances.length === 1) {
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
@@ -343,7 +356,7 @@ export class Elements {
           instances[0].toDbObject(),
           instances[0].constructor.name,
           upsert).then((res) => {
-            return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
+            return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
           });
       }
     }
@@ -354,7 +367,7 @@ export class Elements {
     }
   }
 
-  protected toElementArray(collection: IDocuments): Promise<IElement[]> {
+  protected toElementArray(collection: IDocuments): Promise<any> {
     let that: any = this;
     let result: any[] = [];
     if (that.containsIDocuments(collection)) {

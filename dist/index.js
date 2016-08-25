@@ -122,32 +122,33 @@ class Elements {
     }
     findById(id, collection) {
         return __awaiter(this, void 0, Promise, function* () {
-            let input = collection;
+            let inputColl = collection;
+            let inputId = id;
             let collectionName;
             if (typeof collection !== 'undefined') {
-                if (typeof input === 'string') {
-                    collectionName = input;
+                if (typeof inputColl === 'string') {
+                    collectionName = inputColl;
                 }
-                else if ('prototype' in input) {
-                    collectionName = input.prototype.constructor.name;
+                else if ('prototype' in inputColl) {
+                    collectionName = inputColl.prototype.constructor.name;
                 }
                 else {
-                    collectionName = input.constructor.name;
+                    collectionName = inputColl.constructor.name;
                 }
             }
-            else if (typeof id !== 'number'
-                && typeof id !== 'string') {
-                if ('constructor' in id) {
+            else if (typeof inputId !== 'number'
+                && typeof inputId !== 'string') {
+                if ('constructor' in inputId) {
                     collectionName = id.constructor.name;
                 }
-                if ('_id' in id) {
-                    id = id._id;
+                if ('_id' in inputId) {
+                    inputId = inputId._id;
                 }
                 else {
                     return Promise.reject(new Error('No valid id supplied.'));
                 }
             }
-            return yield this.findByQuery(collectionName, { _id: id }, 1);
+            return yield this.findByQuery(collectionName, { _id: inputId }, 1);
         });
     }
     mongoConnectWrapper() {
@@ -171,12 +172,16 @@ class Elements {
     }
     updateMongoElements(instances, collectionName, upsert = false) {
         return __awaiter(this, void 0, Promise, function* () {
-            return yield this.getMongoConnection().collection(collectionName).updateMany(instances, { upsert: upsert });
+            console.log(instances);
+            return yield this.getMongoConnection().collection(collectionName).updateMany({}, instances, { upsert: upsert });
         });
     }
-    updateMongoElementSingle(instance, collectionName, upsert = false) {
+    updateMongoElementSingle(instance, collectionName, upsert) {
         return __awaiter(this, void 0, Promise, function* () {
-            return yield this.getMongoConnection().collection(collectionName).updateOne(instance, { upsert: upsert });
+            if (!upsert) {
+                upsert = false;
+            }
+            return yield this.getMongoConnection().collection(collectionName).updateOne({}, instance, { upsert: upsert });
         });
     }
     validateAndSort(instances) {
@@ -202,9 +207,12 @@ class Elements {
             return Promise.resolve(collections);
         }
     }
-    mongoUpdate(collections, upsert = false) {
+    mongoUpdate(collections, upsert) {
         return __awaiter(this, void 0, Promise, function* () {
             let result = [];
+            if (!upsert) {
+                upsert = false;
+            }
             for (let collectionName in collections) {
                 let collectionFullName = collectionName;
                 result.push(yield this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
@@ -212,14 +220,17 @@ class Elements {
             return Promise.resolve(result);
         });
     }
-    instancesSave(instances, upsert = false) {
+    saveInstances(instances, upsert) {
+        if (!upsert) {
+            upsert = false;
+        }
         if (instances.length === 1) {
             if (instances[0].validate().length > 0) {
                 return Promise.reject(instances[0].validate());
             }
             else {
                 return this.updateMongoElementSingle(instances[0].toDbObject(), instances[0].constructor.name, upsert).then((res) => {
-                    return [{ result: res.result, ops: res.ops, insertedCount: res.insertedCount, insertedId: res.insertedId }];
+                    return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
                 });
             }
         }

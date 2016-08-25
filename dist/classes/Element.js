@@ -20,8 +20,11 @@ class Element {
     validate() {
         return this.elements.validate(this);
     }
-    save(upsert = false) {
-        return this.elements.instancesSave([this], upsert);
+    save(upsert) {
+        if (!upsert) {
+            upsert = false;
+        }
+        return this.elements.saveInstances([this], upsert);
     }
     toDbObject() {
         return this.elements.toDbObject(this);

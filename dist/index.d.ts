@@ -20,7 +20,7 @@ export declare class Elements {
     toDbObject(element: IElement): any;
     protected toDbObjRecursive(obj: Object, nested: boolean): any;
     mongoClose(): Promise<any>;
-    getMongoConnection(): any;
+    protected getMongoConnection(): any;
     getMongoCollections(): Promise<any>;
     containsIDocuments(obj: any): boolean;
     findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any>;
@@ -29,10 +29,10 @@ export declare class Elements {
     protected connectMongo(): Promise<void>;
     protected elasticConnectWrapper(): PromiseLike<any>;
     protected connectElastic(): Promise<void>;
-    protected updateMongoElements(instances: Object[], collectionName: string, upsert?: boolean): Promise<any>;
-    protected updateMongoElementSingle(instance: Object, collectionName: string, upsert?: boolean): Promise<any>;
+    protected updateMongoElements(instances: IElement[], collectionName: string, upsert?: boolean): Promise<any>;
+    protected updateMongoElementSingle(instance: IElement, collectionName: string, upsert?: boolean): Promise<any>;
     protected validateAndSort(instances: IElement[]): Promise<any>;
     protected mongoUpdate(collections: Object, upsert?: boolean): Promise<any>;
-    instancesSave(instances: IElement[], upsert?: boolean): Promise<any>;
-    protected toElementArray(collection: IDocuments): Promise<IElement[]>;
+    saveInstances(instances: IElement[], upsert?: boolean): Promise<any>;
+    protected toElementArray(collection: IDocuments): Promise<any>;
 }

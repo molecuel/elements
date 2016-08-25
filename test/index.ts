@@ -122,15 +122,18 @@ describe('mlcl', function() {
           }
         }
 
-        await testclass.save().then((res) => {
+        await testclass.save(true).then((res) => {
           (res.length).should.be.above(0);
           assert.equal(res[0].result.ok, 1);
           assert.equal(res[0].result.n, 1);
           return res;
         }).catch((err) => {
+          console.log(err);
           should.not.exist(err);
           return err;
         });
+        let doc = await el.getMongoConnection().collection('Post').findOne();
+        console.log(doc);
       });
 
     it('should NOT validate an Element-object, thus not saving it into its respective MongoDB collection',
@@ -164,8 +167,8 @@ describe('mlcl', function() {
         let testclass2: any = el.getClassInstance('post');
         testclass1.text = 'hello';
         testclass2.text = 'world';
-        testclass1._id = 1;
-        testclass2._id = 2;
+        testclass2._id = 1;
+        testclass1._id = 2;
 
         try {
           await el.getMongoConnection().dropCollection('Post');
@@ -175,8 +178,10 @@ describe('mlcl', function() {
             throw err;
           }
         }
+        let docs = await el.getMongoConnection().collection('Post').find({}).toArray()
+        console.log(docs);
 
-        await el.instanceSaveWrapper([testclass1, testclass2]).then((res) => {
+        await el.saveInstances([testclass1, testclass2]).then((res) => {
           if (typeof res === 'object') {
             assert.equal(res[0].result.ok, 1);
             (res[0].result.n).should.be.above(1);
@@ -208,15 +213,15 @@ describe('mlcl', function() {
         (res).should.be.above(0);
       })
       await el.findByQuery(testmodel, {}).then((res) => {
-        for (let doc of res.documents) {
-          result.push(el.toElementArray(doc)[0]);
-          (result[(result.length - 1)]).should.be.instanceOf(Element);
+        for (let doc of res) {
+          result.push(doc);
+          doc.should.be.instanceOf(Element);
         }
         (result.length).should.be.above(0);
         return res;
       });
     });
-
+    /*
     it('should deserialize an IDocuments-based object', async function() {
       let result: IElement[] = [];
       let testmodel: any = el.getClass('post');
@@ -233,6 +238,7 @@ describe('mlcl', function() {
         return res;
       });
     });
+    */
 
   })
 });

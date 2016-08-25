@@ -122,15 +122,18 @@ describe('mlcl', function () {
                         throw err;
                     }
                 }
-                yield testclass.save().then((res) => {
+                yield testclass.save(true).then((res) => {
                     (res.length).should.be.above(0);
                     assert.equal(res[0].result.ok, 1);
                     assert.equal(res[0].result.n, 1);
                     return res;
                 }).catch((err) => {
+                    console.log(err);
                     should.not.exist(err);
                     return err;
                 });
+                let doc = yield el.getMongoConnection().collection('Post').findOne();
+                console.log(doc);
             });
         });
         it('should NOT validate an Element-object, thus not saving it into its respective MongoDB collection', function () {
@@ -162,8 +165,8 @@ describe('mlcl', function () {
                 let testclass2 = el.getClassInstance('post');
                 testclass1.text = 'hello';
                 testclass2.text = 'world';
-                testclass1._id = 1;
-                testclass2._id = 2;
+                testclass2._id = 1;
+                testclass1._id = 2;
                 try {
                     yield el.getMongoConnection().dropCollection('Post');
                 }
@@ -172,7 +175,9 @@ describe('mlcl', function () {
                         throw err;
                     }
                 }
-                yield el.instanceSaveWrapper([testclass1, testclass2]).then((res) => {
+                let docs = yield el.getMongoConnection().collection('Post').find({}).toArray();
+                console.log(docs);
+                yield el.saveInstances([testclass1, testclass2]).then((res) => {
                     if (typeof res === 'object') {
                         assert.equal(res[0].result.ok, 1);
                         (res[0].result.n).should.be.above(1);
@@ -204,26 +209,9 @@ describe('mlcl', function () {
                     (res).should.be.above(0);
                 });
                 yield el.findByQuery(testmodel, {}).then((res) => {
-                    for (let doc of res.documents) {
-                        result.push(el.toElementArray(doc)[0]);
-                        (result[(result.length - 1)]).should.be.instanceOf(Element_1.Element);
-                    }
-                    (result.length).should.be.above(0);
-                    return res;
-                });
-            });
-        });
-        it('should deserialize an IDocuments-based object', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let result = [];
-                let testmodel = el.getClass('post');
-                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-                    (res).should.be.above(0);
-                });
-                yield el.getMongoDocuments(testmodel, {}).then((res) => {
-                    result = el.toElementArray(res);
-                    for (let doc of result) {
-                        (doc).should.be.instanceOf(testmodel);
+                    for (let doc of res) {
+                        result.push(doc);
+                        doc.should.be.instanceOf(Element_1.Element);
                     }
                     (result.length).should.be.above(0);
                     return res;
