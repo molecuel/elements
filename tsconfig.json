@@ -16,9 +16,9 @@
     "src/index.ts",
     "src/config.ts",
     "dist/index.d.ts",
-    "classes/ElasticOptions.ts",
     "interfaces/IElement.ts",
     "interfaces/IDocuments.ts",
+    "classes/ElasticOptions.ts",
     "classes/Element.ts"
   ],
   "exclude": [],

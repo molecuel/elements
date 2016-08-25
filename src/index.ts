@@ -176,11 +176,50 @@ export class Elements {
    * @param  {any}          query [description]
    * @return {Promise<any>}       [description]
    */
-  public async getMongoDocuments(model: IElement | any, query?: any, limit?: number): Promise<IDocuments> {
-    let collectionName = ('prototype' in model) ? model.prototype.constructor.name : model.constructor.name;
+  public async findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any> {
+    let input: any = collection;
+    let collectionName: string;
+    if (typeof input === 'string') {
+      collectionName = input;
+    }
+    else if ('prototype' in input) {
+      collectionName = input.prototype.constructor.name;
+    }
+    else {
+      collectionName = input.constructor.name;
+    }
     return await this.getMongoConnection().collection(collectionName).find(query).limit(limit || 0).toArray().then((res) => {
-      return { collection: collectionName, documents: res };
+      return this.toElementArray({ collection: collectionName, documents: res });
     });
+  }
+
+  public async findById(id: number | string | IElement, collection?: string | IElement): Promise<any> {
+    let input: any = collection;
+    let collectionName: string;
+    if (typeof collection !== 'undefined') {
+      if (typeof input === 'string') {
+        collectionName = input;
+      }
+      else if ('prototype' in input) {
+        collectionName = input.prototype.constructor.name;
+      }
+      else {
+        collectionName = input.constructor.name;
+      }
+    }
+    else if (typeof id !== 'number'
+      && typeof id !== 'string') {
+      if ('constructor' in id) {
+        collectionName = id.constructor.name;
+      }
+      if ('_id' in id) {
+        id = id._id;
+      }
+      else {
+        return Promise.reject(new Error('No valid id supplied.'));
+      }
+    }
+    return await this.findByQuery(collectionName, { _id: id }, 1);
   }
 
   /**
@@ -294,7 +333,7 @@ export class Elements {
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public instanceSaveWrapper(instances: IElement[], upsert: boolean = false): Promise<any> {
+  public instancesSave(instances: IElement[], upsert: boolean = false): Promise<any> {
     if (instances.length === 1) {
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
@@ -318,7 +357,6 @@ export class Elements {
   protected toElementArray(collection: IDocuments): Promise<IElement[]> {
     let that: any = this;
     let result: any[] = [];
-    // check wether or not obj is { collection:'collectionName'; documents:[...doc] } or single document
     if (that.containsIDocuments(collection)) {
       // build array of collection based elements
       for (let i = 0; i < collection.documents.length; i++) {
@@ -331,8 +369,7 @@ export class Elements {
       return Promise.resolve(result);
     }
     else {
-      return Promise.reject(new Error('Could not determine class'))
+      return Promise.reject(new Error('Could not determine class'));
     }
   }
-
 }

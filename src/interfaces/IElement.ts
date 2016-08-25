@@ -5,4 +5,5 @@ export interface IElement {
   setFactory(elements);
   validate();
   toDbObject();
+  save();
 }

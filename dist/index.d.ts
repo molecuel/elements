@@ -23,7 +23,8 @@ export declare class Elements {
     getMongoConnection(): any;
     getMongoCollections(): Promise<any>;
     containsIDocuments(obj: any): boolean;
-    getMongoDocuments(model: IElement | any, query?: any, limit?: number): Promise<IDocuments>;
+    findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any>;
+    findById(id: number | string | IElement, collection?: string | IElement): Promise<any>;
     protected mongoConnectWrapper(): Promise<any>;
     protected connectMongo(): Promise<void>;
     protected elasticConnectWrapper(): PromiseLike<any>;
@@ -32,6 +33,6 @@ export declare class Elements {
     protected updateMongoElementSingle(instance: Object, collectionName: string, upsert?: boolean): Promise<any>;
     protected validateAndSort(instances: IElement[]): Promise<any>;
     protected mongoUpdate(collections: Object, upsert?: boolean): Promise<any>;
-    instanceSaveWrapper(instances: IElement[], upsert?: boolean): Promise<any>;
+    instancesSave(instances: IElement[], upsert?: boolean): Promise<any>;
     protected toElementArray(collection: IDocuments): Promise<IElement[]>;
 }

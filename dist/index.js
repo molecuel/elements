@@ -102,12 +102,52 @@ class Elements {
         }
         return true;
     }
-    getMongoDocuments(model, query, limit) {
+    findByQuery(collection, query, limit) {
         return __awaiter(this, void 0, Promise, function* () {
-            let collectionName = ('prototype' in model) ? model.prototype.constructor.name : model.constructor.name;
+            let input = collection;
+            let collectionName;
+            if (typeof input === 'string') {
+                collectionName = input;
+            }
+            else if ('prototype' in input) {
+                collectionName = input.prototype.constructor.name;
+            }
+            else {
+                collectionName = input.constructor.name;
+            }
             return yield this.getMongoConnection().collection(collectionName).find(query).limit(limit || 0).toArray().then((res) => {
-                return { collection: collectionName, documents: res };
+                return this.toElementArray({ collection: collectionName, documents: res });
             });
+        });
+    }
+    findById(id, collection) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let input = collection;
+            let collectionName;
+            if (typeof collection !== 'undefined') {
+                if (typeof input === 'string') {
+                    collectionName = input;
+                }
+                else if ('prototype' in input) {
+                    collectionName = input.prototype.constructor.name;
+                }
+                else {
+                    collectionName = input.constructor.name;
+                }
+            }
+            else if (typeof id !== 'number'
+                && typeof id !== 'string') {
+                if ('constructor' in id) {
+                    collectionName = id.constructor.name;
+                }
+                if ('_id' in id) {
+                    id = id._id;
+                }
+                else {
+                    return Promise.reject(new Error('No valid id supplied.'));
+                }
+            }
+            return yield this.findByQuery(collectionName, { _id: id }, 1);
         });
     }
     mongoConnectWrapper() {
@@ -172,7 +212,7 @@ class Elements {
             return Promise.resolve(result);
         });
     }
-    instanceSaveWrapper(instances, upsert = false) {
+    instancesSave(instances, upsert = false) {
         if (instances.length === 1) {
             if (instances[0].validate().length > 0) {
                 return Promise.reject(instances[0].validate());

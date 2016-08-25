@@ -184,26 +184,26 @@ describe('mlcl', function () {
                 });
             });
         });
-        it('should get a document based off an Element-object/-model as query from the respective collection', function () {
+        it('should get documents based off an Element-object/-model as query from the respective collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let testmodel = el.getClass('post');
                 yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
                     (res).should.be.above(0);
                 });
-                yield el.getMongoDocuments(testmodel, {}).then((res) => {
+                yield el.findByQuery(testmodel, {}).then((res) => {
                     (res.documents.length).should.be.above(0);
                     return res;
                 });
             });
         });
-        it('should deserialize an array of DbObjects', function () {
+        it('should deserialize an array of DbObjects, selection based off an Element-object/-model as query from the respective collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let result = [];
                 let testmodel = el.getClass('post');
                 yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
                     (res).should.be.above(0);
                 });
-                yield el.getMongoDocuments(testmodel, {}).then((res) => {
+                yield el.findByQuery(testmodel, {}).then((res) => {
                     for (let doc of res.documents) {
                         result.push(el.toElementArray(doc)[0]);
                         (result[(result.length - 1)]).should.be.instanceOf(Element_1.Element);
