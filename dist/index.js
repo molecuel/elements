@@ -62,7 +62,7 @@ class Elements {
             return o.property;
         });
         for (let key in that) {
-            if (({}).hasOwnProperty.call(that, key)
+            if (Object.hasOwnProperty.call(that, key)
                 && that[key] !== undefined
                 && propertiesValidatorDecorators[key]) {
                 if (key === '_id'
@@ -84,6 +84,9 @@ class Elements {
     }
     getMongoConnection() {
         return this.mongoConnection;
+    }
+    getElasticConnection() {
+        return this.elasticClient;
     }
     getMongoCollections() {
         return __awaiter(this, void 0, Promise, function* () {
@@ -226,7 +229,8 @@ class Elements {
             }
             for (let collectionName in collections) {
                 let collectionFullName = collectionName;
-                result.push(yield this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
+                let prom = yield this.updateMongoElements(collections[collectionName], collectionFullName, upsert);
+                result.push({ [collectionName]: prom });
             }
             return Promise.resolve(result);
         });

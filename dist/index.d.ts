@@ -21,6 +21,7 @@ export declare class Elements {
     protected toDbObjRecursive(obj: Object, nested: boolean): any;
     mongoClose(): Promise<any>;
     protected getMongoConnection(): any;
+    protected getElasticConnection(): any;
     getMongoCollections(): Promise<any>;
     containsIDocuments(obj: any): boolean;
     findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any>;

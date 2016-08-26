@@ -58,7 +58,6 @@ describe('mlcl', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 this.timeout(15000);
                 el = new dist_1.Elements();
-                console.log(el);
                 try {
                     yield el.connect();
                 }
@@ -84,13 +83,13 @@ describe('mlcl', function () {
             let mymodel = el.getClass('test');
             assert(mymodel.elements instanceof dist_1.Elements);
         });
-        it('should NOT validate the object', function () {
+        it('should NOT validate an object', function () {
             let testclass = el.getClassInstance('post');
             testclass.text = 'huhu';
             let errors = testclass.validate();
             assert(errors.length > 0);
         });
-        it('should validate the object', function () {
+        it('should validate an object', function () {
             let testclass = el.getClassInstance('post');
             testclass.text = 'hello';
             let errors = testclass.validate();
@@ -171,17 +170,14 @@ describe('mlcl', function () {
                     testClasses[i]._id = (i + 1);
                     testClasses[i].prop = ('hello' + i);
                 }
-                let testclass1 = el.getClassInstance('post');
-                let testclass2 = el.getClassInstance('post');
-                testclass1.text = 'hello';
-                testclass2.text = 'world';
-                testclass2._id = 1;
-                testclass1._id = 2;
                 yield el.saveInstances(testClasses, true).then((res) => {
                     if (typeof res === 'object') {
-                        console.log(res);
-                        assert.equal(res[0].ok, 1);
-                        (res[0].nUpserted + res[0].nModified).should.be.above(1);
+                        _.each(res, (colRes) => {
+                            for (let resProps in colRes) {
+                                assert.equal(colRes[resProps].ok, 1);
+                                (colRes[resProps].nUpserted + colRes[resProps].nModified).should.be.above(1);
+                            }
+                        });
                     }
                     return res;
                 }).catch((err) => {
@@ -193,9 +189,6 @@ describe('mlcl', function () {
         it('should get documents based off an Element-object/-model as query from the respective collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let testmodel = el.getClass('post');
-                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-                    (res).should.be.above(0);
-                });
                 yield el.findByQuery(testmodel, {}).then((res) => {
                     (res.length).should.be.above(0);
                     return res;
@@ -206,15 +199,38 @@ describe('mlcl', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let result = [];
                 let testmodel = el.getClass('post');
-                yield el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-                    (res).should.be.above(0);
-                });
                 yield el.findByQuery(testmodel, {}).then((res) => {
                     for (let doc of res) {
                         result.push(doc);
                         doc.should.be.instanceOf(Element_1.Element);
                     }
                     (result.length).should.be.above(0);
+                    return res;
+                });
+            });
+        });
+        it('should do some stuff with elastic', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let elastic = el.getElasticConnection();
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass._id = 1;
+                console.log(testclass._id.name);
+                let testbody = testclass.toDbObject();
+                testbody.address = 'here';
+                delete testbody._id;
+                console.log(testbody);
+                yield elastic.index({
+                    index: 'test',
+                    type: 'post',
+                    id: testclass._id,
+                    body: testbody
+                }).then((res) => {
+                    console.log(res);
+                    return res;
+                });
+                yield elastic.search({ q: '*' }).then((res) => {
+                    console.log(res);
                     return res;
                 });
             });

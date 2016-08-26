@@ -41,7 +41,6 @@ describe('mlcl', function() {
     it('should connect the databases', async function() {
       this.timeout(15000);
       el = new Elements();
-      console.log(el);
       try {
         await el.connect();
       } catch (e) {
@@ -75,7 +74,7 @@ describe('mlcl', function() {
 
     });
 
-    it('should NOT validate the object', function() {
+    it('should NOT validate an object', function() {
       let testclass: any = el.getClassInstance('post');
       testclass.text = 'huhu';
       let errors = testclass.validate();
@@ -83,7 +82,7 @@ describe('mlcl', function() {
 
     });
 
-    it('should validate the object', function() {
+    it('should validate an object', function() {
       let testclass: any = el.getClassInstance('post');
       testclass.text = 'hello';
       let errors = testclass.validate();
@@ -185,69 +184,48 @@ describe('mlcl', function() {
           testClasses[i]._id = (i + 1);
           testClasses[i].prop = ('hello' + i);
         }
-        let testclass1: any = el.getClassInstance('post');
-        let testclass2: any = el.getClassInstance('post');
-        testclass1.text = 'hello';
-        testclass2.text = 'world';
-        testclass2._id = 1;
-        testclass1._id = 2;
 
-        // try {
-        //   await el.getMongoConnection().dropCollection('Post');
-        // }
-        // catch (err) {
-        //   if (!(err instanceof mongodb.MongoError)) {
-        //     throw err;
-        //   }
-        // }
 
-        // let docs = await el.getMongoConnection().collection('Post').find({}).toArray()
-        // console.log(docs);
-        // console.log([testclass1.toDbObject(), testclass2.toDbObject()]);
-
-        // await el.saveInstances([testclass1, testclass2], true).then((res) => {
         await el.saveInstances(testClasses, true).then((res) => {
           if (typeof res === 'object') {
-            // for (let prop in res[0]) {
-            //   if (typeof res[0][prop] !== 'function')
-            //     console.log(prop + ': ' + res[0][prop]);
-            // }
-            console.log(res);
-            assert.equal(res[0].ok, 1);
-            (res[0].nUpserted + res[0].nModified).should.be.above(1);
+            _.each(res, (colRes) => {
+              for (let resProps in colRes) {
+
+                // console.log(resProps + ': {');
+                // for (let prop in colRes[resProps]) {
+                //   if (typeof colRes[resProps][prop] !== 'function')
+                //     console.log('  ' + prop + ': ' + colRes[resProps][prop]);
+                //   else if (prop === 'getUpsertedIds') {
+                //     console.log(colRes[resProps][prop]());
+                //   }
+                // }
+                // console.log('}');
+
+                assert.equal(colRes[resProps].ok, 1);
+                (colRes[resProps].nUpserted + colRes[resProps].nModified).should.be.above(1);
+              }
+            });
           }
           return res;
         }).catch((err) => {
           should.not.exist(err);
           return err;
         });
-
-        // docs = await el.getMongoConnection().collection('Post').find({}).toArray()
-        // console.log(docs);
-
       });
 
     it('should get documents based off an Element-object/-model as query from the respective collection', async function() {
       let testmodel: any = el.getClass('post');
 
-      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-        (res).should.be.above(0);
-      })
       await el.findByQuery(testmodel, {}).then((res) => {
-        // console.log(res);
         (res.length).should.be.above(0);
         return res;
       });
-
     });
 
     it('should deserialize an array of DbObjects, selection based off an Element-object/-model as query from the respective collection', async function() {
       let result: IElement[] = [];
       let testmodel: any = el.getClass('post');
 
-      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-        (res).should.be.above(0);
-      })
       await el.findByQuery(testmodel, {}).then((res) => {
         for (let doc of res) {
           result.push(doc);
@@ -256,31 +234,41 @@ describe('mlcl', function() {
         (result.length).should.be.above(0);
         return res;
       });
-
     });
-    /*
-    it('should deserialize an IDocuments-based object', async function() {
-      let result: IElement[] = [];
-      let testmodel: any = el.getClass('post');
 
-      await el.getMongoConnection().collection(testmodel.prototype.constructor.name).count().then((res) => {
-        (res).should.be.above(0);
-      })
-      await el.getMongoDocuments(testmodel, {}).then((res) => {
-        result = el.toElementArray(res);
-        for (let doc of result) {
-          (doc).should.be.instanceOf(testmodel);
-        }
-        (result.length).should.be.above(0);
+    it('should do some stuff with elastic', async function() {
+      let elastic = el.getElasticConnection();
+
+      let testclass: any = el.getClassInstance('post');
+      testclass.text = 'hello';
+      testclass._id = 1;
+      console.log(testclass._id.name);
+      let testbody = testclass.toDbObject();
+      testbody.address = 'here';
+      delete testbody._id;
+      console.log(testbody);
+
+      await elastic.index({
+        index: 'test',
+        type: 'post',
+        id: testclass._id,
+        body: testbody
+      }).then((res) => {
+        console.log(res);
+        return res;
+      });
+
+      await elastic.search({ q: '*' }).then((res) => {
+        console.log(res);
         return res;
       });
 
     });
-    */
+
     after(function(done) {
       el.getMongoConnection().dropDatabase(function(error) {
         should.not.exists(error);
-        // elements.elastic.deleteIndex('*', function(error) {
+        // el.getElasticConnection.deleteIndex('*', function(error) {
         //   should.not.exists(error);
         // });
         done();

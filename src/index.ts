@@ -106,7 +106,7 @@ export class Elements {
 
     for (let key in that) {
       // check for non-prototype, validator-decorated property
-      if (({}).hasOwnProperty.call(that, key)
+      if (Object.hasOwnProperty.call(that, key)
         && that[key] !== undefined
         && propertiesValidatorDecorators[key]) {
         // check for _id
@@ -142,6 +142,14 @@ export class Elements {
    */
   protected getMongoConnection(): any {
     return this.mongoConnection;
+  }
+
+  /**
+  * Return the mongo connection
+  * @return {any} [description]
+  */
+  protected getElasticConnection(): any {
+    return this.elasticClient;
   }
 
   /**
@@ -340,7 +348,8 @@ export class Elements {
     }
     for (let collectionName in collections) {
       let collectionFullName: string = collectionName;
-      result.push(await this.updateMongoElements(collections[collectionName], collectionFullName, upsert));
+      let prom = await this.updateMongoElements(collections[collectionName], collectionFullName, upsert);
+      result.push({ [collectionName]: prom });
     }
     return Promise.resolve(result);
   }
