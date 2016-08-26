@@ -96,6 +96,12 @@ export class Elements {
     return this.toDbObjRecursive(element, false);
   }
 
+  /**
+   * Protected recursive object serialization
+   * @param  {Object}  obj     [description]
+   * @param  {boolean} nested  [description]
+   * @return any               [description]
+   */
   protected toDbObjRecursive(obj: Object, nested: boolean): any {
     let that = obj;
     let result: any = {};
@@ -103,7 +109,6 @@ export class Elements {
     let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
       return o.property;
     });
-
     for (let key in that) {
       // check for non-prototype, validator-decorated property
       if (Object.hasOwnProperty.call(that, key)
@@ -145,9 +150,9 @@ export class Elements {
   }
 
   /**
-  * Return the mongo connection
-  * @return {any} [description]
-  */
+   * Return the mongo connection
+   * @return {any} [description]
+   */
   protected getElasticConnection(): any {
     return this.elasticClient;
   }
@@ -201,6 +206,12 @@ export class Elements {
     });
   }
 
+  /**
+   * Get Element based object from current Db and supplied collection by Id
+   * @param {number | string | IElement} id          [description]
+   * @param {string | IElement}          collection  [description]
+   * @return  [description]
+   */
   public async findById(id: number | string | IElement, collection?: string | IElement): Promise<any> {
     let inputColl: any = collection;
     let inputId: any = id;
@@ -384,6 +395,11 @@ export class Elements {
     }
   }
 
+  /**
+   * Convert document search result to array of Element objects
+   * @param  {IDocuments}   collection [description]
+   * @return {Promise<any>}            [description]
+   */
   protected toElementArray(collection: IDocuments): Promise<any> {
     let that: any = this;
     let result: any[] = [];
