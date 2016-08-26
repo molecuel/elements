@@ -265,9 +265,20 @@ export class Elements {
    * @param  {mongodb.CollectionInsertManyOptions} options        [description]
    * @return {Promise<any>}                                       [description]
    */
-  protected async updateMongoElements(instances: IElement[], collectionName: string, upsert: boolean = false): Promise<any> {
-    console.log(instances);
-    return await this.getMongoConnection().collection(collectionName).updateMany({}, instances, { upsert: upsert }); // does NOT upsert documents with predefined _id via array; find->insert?? / bulk.find({ _id : { $in : instancesIdArray } }).update(instances).exec(); ??
+  protected async updateMongoElements(instances: IElement[], collectionName: string, upsert?: boolean): Promise<any> {
+    if (!upsert) {
+      upsert = false;
+    }
+    let bulk = await this.getMongoConnection().collection(collectionName).initializeUnorderedBulkOp();
+    _.each(instances, (instance) => {
+      if (upsert) {
+        bulk.find({ _id: instance._id }).upsert().updateOne(instance);
+      }
+      else {
+        bulk.find({ _id: instance._id }).updateOne(instance);
+      }
+    });
+    return await bulk.execute();
   }
 
   /**
@@ -281,10 +292,7 @@ export class Elements {
     if (!upsert) {
       upsert = false;
     }
-    return await this.getMongoConnection().collection(collectionName).updateOne({}, instance, { upsert: upsert });
-    // console.log(prom);
-    // console.log(collectionName);
-    // console.log(upsert);
+    return await this.getMongoConnection().collection(collectionName).updateOne({ _id: instance._id }, instance, { upsert: upsert });
   }
 
   /**

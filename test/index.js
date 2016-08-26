@@ -33,7 +33,7 @@ __decorate([
     __metadata('design:type', Number)
 ], Post.prototype, "_id", void 0);
 __decorate([
-    V.InArray(['hello', 'world']), 
+    V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5']), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
 class SmallTestClass extends Element_1.Element {
@@ -58,6 +58,7 @@ describe('mlcl', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 this.timeout(15000);
                 el = new dist_1.Elements();
+                console.log(el);
                 try {
                     yield el.connect();
                 }
@@ -109,33 +110,6 @@ describe('mlcl', function () {
                 should.not.exist(err);
             }
         });
-        it('should validate an Element-object and save it into its respective MongoDB collection', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                testclass._id = 1;
-                try {
-                    yield el.getMongoConnection().dropCollection('Post');
-                }
-                catch (err) {
-                    if (!(err instanceof mongodb.MongoError)) {
-                        throw err;
-                    }
-                }
-                yield testclass.save(true).then((res) => {
-                    (res.length).should.be.above(0);
-                    assert.equal(res[0].result.ok, 1);
-                    assert.equal(res[0].result.n, 1);
-                    return res;
-                }).catch((err) => {
-                    console.log(err);
-                    should.not.exist(err);
-                    return err;
-                });
-                let doc = yield el.getMongoConnection().collection('Post').findOne();
-                console.log(doc);
-            });
-        });
         it('should NOT validate an Element-object, thus not saving it into its respective MongoDB collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 let testclass = el.getClassInstance('post');
@@ -159,14 +133,11 @@ describe('mlcl', function () {
                 });
             });
         });
-        it('should validate an array of Element-objects and save them into their respective MongoDB collection(s)', function () {
+        it('should validate an Element-object and save it into its respective MongoDB collection', function () {
             return __awaiter(this, void 0, void 0, function* () {
-                let testclass1 = el.getClassInstance('post');
-                let testclass2 = el.getClassInstance('post');
-                testclass1.text = 'hello';
-                testclass2.text = 'world';
-                testclass2._id = 1;
-                testclass1._id = 2;
+                let testclass = el.getClassInstance('post');
+                testclass.text = 'hello';
+                testclass._id = 1;
                 try {
                     yield el.getMongoConnection().dropCollection('Post');
                 }
@@ -175,12 +146,42 @@ describe('mlcl', function () {
                         throw err;
                     }
                 }
-                let docs = yield el.getMongoConnection().collection('Post').find({}).toArray();
-                console.log(docs);
-                yield el.saveInstances([testclass1, testclass2]).then((res) => {
+                yield testclass.save(true).then((res) => {
+                    (res.length).should.be.above(0);
+                    assert.equal(res[0].result.ok, 1);
+                    assert.equal(res[0].result.n, 1);
+                    return res;
+                }).catch((err) => {
+                    console.log(err);
+                    should.not.exist(err);
+                    return err;
+                });
+            });
+        });
+        it('should validate an array of Element-objects and save them into their respective MongoDB collection(s)', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let testClasses = [];
+                for (let i = 0; i < 4; i++) {
+                    testClasses.push(el.getClassInstance('post'));
+                    testClasses[i]._id = (i + 1);
+                    testClasses[i].text = ('earth' + (i + 1));
+                }
+                for (let i = 4; i < 6; i++) {
+                    testClasses.push(el.getClassInstance('test'));
+                    testClasses[i]._id = (i + 1);
+                    testClasses[i].prop = ('hello' + i);
+                }
+                let testclass1 = el.getClassInstance('post');
+                let testclass2 = el.getClassInstance('post');
+                testclass1.text = 'hello';
+                testclass2.text = 'world';
+                testclass2._id = 1;
+                testclass1._id = 2;
+                yield el.saveInstances(testClasses, true).then((res) => {
                     if (typeof res === 'object') {
-                        assert.equal(res[0].result.ok, 1);
-                        (res[0].result.n).should.be.above(1);
+                        console.log(res);
+                        assert.equal(res[0].ok, 1);
+                        (res[0].nUpserted + res[0].nModified).should.be.above(1);
                     }
                     return res;
                 }).catch((err) => {
@@ -196,7 +197,7 @@ describe('mlcl', function () {
                     (res).should.be.above(0);
                 });
                 yield el.findByQuery(testmodel, {}).then((res) => {
-                    (res.documents.length).should.be.above(0);
+                    (res.length).should.be.above(0);
                     return res;
                 });
             });
@@ -216,6 +217,12 @@ describe('mlcl', function () {
                     (result.length).should.be.above(0);
                     return res;
                 });
+            });
+        });
+        after(function (done) {
+            el.getMongoConnection().dropDatabase(function (error) {
+                should.not.exists(error);
+                done();
             });
         });
     });

@@ -170,10 +170,21 @@ class Elements {
             this.elasticConnection = yield this.elasticConnectWrapper();
         });
     }
-    updateMongoElements(instances, collectionName, upsert = false) {
+    updateMongoElements(instances, collectionName, upsert) {
         return __awaiter(this, void 0, Promise, function* () {
-            console.log(instances);
-            return yield this.getMongoConnection().collection(collectionName).updateMany({}, instances, { upsert: upsert });
+            if (!upsert) {
+                upsert = false;
+            }
+            let bulk = yield this.getMongoConnection().collection(collectionName).initializeUnorderedBulkOp();
+            _.each(instances, (instance) => {
+                if (upsert) {
+                    bulk.find({ _id: instance._id }).upsert().updateOne(instance);
+                }
+                else {
+                    bulk.find({ _id: instance._id }).updateOne(instance);
+                }
+            });
+            return yield bulk.execute();
         });
     }
     updateMongoElementSingle(instance, collectionName, upsert) {
@@ -181,7 +192,7 @@ class Elements {
             if (!upsert) {
                 upsert = false;
             }
-            return yield this.getMongoConnection().collection(collectionName).updateOne({}, instance, { upsert: upsert });
+            return yield this.getMongoConnection().collection(collectionName).updateOne({ _id: instance._id }, instance, { upsert: upsert });
         });
     }
     validateAndSort(instances) {
