@@ -25,6 +25,7 @@ const _ = require('lodash');
 const dist_1 = require('../dist');
 const Element_1 = require('../dist/classes/Element');
 const V = require('tsvalidate');
+const ELD = require('../dist/customDecorators');
 class Post extends Element_1.Element {
 }
 __decorate([
@@ -36,7 +37,7 @@ __decorate([
     V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5']), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
-class SmallTestClass extends Element_1.Element {
+let SmallTestClass = class SmallTestClass extends Element_1.Element {
     constructor(value, obj) {
         super();
         this.func = function () { };
@@ -45,11 +46,15 @@ class SmallTestClass extends Element_1.Element {
     }
     meth() {
     }
-}
+};
 __decorate([
     V.Contains('hello'), 
     __metadata('design:type', Object)
 ], SmallTestClass.prototype, "prop", void 0);
+SmallTestClass = __decorate([
+    ELD.UseMongoCollection('Post'), 
+    __metadata('design:paramtypes', [Object, Object])
+], SmallTestClass);
 describe('mlcl', function () {
     let el;
     let bson = new BSON.BSONPure.BSON();
@@ -209,36 +214,13 @@ describe('mlcl', function () {
                 });
             });
         });
-        it('should do some stuff with elastic', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let elastic = el.getElasticConnection();
-                let testclass = el.getClassInstance('post');
-                testclass.text = 'hello';
-                testclass._id = 1;
-                console.log(testclass._id.name);
-                let testbody = testclass.toDbObject();
-                testbody.address = 'here';
-                delete testbody._id;
-                console.log(testbody);
-                yield elastic.index({
-                    index: 'test',
-                    type: 'post',
-                    id: testclass._id,
-                    body: testbody
-                }).then((res) => {
-                    console.log(res);
-                    return res;
-                });
-                yield elastic.search({ q: '*' }).then((res) => {
-                    console.log(res);
-                    return res;
-                });
-            });
-        });
         after(function (done) {
             el.getMongoConnection().dropDatabase(function (error) {
                 should.not.exists(error);
-                done();
+                el.getElasticConnection().indices.delete({ index: '*' }, function (error) {
+                    should.not.exists(error);
+                    done();
+                });
             });
         });
     });

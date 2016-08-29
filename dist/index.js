@@ -12,6 +12,7 @@ const elasticsearch = require('elasticsearch');
 require('reflect-metadata');
 const _ = require('lodash');
 const TSV = require('tsvalidate');
+const ELD = require('./customDecorators');
 const ElasticOptions_1 = require('./classes/ElasticOptions');
 var Element_1 = require('./classes/Element');
 exports.Element = Element_1.Element;
@@ -39,10 +40,10 @@ class Elements {
         this.elementStore.set(name, definition);
     }
     getClass(name) {
-        return this.elementStore.get(name || 'element');
+        return this.elementStore.get(name);
     }
     getClassInstance(name) {
-        let elementClass = this.elementStore.get(name || 'element');
+        let elementClass = this.elementStore.get(name);
         let classInstance = new elementClass();
         classInstance.setFactory(this);
         return classInstance;
@@ -202,12 +203,23 @@ class Elements {
         let errors = [];
         let collections = {};
         for (let instance of instances) {
+            let metadata = Reflect.getMetadata(ELD.METADATAKEY, instance.constructor);
+            let collectionName = instance.constructor.name;
+            _.each(metadata, (entry) => {
+                if ('type' in entry
+                    && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+                    && 'value' in entry
+                    && 'property' in entry
+                    && entry.property === instance.constructor.name) {
+                    collectionName = entry.value;
+                }
+            });
             if (instance.validate().length === 0) {
-                if (!collections[instance.constructor.name]) {
-                    collections[instance.constructor.name] = [instance.toDbObject()];
+                if (!collections[collectionName]) {
+                    collections[collectionName] = [instance.toDbObject()];
                 }
                 else {
-                    collections[instance.constructor.name].push(instance.toDbObject());
+                    collections[collectionName].push(instance.toDbObject());
                 }
             }
             else {

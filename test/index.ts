@@ -9,6 +9,7 @@ import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
 import { IElement } from '../dist/interfaces/IElement';
 import * as V from 'tsvalidate';
+import * as ELD from '../dist/customDecorators';
 
 class Post extends Element {
   @V.ValidateType()
@@ -18,6 +19,7 @@ class Post extends Element {
   text: string;
 }
 
+@ELD.UseMongoCollection('Post')
 class SmallTestClass extends Element {
   constructor(value?: any, obj?: Object) {
     super();
@@ -185,7 +187,6 @@ describe('mlcl', function() {
           testClasses[i].prop = ('hello' + i);
         }
 
-
         await el.saveInstances(testClasses, true).then((res) => {
           if (typeof res === 'object') {
             _.each(res, (colRes) => {
@@ -236,42 +237,72 @@ describe('mlcl', function() {
       });
     });
 
-    it('should do some stuff with elastic', async function() {
-      let elastic = el.getElasticConnection();
-
-      let testclass: any = el.getClassInstance('post');
-      testclass.text = 'hello';
-      testclass._id = 1;
-      console.log(testclass._id.name);
-      let testbody = testclass.toDbObject();
-      testbody.address = 'here';
-      delete testbody._id;
-      console.log(testbody);
-
-      await elastic.index({
-        index: 'test',
-        type: 'post',
-        id: testclass._id,
-        body: testbody
-      }).then((res) => {
-        console.log(res);
-        return res;
-      });
-
-      await elastic.search({ q: '*' }).then((res) => {
-        console.log(res);
-        return res;
-      });
-
-    });
+    // it('should do some stuff with elastic', async function() {
+    //   let elastic = el.getElasticConnection();
+    //   let testClasses: any[] = [];
+    //   for (let i = 0; i < 4; i++) {
+    //     testClasses.push(el.getClassInstance('post'));
+    //     testClasses[i]._id = (i + 1);
+    //     testClasses[i].text = ('earth' + (i + 1));
+    //   }
+    //   for (let i = 4; i < 6; i++) {
+    //     testClasses.push(el.getClassInstance('test'));
+    //     testClasses[i]._id = (i + 1);
+    //     testClasses[i].prop = ('hello' + i);
+    //   }
+    //   let posttestbody = testClasses[0].toDbObject();
+    //   posttestbody.address = 'here';
+    //   delete posttestbody._id;
+    //   console.log(posttestbody);
+    //   let testtestbody = testClasses[testClasses.length - 1].toDbObject();
+    //   delete testtestbody._id;
+    //   console.log(testtestbody);
+    //
+    //   await elastic.index({
+    //     index: 'test',
+    //     type: 'post',
+    //     id: testClasses[0]._id,
+    //     body: posttestbody
+    //   }).then((res) => {
+    //     // console.log(res);
+    //     return res;
+    //   });
+    //   await elastic.create({
+    //     index: 'test',
+    //     type: 'test',
+    //     id: testClasses.length,
+    //     body: testtestbody
+    //   }).then((res) => {
+    //     // console.log(res);
+    //     return res;
+    //   }).catch((err) => {
+    //     console.log(err);
+    //     return err;
+    //   })
+    //
+    //   // await elastic.bulk({
+    //   //   body: [
+    //   //
+    //   //   ]
+    //   // }).then((res) => {
+    //   //
+    //   //   return res;
+    //   // })
+    //
+    //   await elastic.search({ q: '*' }).then((res) => {
+    //     console.log(res.hits.hits);
+    //     return res;
+    //   });
+    //
+    // });
 
     after(function(done) {
       el.getMongoConnection().dropDatabase(function(error) {
         should.not.exists(error);
-        // el.getElasticConnection.deleteIndex('*', function(error) {
-        //   should.not.exists(error);
-        // });
-        done();
+        el.getElasticConnection().indices.delete({ index: '*' }, function(error) {
+          should.not.exists(error);
+          done();
+        });
       });
     });
   })

@@ -5,10 +5,11 @@ import 'reflect-metadata';
 import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
 
+import * as ELD from './customDecorators';
 import { ElasticOptions } from './classes/ElasticOptions';
 import { IElement } from './interfaces/IElement';
 import { IDocuments } from './interfaces/IDocuments';
-import { Element } from './classes/Element';
+// import { Element } from './classes/Element';
 export { Element as Element } from './classes/Element';
 
 
@@ -62,7 +63,7 @@ export class Elements {
    * @return {IElement}      [description]
    */
   public getClass(name: string): IElement {
-    return this.elementStore.get(name || 'element');
+    return this.elementStore.get(name);
   }
 
   /**
@@ -71,7 +72,7 @@ export class Elements {
    * @return {IElement}      [description]
    */
   public getClassInstance(name: string): any {
-    let elementClass: any = this.elementStore.get(name || 'element');
+    let elementClass: any = this.elementStore.get(name);
     let classInstance: IElement = new elementClass();
     classInstance.setFactory(this);
     return classInstance;
@@ -326,12 +327,24 @@ export class Elements {
     // validate all instances and sort transformed objects into array based collections per model name;
     for (let instance of instances) {
 
+      let metadata = Reflect.getMetadata(ELD.METADATAKEY, instance.constructor);
+      let collectionName: string = instance.constructor.name;
+      _.each(metadata, (entry) => {
+        if ('type' in entry
+          && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+          && 'value' in entry
+          && 'property' in entry
+          && entry.property === instance.constructor.name) {
+
+          collectionName = entry.value;
+        }
+      });
       if (instance.validate().length === 0) {
-        if (!collections[instance.constructor.name]) {
-          collections[instance.constructor.name] = [instance.toDbObject()];
+        if (!collections[collectionName]) {
+          collections[collectionName] = [instance.toDbObject()];
         }
         else {
-          collections[instance.constructor.name].push(instance.toDbObject());
+          collections[collectionName].push(instance.toDbObject());
         }
       }
       else {
