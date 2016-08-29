@@ -152,7 +152,24 @@ class Elements {
                     return Promise.reject(new Error('No valid id supplied.'));
                 }
             }
+            else {
+                return Promise.reject(new Error('Could not determine target collection.'));
+            }
             return yield this.findByQuery(collectionName, { _id: inputId }, 1);
+        });
+    }
+    search(query) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let input = query;
+            if (this.elasticOptions.prefix) {
+                if (!input.index) {
+                    input.index = this.elasticOptions.prefix + '-*';
+                }
+                else if (!input.index.match(new RegExp('^' + this.elasticOptions.prefix + '-'))) {
+                    input.index = this.elasticOptions.prefix + '-' + input.index;
+                }
+            }
+            return yield this.getElasticConnection().search(input);
         });
     }
     mongoConnectWrapper() {
@@ -256,7 +273,26 @@ class Elements {
                 return Promise.reject(instances[0].validate());
             }
             else {
-                return this.updateMongoElementSingle(instances[0].toDbObject(), instances[0].constructor.name, upsert).then((res) => {
+                let metadata = Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor);
+                let collectionName = instances[0].constructor.name;
+                _.each(metadata, (entry) => {
+                    if ('type' in entry
+                        && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+                        && 'value' in entry
+                        && 'property' in entry
+                        && entry.property === instances[0].constructor.name) {
+                        collectionName = entry.value;
+                    }
+                });
+                return this.updateMongoElementSingle(instances[0].toDbObject(), collectionName, upsert).then((res) => {
+                    if (res
+                        && ((res.upsertedId && instances[0]._id === res.upsertedId._id)
+                            || (res.modified && res.modified >= 1))) {
+                        this.updateElasticElementSingle(instances[0], upsert).then((res) => {
+                            console.log(res);
+                            return res;
+                        });
+                    }
                     return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
                 });
             }
@@ -265,6 +301,42 @@ class Elements {
             return this.validateAndSort(instances).then((res) => {
                 return this.mongoUpdate(res, upsert);
             });
+        }
+    }
+    updateElasticElementSingle(element, upsert) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let _body = element;
+            if (!upsert) {
+                upsert = false;
+            }
+            if (upsert) {
+                delete _body._id;
+                _body = _body.toDbObject();
+                return yield this.getElasticConnection().index({
+                    index: this.getIndexName(element),
+                    type: element.constructor.name,
+                    id: element._id,
+                    body: _body
+                });
+            }
+            else {
+                delete _body._id;
+                _body = _body.toDbObject();
+                return yield this.getElasticConnection().update({
+                    index: this.getIndexName(element),
+                    type: element.constructor.name,
+                    id: element._id,
+                    body: _body
+                });
+            }
+        });
+    }
+    getIndexName(element) {
+        if (this.elasticOptions.prefix) {
+            return (this.elasticOptions.prefix + '-' + element.constructor.name).toLowerCase();
+        }
+        else {
+            return element.constructor.name.toLowerCase();
         }
     }
     toElementArray(collection) {

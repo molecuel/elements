@@ -26,6 +26,7 @@ export class Elements {
   constructor(mlcl?: any, config?: any) {
     this.elementStore = new Map();
     // @todo Get from config object
+
     this.elasticOptions = new ElasticOptions();
     this.elasticOptions.url = 'http://localhost:9200';
     this.elasticOptions.loglevel = 'trace';
@@ -185,7 +186,7 @@ export class Elements {
   }
 
   /**
-   * Get documents based on query
+   * Get documents from MongoDb based on query
    * @param  {IElement}     model [description]
    * @param  {any}          query [description]
    * @return {Promise<any>}       [description]
@@ -208,7 +209,7 @@ export class Elements {
   }
 
   /**
-   * Get Element based object from current Db and supplied collection by Id
+   * Get Element based object from MongoDb by supplied collection and Id
    * @param {number | string | IElement} id          [description]
    * @param {string | IElement}          collection  [description]
    * @return  [description]
@@ -240,7 +241,28 @@ export class Elements {
         return Promise.reject(new Error('No valid id supplied.'));
       }
     }
+    else {
+      return Promise.reject(new Error('Could not determine target collection.'));
+    }
     return await this.findByQuery(collectionName, { _id: inputId }, 1);
+  }
+
+  /**
+   *
+   * @param   [description]
+   * @return  [description]
+   */
+  public async search(query: Object): Promise<any> {
+    let input: any = query;
+    if (this.elasticOptions.prefix) {
+      if (!input.index) {
+        input.index = this.elasticOptions.prefix + '-*';
+      }
+      else if (!input.index.match(new RegExp('^' + this.elasticOptions.prefix + '-'))) {
+        input.index = this.elasticOptions.prefix + '-' + input.index;
+      }
+    }
+    return await this.getElasticConnection().search(input);
   }
 
   /**
@@ -393,10 +415,31 @@ export class Elements {
         return Promise.reject(instances[0].validate());
       }
       else {
+        let metadata = Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor);
+        let collectionName: string = instances[0].constructor.name;
+        _.each(metadata, (entry) => {
+          if ('type' in entry
+            && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+            && 'value' in entry
+            && 'property' in entry
+            && entry.property === instances[0].constructor.name) {
+
+            collectionName = entry.value;
+          }
+        });
         return this.updateMongoElementSingle(
           instances[0].toDbObject(),
-          instances[0].constructor.name,
+          collectionName,
           upsert).then((res) => {
+            if (res
+              && ((res.upsertedId && instances[0]._id === res.upsertedId._id)
+                || (res.modified && res.modified >= 1))) {
+
+              this.updateElasticElementSingle(instances[0], upsert).then((res) => {
+                console.log(res);
+                return res;
+              });
+            }
             return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
           });
       }
@@ -405,6 +448,52 @@ export class Elements {
       return this.validateAndSort(instances).then((res) => {
         return this.mongoUpdate(res, upsert);
       });
+    }
+  }
+
+  /**
+   *
+   * @param   [description]
+   * @return  [description]
+   */
+  protected async updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any> {
+    let _body = element;
+    if (!upsert) {
+      upsert = false;
+    }
+    if (upsert) {
+      delete _body._id;
+      _body = _body.toDbObject();
+      return await this.getElasticConnection().index({
+        index: this.getIndexName(element),
+        type: element.constructor.name,
+        id: element._id,
+        body: _body
+      });
+    }
+    else {
+      delete _body._id;
+      _body = _body.toDbObject();
+      return await this.getElasticConnection().update({
+        index: this.getIndexName(element),
+        type: element.constructor.name,
+        id: element._id,
+        body: _body
+      });
+    }
+  }
+
+  /**
+   *
+   * @param   [description]
+   * @return  [description]
+   */
+  protected getIndexName(element: IElement): string {
+    if (this.elasticOptions.prefix) {
+      return (this.elasticOptions.prefix + '-' + element.constructor.name).toLowerCase();
+    }
+    else {
+      return element.constructor.name.toLowerCase();
     }
   }
 

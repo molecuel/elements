@@ -217,10 +217,7 @@ describe('mlcl', function () {
         after(function (done) {
             el.getMongoConnection().dropDatabase(function (error) {
                 should.not.exists(error);
-                el.getElasticConnection().indices.delete({ index: '*' }, function (error) {
-                    should.not.exists(error);
-                    done();
-                });
+                done();
             });
         });
     });

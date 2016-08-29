@@ -26,6 +26,7 @@ export declare class Elements {
     containsIDocuments(obj: any): boolean;
     findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any>;
     findById(id: number | string | IElement, collection?: string | IElement): Promise<any>;
+    search(query: Object): Promise<any>;
     protected mongoConnectWrapper(): Promise<any>;
     protected connectMongo(): Promise<void>;
     protected elasticConnectWrapper(): PromiseLike<any>;
@@ -35,5 +36,7 @@ export declare class Elements {
     protected validateAndSort(instances: IElement[]): Promise<any>;
     protected mongoUpdate(collections: Object, upsert?: boolean): Promise<any>;
     saveInstances(instances: IElement[], upsert?: boolean): Promise<any>;
+    protected updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any>;
+    protected getIndexName(element: IElement): string;
     protected toElementArray(collection: IDocuments): Promise<any>;
 }
