@@ -236,73 +236,82 @@ describe('mlcl', function() {
         return res;
       });
     });
+    /*
+        it('should do some stuff with elastic', async function() {
+          let elastic = el.getElasticConnection();
+          let testClasses: any[] = [];
+          for (let i = 0; i < 4; i++) {
+            testClasses.push(el.getClassInstance('post'));
+            testClasses[i]._id = (i + 1);
+            testClasses[i].text = ('earth' + (i + 1));
+          }
+          for (let i = 4; i < 6; i++) {
+            testClasses.push(el.getClassInstance('test'));
+            testClasses[i]._id = (i + 1);
+            testClasses[i].prop = ('hello' + i);
+          }
+          let posttestbody = testClasses[0].toDbObject();
+          posttestbody.address = 'here';
+          delete posttestbody._id;
+          console.log(posttestbody);
+          let testtestbody = testClasses[testClasses.length - 1].toDbObject();
+          delete testtestbody._id;
+          console.log(testtestbody);
 
-    // it('should do some stuff with elastic', async function() {
-    //   let elastic = el.getElasticConnection();
-    //   let testClasses: any[] = [];
-    //   for (let i = 0; i < 4; i++) {
-    //     testClasses.push(el.getClassInstance('post'));
-    //     testClasses[i]._id = (i + 1);
-    //     testClasses[i].text = ('earth' + (i + 1));
-    //   }
-    //   for (let i = 4; i < 6; i++) {
-    //     testClasses.push(el.getClassInstance('test'));
-    //     testClasses[i]._id = (i + 1);
-    //     testClasses[i].prop = ('hello' + i);
-    //   }
-    //   let posttestbody = testClasses[0].toDbObject();
-    //   posttestbody.address = 'here';
-    //   delete posttestbody._id;
-    //   console.log(posttestbody);
-    //   let testtestbody = testClasses[testClasses.length - 1].toDbObject();
-    //   delete testtestbody._id;
-    //   console.log(testtestbody);
-    //
-    //   await elastic.index({
-    //     index: 'test',
-    //     type: 'post',
-    //     id: testClasses[0]._id,
-    //     body: posttestbody
-    //   }).then((res) => {
-    //     // console.log(res);
-    //     return res;
-    //   });
-    //   await elastic.create({
-    //     index: 'test',
-    //     type: 'test',
-    //     id: testClasses.length,
-    //     body: testtestbody
-    //   }).then((res) => {
-    //     // console.log(res);
-    //     return res;
-    //   }).catch((err) => {
-    //     console.log(err);
-    //     return err;
-    //   })
-    //
-    //   // await elastic.bulk({
-    //   //   body: [
-    //   //
-    //   //   ]
-    //   // }).then((res) => {
-    //   //
-    //   //   return res;
-    //   // })
-    //
-    //   await elastic.search({ q: '*' }).then((res) => {
-    //     console.log(res.hits.hits);
-    //     return res;
-    //   });
-    //
-    // });
+          await elastic.index({
+            index: 'test',
+            type: 'post',
+            id: testClasses[0]._id,
+            body: posttestbody
+          }).then((res) => {
+            // console.log(res);
+            return res;
+          });
+          await elastic.create({
+            index: 'test',
+            type: 'test',
+            id: testClasses.length,
+            body: testtestbody
+          }).then((res) => {
+            // console.log(res);
+            return res;
+          }).catch((err) => {
+            console.log(err);
+            return err;
+          })
+
+          // await elastic.bulk({
+          //   body: [
+          //
+          //   ]
+          // }).then((res) => {
+          //
+          //   return res;
+          // })
+
+          await elastic.search({ q: '*' }).then((res) => {
+            console.log(res.hits.hits);
+            return res;
+          });
+
+        });
+    */
+
+    it('should create a type configuration pre-index-creation', async function() {
+      let model = el.getClass('post');
+      await el.registerIndex(model).then((res) => {
+        // console.log(res);
+        return res;
+      })
+    });
 
     after(function(done) {
       el.getMongoConnection().dropDatabase(function(error) {
         should.not.exists(error);
-        // el.getElasticConnection().indices.delete({ index: '*' }, function(error) {
-        //   should.not.exists(error);
-        done();
-        // });
+        el.getElasticConnection().indices.delete({ index: '*' }, function(error) {
+          should.not.exists(error);
+          done();
+        });
       });
     });
   })

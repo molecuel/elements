@@ -214,10 +214,21 @@ describe('mlcl', function () {
                 });
             });
         });
+        it('should create a type configuration pre-index-creation', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                let model = el.getClass('post');
+                yield el.registerIndex(model).then((res) => {
+                    return res;
+                });
+            });
+        });
         after(function (done) {
             el.getMongoConnection().dropDatabase(function (error) {
                 should.not.exists(error);
-                done();
+                el.getElasticConnection().indices.delete({ index: '*' }, function (error) {
+                    should.not.exists(error);
+                    done();
+                });
             });
         });
     });

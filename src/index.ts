@@ -406,7 +406,7 @@ export class Elements {
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public saveInstances(instances: IElement[], upsert?: boolean): Promise<any> {
+  public async saveInstances(instances: IElement[], upsert?: boolean): Promise<any> {
     if (!upsert) {
       upsert = false;
     }
@@ -427,20 +427,26 @@ export class Elements {
             collectionName = entry.value;
           }
         });
-        return this.updateMongoElementSingle(
+        let that = this;
+        return await this.updateMongoElementSingle(
           instances[0].toDbObject(),
           collectionName,
-          upsert).then((res) => {
-            if (res
-              && ((res.upsertedId && instances[0]._id === res.upsertedId._id)
-                || (res.modified && res.modified >= 1))) {
+          upsert).then(async function(mres) {
+            if (mres
+              && ((mres.upsertedId && instances[0]._id === mres.upsertedId._id)
+                || (mres.modified && mres.modified >= 1))) {
 
-              this.updateElasticElementSingle(instances[0], upsert).then((res) => {
-                console.log(res);
-                return res;
+              await that.updateElasticElementSingle(instances[0], upsert).then((eres) => {
+                console.log('HERE BE DRAGONS!');
+                console.log(eres);
+                return eres;
+              }).catch((err) => {
+                console.log('HERE BE DEMONS!');
+                console.log(err);
+                return err;
               });
             }
-            return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
+            return [{ result: mres.result, ops: mres.ops, upsertedCount: mres.upsertedCount, upsertedId: mres.upsertedId }];
           });
       }
     }
@@ -452,18 +458,34 @@ export class Elements {
   }
 
   /**
-   *
-   * @param   [description]
-   * @return  [description]
+   * Index a single Element based object, if it is not yet indexed; return  response
+   * @param  {IElement} element [description]
+   * @return {Promise<any>}     [description]
+   */
+  public async createElastic(element: IElement): Promise<any> {
+    let _body = element.toDbObject();
+    delete _body._id;
+    return await this.getElasticConnection().create({
+      index: this.getIndexName(element),
+      type: element.constructor.name,
+      id: element._id,
+      body: _body
+    });
+  }
+
+  /**
+   * Update or upsert a single Element based object in Elasticsearch; return response
+   * @param  {IElement} element   [description]
+   * @param  {boolean}  [upsert]  [description]
+   * @return {Promise<any>} [description]
    */
   protected async updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any> {
-    let _body = element;
+    let _body = element.toDbObject();
+    delete _body._id;
     if (!upsert) {
       upsert = false;
     }
     if (upsert) {
-      delete _body._id;
-      _body = _body.toDbObject();
       return await this.getElasticConnection().index({
         index: this.getIndexName(element),
         type: element.constructor.name,
@@ -472,8 +494,6 @@ export class Elements {
       });
     }
     else {
-      delete _body._id;
-      _body = _body.toDbObject();
       return await this.getElasticConnection().update({
         index: this.getIndexName(element),
         type: element.constructor.name,
@@ -484,9 +504,103 @@ export class Elements {
   }
 
   /**
-   *
+   * Create an index and coresponding mapping for a supplied class
+   * @param  {any} definition  [description]
+   * @return {Promise<any>}    [description]
+   */
+  protected async registerIndex(definition: any): Promise<any> {
+    let _type: string = definition.prototype.constructor.name;
+    let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(_type.toLowerCase())), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(_type.toLowerCase())));
+    let propertiesValidatorDecorators = _.keyBy(objectDecorators, function(o: any) {
+      if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
+        && o.property !== definition.prototype.constructor.name) {
+        return o.property;
+      }
+    });
+    let propertyTypes = this.getPropertyTypes(definition, objectDecorators);
+    let configuration = {
+      settings: {},
+      mappings: {}
+    };
+    configuration.mappings[_type] = { properties: {} };
+    _.each(propertiesValidatorDecorators, (property) => {
+      if (!configuration.mappings[_type].properties[property]) {
+        configuration.mappings[_type].properties[property] = {
+          type: _.get(propertyTypes, property)
+        };
+      }
+    });
+    console.log('config:');
+    console.log(configuration);
+    Promise.resolve(configuration);
+  }
+
+  /**
+   * Return an object with the Elasticsearch required type for each property
    * @param   [description]
    * @return  [description]
+   */
+  protected getPropertyTypes(source: any, decorators: any): Object {
+    let result = {};
+    _.each(decorators, (decorator) => {
+      if (decorator && !result[decorator.property]
+        && decorator.property !== source.prototype.constructor.name) {
+
+        switch (decorator.type) {
+          case TSV.DecoratorTypes.IS_INT:
+            result[decorator.property] = 'integer';
+            break;
+          case TSV.DecoratorTypes.IS_FLOAT:
+          case TSV.DecoratorTypes.IS_DECIMAL:
+            result[decorator.property] = 'float';
+            break;
+          case TSV.DecoratorTypes.IP_ADDRESS:
+          case TSV.DecoratorTypes.MAC_ADDRESS:
+          case TSV.DecoratorTypes.EMAIL:
+          case TSV.DecoratorTypes.ALPHA:
+            result[decorator.property] = 'string';
+            break;
+          case TSV.DecoratorTypes.DATE:
+          case TSV.DecoratorTypes.DATE_AFTER:
+          case TSV.DecoratorTypes.DATE_BEFORE:
+          case TSV.DecoratorTypes.DATE_ISO8601:
+            result[decorator.property] = 'date';
+            break;
+          case TSV.DecoratorTypes.NESTED:
+            result[decorator.property] = 'nested';
+            break;
+          default:
+            switch (Reflect.getMetadata('design:type', this.getClassInstance(source.prototype.constructor.name.toLowerCase()), decorator.property).name) {
+              // declared type: string
+              case 'String':
+                result[decorator.property] = 'string';
+                break;
+              // declared type: number
+              case 'Number':
+                result[decorator.property] = 'integer';
+                break;
+              // declared type: boolean
+              case 'Boolean':
+                result[decorator.property] = 'boolean';
+                break;
+              // declared type: any
+              case 'Object':
+              // declared type: object
+              default:
+                result[decorator.property] = 'object';
+                break;
+            }
+            break;
+        }
+      }
+    });
+    return result;
+  }
+
+  /**
+   * Returns the index name for a given Element based Object
+   * @param  {IElement} element [description]
+   * @return {string}           [description]
    */
   protected getIndexName(element: IElement): string {
     if (this.elasticOptions.prefix) {

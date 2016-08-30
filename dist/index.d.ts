@@ -36,7 +36,10 @@ export declare class Elements {
     protected validateAndSort(instances: IElement[]): Promise<any>;
     protected mongoUpdate(collections: Object, upsert?: boolean): Promise<any>;
     saveInstances(instances: IElement[], upsert?: boolean): Promise<any>;
+    createElastic(element: IElement): Promise<any>;
     protected updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any>;
+    protected registerIndex(definition: any): Promise<any>;
+    protected getPropertyTypes(source: any, decorators: any): Object;
     protected getIndexName(element: IElement): string;
     protected toElementArray(collection: IDocuments): Promise<any>;
 }

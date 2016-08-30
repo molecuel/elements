@@ -265,53 +265,74 @@ class Elements {
         });
     }
     saveInstances(instances, upsert) {
-        if (!upsert) {
-            upsert = false;
-        }
-        if (instances.length === 1) {
-            if (instances[0].validate().length > 0) {
-                return Promise.reject(instances[0].validate());
+        return __awaiter(this, void 0, Promise, function* () {
+            if (!upsert) {
+                upsert = false;
+            }
+            if (instances.length === 1) {
+                if (instances[0].validate().length > 0) {
+                    return Promise.reject(instances[0].validate());
+                }
+                else {
+                    let metadata = Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor);
+                    let collectionName = instances[0].constructor.name;
+                    _.each(metadata, (entry) => {
+                        if ('type' in entry
+                            && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+                            && 'value' in entry
+                            && 'property' in entry
+                            && entry.property === instances[0].constructor.name) {
+                            collectionName = entry.value;
+                        }
+                    });
+                    let that = this;
+                    return yield this.updateMongoElementSingle(instances[0].toDbObject(), collectionName, upsert).then(function (mres) {
+                        return __awaiter(this, void 0, void 0, function* () {
+                            if (mres
+                                && ((mres.upsertedId && instances[0]._id === mres.upsertedId._id)
+                                    || (mres.modified && mres.modified >= 1))) {
+                                yield that.updateElasticElementSingle(instances[0], upsert).then((eres) => {
+                                    console.log('HERE BE DRAGONS!');
+                                    console.log(eres);
+                                    return eres;
+                                }).catch((err) => {
+                                    console.log('HERE BE DEMONS!');
+                                    console.log(err);
+                                    return err;
+                                });
+                            }
+                            return [{ result: mres.result, ops: mres.ops, upsertedCount: mres.upsertedCount, upsertedId: mres.upsertedId }];
+                        });
+                    });
+                }
             }
             else {
-                let metadata = Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor);
-                let collectionName = instances[0].constructor.name;
-                _.each(metadata, (entry) => {
-                    if ('type' in entry
-                        && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
-                        && 'value' in entry
-                        && 'property' in entry
-                        && entry.property === instances[0].constructor.name) {
-                        collectionName = entry.value;
-                    }
-                });
-                return this.updateMongoElementSingle(instances[0].toDbObject(), collectionName, upsert).then((res) => {
-                    if (res
-                        && ((res.upsertedId && instances[0]._id === res.upsertedId._id)
-                            || (res.modified && res.modified >= 1))) {
-                        this.updateElasticElementSingle(instances[0], upsert).then((res) => {
-                            console.log(res);
-                            return res;
-                        });
-                    }
-                    return [{ result: res.result, ops: res.ops, upsertedCount: res.upsertedCount, upsertedId: res.upsertedId }];
+                return this.validateAndSort(instances).then((res) => {
+                    return this.mongoUpdate(res, upsert);
                 });
             }
-        }
-        else {
-            return this.validateAndSort(instances).then((res) => {
-                return this.mongoUpdate(res, upsert);
+        });
+    }
+    createElastic(element) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let _body = element.toDbObject();
+            delete _body._id;
+            return yield this.getElasticConnection().create({
+                index: this.getIndexName(element),
+                type: element.constructor.name,
+                id: element._id,
+                body: _body
             });
-        }
+        });
     }
     updateElasticElementSingle(element, upsert) {
         return __awaiter(this, void 0, Promise, function* () {
-            let _body = element;
+            let _body = element.toDbObject();
+            delete _body._id;
             if (!upsert) {
                 upsert = false;
             }
             if (upsert) {
-                delete _body._id;
-                _body = _body.toDbObject();
                 return yield this.getElasticConnection().index({
                     index: this.getIndexName(element),
                     type: element.constructor.name,
@@ -320,8 +341,6 @@ class Elements {
                 });
             }
             else {
-                delete _body._id;
-                _body = _body.toDbObject();
                 return yield this.getElasticConnection().update({
                     index: this.getIndexName(element),
                     type: element.constructor.name,
@@ -330,6 +349,84 @@ class Elements {
                 });
             }
         });
+    }
+    registerIndex(definition) {
+        return __awaiter(this, void 0, Promise, function* () {
+            let _type = definition.prototype.constructor.name;
+            let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(_type.toLowerCase())), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(_type.toLowerCase())));
+            let propertiesValidatorDecorators = _.keyBy(objectDecorators, function (o) {
+                if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
+                    && o.property !== definition.prototype.constructor.name) {
+                    return o.property;
+                }
+            });
+            let propertyTypes = this.getPropertyTypes(definition, objectDecorators);
+            let configuration = {
+                settings: {},
+                mappings: {}
+            };
+            configuration.mappings[_type] = { properties: {} };
+            _.each(propertiesValidatorDecorators, (property) => {
+                if (!configuration.mappings[_type].properties[property]) {
+                    configuration.mappings[_type].properties[property] = {
+                        type: _.get(propertyTypes, property)
+                    };
+                }
+            });
+            console.log('config:');
+            console.log(configuration);
+            Promise.resolve(configuration);
+        });
+    }
+    getPropertyTypes(source, decorators) {
+        let result = {};
+        _.each(decorators, (decorator) => {
+            if (decorator && !result[decorator.property]
+                && decorator.property !== source.prototype.constructor.name) {
+                switch (decorator.type) {
+                    case TSV.DecoratorTypes.IS_INT:
+                        result[decorator.property] = 'integer';
+                        break;
+                    case TSV.DecoratorTypes.IS_FLOAT:
+                    case TSV.DecoratorTypes.IS_DECIMAL:
+                        result[decorator.property] = 'float';
+                        break;
+                    case TSV.DecoratorTypes.IP_ADDRESS:
+                    case TSV.DecoratorTypes.MAC_ADDRESS:
+                    case TSV.DecoratorTypes.EMAIL:
+                    case TSV.DecoratorTypes.ALPHA:
+                        result[decorator.property] = 'string';
+                        break;
+                    case TSV.DecoratorTypes.DATE:
+                    case TSV.DecoratorTypes.DATE_AFTER:
+                    case TSV.DecoratorTypes.DATE_BEFORE:
+                    case TSV.DecoratorTypes.DATE_ISO8601:
+                        result[decorator.property] = 'date';
+                        break;
+                    case TSV.DecoratorTypes.NESTED:
+                        result[decorator.property] = 'nested';
+                        break;
+                    default:
+                        switch (Reflect.getMetadata('design:type', this.getClassInstance(source.prototype.constructor.name.toLowerCase()), decorator.property).name) {
+                            case 'String':
+                                result[decorator.property] = 'string';
+                                break;
+                            case 'Number':
+                                result[decorator.property] = 'integer';
+                                break;
+                            case 'Boolean':
+                                result[decorator.property] = 'boolean';
+                                break;
+                            case 'Object':
+                            default:
+                                result[decorator.property] = 'object';
+                                break;
+                        }
+                        break;
+                }
+            }
+        });
+        return result;
     }
     getIndexName(element) {
         if (this.elasticOptions.prefix) {
