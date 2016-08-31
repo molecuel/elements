@@ -35,9 +35,12 @@ class Elements {
             yield this.connectMongo();
         });
     }
-    registerClass(name, definition) {
-        definition.elements = this;
-        this.elementStore.set(name, definition);
+    registerClass(name, definition, indexSettings) {
+        return __awaiter(this, void 0, Promise, function* () {
+            definition.elements = this;
+            this.elementStore.set(name, definition);
+            return yield this.registerIndex(name, definition, indexSettings);
+        });
     }
     getClass(name) {
         return this.elementStore.get(name);
@@ -292,13 +295,7 @@ class Elements {
                                 && ((mres.upsertedId && instances[0]._id === mres.upsertedId._id)
                                     || (mres.modified && mres.modified >= 1))) {
                                 yield that.updateElasticElementSingle(instances[0], upsert).then((eres) => {
-                                    console.log('HERE BE DRAGONS!');
-                                    console.log(eres);
                                     return eres;
-                                }).catch((err) => {
-                                    console.log('HERE BE DEMONS!');
-                                    console.log(err);
-                                    return err;
                                 });
                             }
                             return [{ result: mres.result, ops: mres.ops, upsertedCount: mres.upsertedCount, upsertedId: mres.upsertedId }];
@@ -350,35 +347,40 @@ class Elements {
             }
         });
     }
-    registerIndex(definition) {
+    registerIndex(name, definition, indexSettings) {
         return __awaiter(this, void 0, Promise, function* () {
             let _type = definition.prototype.constructor.name;
-            let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(_type.toLowerCase())), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(_type.toLowerCase())));
-            let propertiesValidatorDecorators = _.keyBy(objectDecorators, function (o) {
+            let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(name)), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(name)));
+            let decoratedProperties = _.keyBy(objectDecorators, function (o) {
                 if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
-                    && o.property !== definition.prototype.constructor.name) {
+                    && o.property !== definition.prototype.constructor.name
+                    && o.property !== '_id') {
                     return o.property;
                 }
             });
-            let propertyTypes = this.getPropertyTypes(definition, objectDecorators);
+            let propertyTypes = this.getPropertyTypes(name, definition, objectDecorators);
             let configuration = {
                 settings: {},
                 mappings: {}
             };
+            for (let setting in indexSettings) {
+                configuration['settings'][setting] = indexSettings[setting];
+            }
             configuration.mappings[_type] = { properties: {} };
-            _.each(propertiesValidatorDecorators, (property) => {
-                if (!configuration.mappings[_type].properties[property]) {
-                    configuration.mappings[_type].properties[property] = {
-                        type: _.get(propertyTypes, property)
+            _.each(decoratedProperties, (decorator) => {
+                if (decorator && !configuration.mappings[_type].properties[decorator]) {
+                    configuration.mappings[_type].properties[decorator.property] = {
+                        type: _.get(propertyTypes, decorator.property)
                     };
                 }
             });
-            console.log('config:');
-            console.log(configuration);
-            Promise.resolve(configuration);
+            return yield this.getElasticConnection().indices.create({
+                index: this.getIndexName(this.getClassInstance(name)),
+                body: configuration
+            });
         });
     }
-    getPropertyTypes(source, decorators) {
+    getPropertyTypes(name, source, decorators) {
         let result = {};
         _.each(decorators, (decorator) => {
             if (decorator && !result[decorator.property]
@@ -407,7 +409,7 @@ class Elements {
                         result[decorator.property] = 'nested';
                         break;
                     default:
-                        switch (Reflect.getMetadata('design:type', this.getClassInstance(source.prototype.constructor.name.toLowerCase()), decorator.property).name) {
+                        switch (Reflect.getMetadata('design:type', this.getClassInstance(name), decorator.property).name) {
                             case 'String':
                                 result[decorator.property] = 'string';
                                 break;
@@ -442,7 +444,14 @@ class Elements {
         if (that.containsIDocuments(collection)) {
             for (let i = 0; i < collection.documents.length; i++) {
                 let currDoc = collection.documents[i];
-                result.push(that.getClassInstance(collection.collection.toString().toLowerCase()));
+                let mappedName;
+                this.elementStore.forEach((value, key, map) => {
+                    let constr = value;
+                    if (constr && !mappedName && constr.name.toLowerCase() === collection.collection.toString().toLowerCase()) {
+                        mappedName = key;
+                    }
+                });
+                result.push(that.getClassInstance(mappedName));
                 for (let key in currDoc) {
                     result[i][key] = currDoc[key];
                 }

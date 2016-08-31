@@ -42,7 +42,7 @@ let SmallTestClass = class SmallTestClass extends Element_1.Element {
         super();
         this.func = function () { };
         this.prop = value || true;
-        this.obj = obj || {};
+        this.obj = obj || new Post();
     }
     meth() {
     }
@@ -51,6 +51,10 @@ __decorate([
     V.Contains('hello'), 
     __metadata('design:type', Object)
 ], SmallTestClass.prototype, "prop", void 0);
+__decorate([
+    V.ValidateNested(), 
+    __metadata('design:type', Object)
+], SmallTestClass.prototype, "obj", void 0);
 SmallTestClass = __decorate([
     ELD.UseMongoCollection('Post'), 
     __metadata('design:paramtypes', [Object, Object])
@@ -71,9 +75,12 @@ describe('mlcl', function () {
                 }
             });
         });
-        it('should register a new data model', function () {
-            el.registerClass('post', Post);
-            el.registerClass('test', SmallTestClass);
+        it('should register a new data model and a new elasticsearch index', function () {
+            return __awaiter(this, void 0, void 0, function* () {
+                yield el.registerClass('post', Post);
+                let settings = { number_of_shards: 3 };
+                yield el.registerClass('test', SmallTestClass, settings);
+            });
         });
         it('should get a class for a model name', function () {
             let myclass = el.getClass('post');
@@ -210,14 +217,6 @@ describe('mlcl', function () {
                         doc.should.be.instanceOf(Element_1.Element);
                     }
                     (result.length).should.be.above(0);
-                    return res;
-                });
-            });
-        });
-        it('should create a type configuration pre-index-creation', function () {
-            return __awaiter(this, void 0, void 0, function* () {
-                let model = el.getClass('post');
-                yield el.registerIndex(model).then((res) => {
                     return res;
                 });
             });

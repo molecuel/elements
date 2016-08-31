@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import { IElement } from './interfaces/IElement';
 import { IDocuments } from './interfaces/IDocuments';
+import { IIndexSettings } from './interfaces/IIndexSettings';
 export { Element as Element } from './classes/Element';
 export declare class Elements {
     static loaderversion: number;
@@ -13,7 +14,7 @@ export declare class Elements {
     private elementStore;
     constructor(mlcl?: any, config?: any);
     connect(): Promise<void>;
-    registerClass(name: string, definition: any): void;
+    registerClass(name: string, definition: any, indexSettings?: IIndexSettings): Promise<void>;
     getClass(name: string): IElement;
     getClassInstance(name: string): any;
     validate(instance: Object): TSV.IValidatorError[];
@@ -23,7 +24,7 @@ export declare class Elements {
     protected getMongoConnection(): any;
     protected getElasticConnection(): any;
     getMongoCollections(): Promise<any>;
-    containsIDocuments(obj: any): boolean;
+    protected containsIDocuments(obj: any): boolean;
     findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any>;
     findById(id: number | string | IElement, collection?: string | IElement): Promise<any>;
     search(query: Object): Promise<any>;
@@ -38,8 +39,8 @@ export declare class Elements {
     saveInstances(instances: IElement[], upsert?: boolean): Promise<any>;
     createElastic(element: IElement): Promise<any>;
     protected updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any>;
-    protected registerIndex(definition: any): Promise<any>;
-    protected getPropertyTypes(source: any, decorators: any): Object;
+    protected registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any>;
+    protected getPropertyTypes(name: string, source: any, decorators: any): Object;
     protected getIndexName(element: IElement): string;
     protected toElementArray(collection: IDocuments): Promise<any>;
 }

@@ -21,14 +21,15 @@ class Post extends Element {
 
 @ELD.UseMongoCollection('Post')
 class SmallTestClass extends Element {
-  constructor(value?: any, obj?: Object) {
+  constructor(value?: any, obj?: IElement) {
     super();
     this.prop = value || true;
-    this.obj = obj || {};
+    this.obj = obj || new Post();
   }
   @V.Contains('hello')
   prop: any;
-  obj: Object;
+  @V.ValidateNested()
+  obj: IElement;
   func: any = function() { };
   public meth() {
 
@@ -51,29 +52,26 @@ describe('mlcl', function() {
 
     });
 
-    it('should register a new data model', function() {
-      el.registerClass('post', Post);
-      el.registerClass('test', SmallTestClass);
-
+    it('should register a new data model and a new elasticsearch index', async function() {
+      await el.registerClass('post', Post);
+      let settings = { number_of_shards: 3 };
+      await el.registerClass('test', SmallTestClass, settings);
     });
 
     it('should get a class for a model name', function() {
       let myclass: any = el.getClass('post');
       let mymodel = new myclass();
       assert(mymodel instanceof Post);
-
     });
 
     it('should get a instance of a class', function() {
       let mymodel = el.getClassInstance('post');
       assert(mymodel instanceof Post);
-
     });
 
     it('should have a instance of Elements as static', function() {
       let mymodel: any = el.getClass('test');
       assert(mymodel.elements instanceof Elements);
-
     });
 
     it('should NOT validate an object', function() {
@@ -81,7 +79,6 @@ describe('mlcl', function() {
       testclass.text = 'huhu';
       let errors = testclass.validate();
       assert(errors.length > 0);
-
     });
 
     it('should validate an object', function() {
@@ -89,7 +86,6 @@ describe('mlcl', function() {
       testclass.text = 'hello';
       let errors = testclass.validate();
       assert(errors.length === 0);
-
     });
 
     it('should serialize an Element-object', function() {
@@ -140,7 +136,6 @@ describe('mlcl', function() {
           (err.length).should.be.above(0);
           return err;
         });
-
       });
 
     it('should validate an Element-object and save it into its respective MongoDB collection',
@@ -237,73 +232,66 @@ describe('mlcl', function() {
       });
     });
     /*
-        it('should do some stuff with elastic', async function() {
-          let elastic = el.getElasticConnection();
-          let testClasses: any[] = [];
-          for (let i = 0; i < 4; i++) {
-            testClasses.push(el.getClassInstance('post'));
-            testClasses[i]._id = (i + 1);
-            testClasses[i].text = ('earth' + (i + 1));
-          }
-          for (let i = 4; i < 6; i++) {
-            testClasses.push(el.getClassInstance('test'));
-            testClasses[i]._id = (i + 1);
-            testClasses[i].prop = ('hello' + i);
-          }
-          let posttestbody = testClasses[0].toDbObject();
-          posttestbody.address = 'here';
-          delete posttestbody._id;
-          console.log(posttestbody);
-          let testtestbody = testClasses[testClasses.length - 1].toDbObject();
-          delete testtestbody._id;
-          console.log(testtestbody);
 
-          await elastic.index({
-            index: 'test',
-            type: 'post',
-            id: testClasses[0]._id,
-            body: posttestbody
-          }).then((res) => {
-            // console.log(res);
-            return res;
-          });
-          await elastic.create({
-            index: 'test',
-            type: 'test',
-            id: testClasses.length,
-            body: testtestbody
-          }).then((res) => {
-            // console.log(res);
-            return res;
-          }).catch((err) => {
-            console.log(err);
-            return err;
-          })
+      it('should do some stuff with elastic', async function() {
+        let elastic = el.getElasticConnection();
+        let testClasses: any[] = [];
+        for (let i = 0; i < 4; i++) {
+          testClasses.push(el.getClassInstance('post'));
+          testClasses[i]._id = (i + 1);
+          testClasses[i].text = ('earth' + (i + 1));
+        }
+        for (let i = 4; i < 6; i++) {
+          testClasses.push(el.getClassInstance('test'));
+          testClasses[i]._id = (i + 1);
+          testClasses[i].prop = ('hello' + i);
+        }
+        let posttestbody = testClasses[0].toDbObject();
+        posttestbody.address = 'here';
+        delete posttestbody._id;
+        console.log(posttestbody);
+        let testtestbody = testClasses[testClasses.length - 1].toDbObject();
+        delete testtestbody._id;
+        console.log(testtestbody);
 
-          // await elastic.bulk({
-          //   body: [
-          //
-          //   ]
-          // }).then((res) => {
-          //
-          //   return res;
-          // })
-
-          await elastic.search({ q: '*' }).then((res) => {
-            console.log(res.hits.hits);
-            return res;
-          });
-
+        await elastic.index({
+          index: 'test',
+          type: 'post',
+          id: testClasses[0]._id,
+          body: posttestbody
+        }).then((res) => {
+          // console.log(res);
+          return res;
         });
-    */
+        await elastic.create({
+          index: 'test',
+          type: 'test',
+          id: testClasses.length,
+          body: testtestbody
+        }).then((res) => {
+          // console.log(res);
+          return res;
+        }).catch((err) => {
+          console.log(err);
+          return err;
+        })
 
-    it('should create a type configuration pre-index-creation', async function() {
-      let model = el.getClass('post');
-      await el.registerIndex(model).then((res) => {
-        // console.log(res);
-        return res;
-      })
-    });
+        // await elastic.bulk({
+        //   body: [
+        //
+        //   ]
+        // }).then((res) => {
+        //
+        //   return res;
+        // })
+
+        await elastic.search({ q: '*' }).then((res) => {
+          console.log(res.hits.hits);
+          return res;
+        });
+
+      });
+    */
 
     after(function(done) {
       el.getMongoConnection().dropDatabase(function(error) {

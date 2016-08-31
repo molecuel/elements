@@ -19,6 +19,7 @@
     "dist/index.d.ts",
     "interfaces/IElement.ts",
     "interfaces/IDocuments.ts",
+    "interfaces/IIndexSettings.ts",
     "classes/ElasticOptions.ts",
     "classes/Element.ts"
   ],

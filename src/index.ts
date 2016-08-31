@@ -9,6 +9,7 @@ import * as ELD from './customDecorators';
 import { ElasticOptions } from './classes/ElasticOptions';
 import { IElement } from './interfaces/IElement';
 import { IDocuments } from './interfaces/IDocuments';
+import { IIndexSettings } from './interfaces/IIndexSettings';
 // import { Element } from './classes/Element';
 export { Element as Element } from './classes/Element';
 
@@ -53,9 +54,10 @@ export class Elements {
    * @param {string} name       [description]
    * @param {any}    definition [description]
    */
-  public registerClass(name: string, definition: any): void {
+  public async registerClass(name: string, definition: any, indexSettings?: IIndexSettings): Promise<void> {
     definition.elements = this;
     this.elementStore.set(name, definition);
+    return await this.registerIndex(name, definition, indexSettings);
   }
 
   /**
@@ -160,7 +162,7 @@ export class Elements {
   }
 
   /**
-   * Get a specific mongo collection
+   * Get all mongo collections
    * @return {Promise<any>} [description]
    */
   public async getMongoCollections(): Promise<any> {
@@ -172,7 +174,7 @@ export class Elements {
    * @param  {any}          obj   [description]
    * @return {boolean}            [description]
    */
-  public containsIDocuments(obj: any): boolean {
+  protected containsIDocuments(obj: any): boolean {
     let template: IDocuments = {
       collection: 'collectionName',
       documents: []
@@ -437,13 +439,8 @@ export class Elements {
                 || (mres.modified && mres.modified >= 1))) {
 
               await that.updateElasticElementSingle(instances[0], upsert).then((eres) => {
-                console.log('HERE BE DRAGONS!');
-                console.log(eres);
+                // @todo bind resolve in outer resolve
                 return eres;
-              }).catch((err) => {
-                console.log('HERE BE DEMONS!');
-                console.log(err);
-                return err;
               });
             }
             return [{ result: mres.result, ops: mres.ops, upsertedCount: mres.upsertedCount, upsertedId: mres.upsertedId }];
@@ -508,31 +505,36 @@ export class Elements {
    * @param  {any} definition  [description]
    * @return {Promise<any>}    [description]
    */
-  protected async registerIndex(definition: any): Promise<any> {
+  protected async registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any> {
     let _type: string = definition.prototype.constructor.name;
-    let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(_type.toLowerCase())), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(_type.toLowerCase())));
-    let propertiesValidatorDecorators = _.keyBy(objectDecorators, function(o: any) {
+    let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(name)), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(name)));
+    let decoratedProperties = _.keyBy(objectDecorators, function(o: any) {
       if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
-        && o.property !== definition.prototype.constructor.name) {
+        && o.property !== definition.prototype.constructor.name
+        && o.property !== '_id') {
         return o.property;
       }
     });
-    let propertyTypes = this.getPropertyTypes(definition, objectDecorators);
+    let propertyTypes = this.getPropertyTypes(name, definition, objectDecorators);
     let configuration = {
       settings: {},
       mappings: {}
     };
+    for (let setting in indexSettings) {
+      configuration['settings'][setting] = indexSettings[setting];
+    }
     configuration.mappings[_type] = { properties: {} };
-    _.each(propertiesValidatorDecorators, (property) => {
-      if (!configuration.mappings[_type].properties[property]) {
-        configuration.mappings[_type].properties[property] = {
-          type: _.get(propertyTypes, property)
+    _.each(decoratedProperties, (decorator) => { // @todo recursive rework for nested obj
+      if (decorator && !configuration.mappings[_type].properties[decorator]) {
+        configuration.mappings[_type].properties[decorator.property] = {
+          type: _.get(propertyTypes, decorator.property)
         };
       }
     });
-    console.log('config:');
-    console.log(configuration);
-    Promise.resolve(configuration);
+    return await this.getElasticConnection().indices.create({
+      index: this.getIndexName(this.getClassInstance(name)),
+      body: configuration
+    });
   }
 
   /**
@@ -540,7 +542,7 @@ export class Elements {
    * @param   [description]
    * @return  [description]
    */
-  protected getPropertyTypes(source: any, decorators: any): Object {
+  protected getPropertyTypes(name: string, source: any, decorators: any): Object {
     let result = {};
     _.each(decorators, (decorator) => {
       if (decorator && !result[decorator.property]
@@ -570,7 +572,7 @@ export class Elements {
             result[decorator.property] = 'nested';
             break;
           default:
-            switch (Reflect.getMetadata('design:type', this.getClassInstance(source.prototype.constructor.name.toLowerCase()), decorator.property).name) {
+            switch (Reflect.getMetadata('design:type', this.getClassInstance(name), decorator.property).name) {
               // declared type: string
               case 'String':
                 result[decorator.property] = 'string';
@@ -623,7 +625,14 @@ export class Elements {
       // build array of collection based elements
       for (let i = 0; i < collection.documents.length; i++) {
         let currDoc: any = collection.documents[i];
-        result.push(that.getClassInstance(collection.collection.toString().toLowerCase()));
+        let mappedName;
+        this.elementStore.forEach((value, key, map) => {
+          let constr: any = value;
+          if (constr && !mappedName && constr.name.toLowerCase() === collection.collection.toString().toLowerCase()) {
+            mappedName = key;
+          }
+        });
+        result.push(that.getClassInstance(mappedName));
         for (let key in currDoc) {
           result[i][key] = currDoc[key];
         }
