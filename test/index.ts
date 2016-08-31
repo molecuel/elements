@@ -55,6 +55,7 @@ describe('mlcl', function() {
     it('should register a new data model and a new elasticsearch index', async function() {
       await el.registerClass('post', Post);
       let settings = { number_of_shards: 3 };
+      // console.log(SmallTestClass['obj']);
       await el.registerClass('test', SmallTestClass, settings);
     });
 

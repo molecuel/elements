@@ -358,7 +358,7 @@ class Elements {
                     return o.property;
                 }
             });
-            let propertyTypes = this.getPropertyTypes(name, definition, objectDecorators);
+            let propertyType = this.getPropertyType(definition, objectDecorators);
             let configuration = {
                 settings: {},
                 mappings: {}
@@ -367,20 +367,13 @@ class Elements {
                 configuration['settings'][setting] = indexSettings[setting];
             }
             configuration.mappings[_type] = { properties: {} };
-            _.each(decoratedProperties, (decorator) => {
-                if (decorator && !configuration.mappings[_type].properties[decorator]) {
-                    configuration.mappings[_type].properties[decorator.property] = {
-                        type: _.get(propertyTypes, decorator.property)
-                    };
-                }
-            });
             return yield this.getElasticConnection().indices.create({
                 index: this.getIndexName(this.getClassInstance(name)),
                 body: configuration
             });
         });
     }
-    getPropertyTypes(name, source, decorators) {
+    getPropertyType(source, decorators) {
         let result = {};
         _.each(decorators, (decorator) => {
             if (decorator && !result[decorator.property]
@@ -406,10 +399,12 @@ class Elements {
                         result[decorator.property] = 'date';
                         break;
                     case TSV.DecoratorTypes.NESTED:
-                        result[decorator.property] = 'nested';
+                        console.log('HERE BE DRAGONS!');
+                        console.log('TARGETING ' + decorator.property + ' OF ' + source + ' -> ' + source[decorator.property]);
+                        console.log('TARGETING ' + decorator.property + ' OF ' + source.prototype + ' -> ' + source.prototype[decorator.property]);
                         break;
                     default:
-                        switch (Reflect.getMetadata('design:type', this.getClassInstance(name), decorator.property).name) {
+                        switch (Reflect.getMetadata('design:type', new source(), decorator.property).name) {
                             case 'String':
                                 result[decorator.property] = 'string';
                                 break;

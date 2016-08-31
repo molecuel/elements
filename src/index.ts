@@ -508,6 +508,7 @@ export class Elements {
   protected async registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any> {
     let _type: string = definition.prototype.constructor.name;
     let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(name)), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(name)));
+    // console.log(objectDecorators);
     let decoratedProperties = _.keyBy(objectDecorators, function(o: any) {
       if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
         && o.property !== definition.prototype.constructor.name
@@ -515,7 +516,7 @@ export class Elements {
         return o.property;
       }
     });
-    let propertyTypes = this.getPropertyTypes(name, definition, objectDecorators);
+    let propertyType = this.getPropertyType(definition, objectDecorators);
     let configuration = {
       settings: {},
       mappings: {}
@@ -524,25 +525,30 @@ export class Elements {
       configuration['settings'][setting] = indexSettings[setting];
     }
     configuration.mappings[_type] = { properties: {} };
-    _.each(decoratedProperties, (decorator) => { // @todo recursive rework for nested obj
-      if (decorator && !configuration.mappings[_type].properties[decorator]) {
-        configuration.mappings[_type].properties[decorator.property] = {
-          type: _.get(propertyTypes, decorator.property)
-        };
-      }
-    });
     return await this.getElasticConnection().indices.create({
       index: this.getIndexName(this.getClassInstance(name)),
       body: configuration
     });
   }
 
+  // protected getMappingProperties(decoratedProperties: any, type: string): Object {
+  //   let result = { properties: {} };
+  //   let propertyType = this.getPropertyType(name, definition, objectDecorators);
+  //   _.each(decoratedProperties, (decorator) => { // @todo recursive rework for nested obj
+  //     if (decorator && !configuration.mappings[_type].properties[decorator]) {
+  //       configuration.mappings[_type].properties[decorator.property] = {
+  //         type: _.get(propertyTypes, decorator.property)
+  //       };
+  //     }
+  //   });
+  // }
+
   /**
    * Return an object with the Elasticsearch required type for each property
    * @param   [description]
    * @return  [description]
    */
-  protected getPropertyTypes(name: string, source: any, decorators: any): Object {
+  protected getPropertyType(source: any, decorators: any): Object {
     let result = {};
     _.each(decorators, (decorator) => {
       if (decorator && !result[decorator.property]
@@ -569,10 +575,14 @@ export class Elements {
             result[decorator.property] = 'date';
             break;
           case TSV.DecoratorTypes.NESTED:
-            result[decorator.property] = 'nested';
+            console.log('HERE BE DRAGONS!');
+            console.log('TARGETING ' + decorator.property + ' OF ' + source + ' -> ' + source[decorator.property]);
+            console.log('TARGETING ' + decorator.property + ' OF ' + source.prototype + ' -> ' + source.prototype[decorator.property]);
+            // this.getPropertyType(source[decorator.property]);
+            // result[decorator.property] = 'nested';
             break;
           default:
-            switch (Reflect.getMetadata('design:type', this.getClassInstance(name), decorator.property).name) {
+            switch (Reflect.getMetadata('design:type', new source(), decorator.property).name) {
               // declared type: string
               case 'String':
                 result[decorator.property] = 'string';

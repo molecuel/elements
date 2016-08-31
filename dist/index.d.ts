@@ -40,7 +40,7 @@ export declare class Elements {
     createElastic(element: IElement): Promise<any>;
     protected updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any>;
     protected registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any>;
-    protected getPropertyTypes(name: string, source: any, decorators: any): Object;
+    protected getPropertyType(source: any, decorators: any): Object;
     protected getIndexName(element: IElement): string;
     protected toElementArray(collection: IDocuments): Promise<any>;
 }
