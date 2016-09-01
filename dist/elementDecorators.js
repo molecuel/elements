@@ -82,4 +82,4 @@ function UseElasticType(type) {
 }
 exports.UseElasticType = UseElasticType;
 
-//# sourceMappingURL=customDecorators.js.map
+//# sourceMappingURL=elementDecorators.js.map

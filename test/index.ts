@@ -9,7 +9,7 @@ import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
 import { IElement } from '../dist/interfaces/IElement';
 import * as V from 'tsvalidate';
-import * as ELD from '../dist/customDecorators';
+import * as ELD from '../dist/elementDecorators';
 
 class Post extends Element {
   @V.ValidateType()
@@ -58,7 +58,7 @@ describe('mlcl', function() {
 
     it('should register a new data model and a new elasticsearch index', async function() {
       await el.registerClass('post', Post);
-      let conf = { settings: {number_of_shards: 3} };
+      let conf = { settings: { number_of_shards: 3 } };
       // console.log(SmallTestClass['obj']);
       await el.registerClass('test', SmallTestClass, conf);
     });

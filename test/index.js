@@ -25,7 +25,7 @@ const _ = require('lodash');
 const dist_1 = require('../dist');
 const Element_1 = require('../dist/classes/Element');
 const V = require('tsvalidate');
-const ELD = require('../dist/customDecorators');
+const ELD = require('../dist/elementDecorators');
 class Post extends Element_1.Element {
 }
 __decorate([

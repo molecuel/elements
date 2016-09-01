@@ -12,7 +12,7 @@ const elasticsearch = require('elasticsearch');
 require('reflect-metadata');
 const _ = require('lodash');
 const TSV = require('tsvalidate');
-const ELD = require('./customDecorators');
+const ELD = require('./elementDecorators');
 const ElasticOptions_1 = require('./classes/ElasticOptions');
 var Element_1 = require('./classes/Element');
 exports.Element = Element_1.Element;

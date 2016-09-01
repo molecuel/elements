@@ -5,7 +5,7 @@ import 'reflect-metadata';
 import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
 
-import * as ELD from './customDecorators';
+import * as ELD from './elementDecorators';
 import { ElasticOptions } from './classes/ElasticOptions';
 import { IElement } from './interfaces/IElement';
 import { IDocuments } from './interfaces/IDocuments';

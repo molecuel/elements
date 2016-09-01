@@ -15,7 +15,7 @@
     "test/index.ts",
     "src/index.ts",
     "src/config.ts",
-    "src/customDecorators.ts",
+    "src/elementDecorators.ts",
     "dist/index.d.ts",
     "interfaces/IElement.ts",
     "interfaces/IDocuments.ts",
