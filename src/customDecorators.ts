@@ -1,10 +1,26 @@
 export class Decorators {
   public static get NOT_FOR_ELASTIC(): string { return 'NotForElastic'; }
+  public static get INDEX_MAPPING(): string { return 'Mapping'; }
   public static get USE_MONGO_COLLECTION(): string { return 'UseMongoCollection'; }
   public static get USE_ELASTIC_TYPE(): string { return 'UseElasticType'; }
 }
 
 export const METADATAKEY = 'mlcl_elements:validators';
+
+export function Mapping() {
+  return function(target: Object, propertyName: string) {
+    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    if (!metadata) {
+      metadata = [];
+    }
+    metadata.push({
+      type: Decorators.INDEX_MAPPING,
+      property: propertyName
+    });
+    Reflect.defineMetadata(METADATAKEY, metadata, target);
+  };
+}
+
 
 export function NotForElastic() {
   return function(target: Object, propertyName: string) {

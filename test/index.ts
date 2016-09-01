@@ -15,21 +15,25 @@ class Post extends Element {
   @V.ValidateType()
   @V.ClearValidators()
   _id: number;
+  @ELD.Mapping()
   @V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5'])
   text: string;
 }
 
 @ELD.UseMongoCollection('Post')
 class SmallTestClass extends Element {
-  constructor(value?: any, obj?: IElement) {
+  constructor(value?: any, obj?: Post) {
     super();
     this.prop = value || true;
     this.obj = obj || new Post();
   }
+  @V.ValidateType(String)
   @V.Contains('hello')
+  @ELD.Mapping()
   prop: any;
+  @ELD.Mapping()
   @V.ValidateNested()
-  obj: IElement;
+  obj: Post;
   func: any = function() { };
   public meth() {
 
@@ -54,9 +58,9 @@ describe('mlcl', function() {
 
     it('should register a new data model and a new elasticsearch index', async function() {
       await el.registerClass('post', Post);
-      let settings = { number_of_shards: 3 };
+      let conf = { settings: {number_of_shards: 3} };
       // console.log(SmallTestClass['obj']);
-      await el.registerClass('test', SmallTestClass, settings);
+      await el.registerClass('test', SmallTestClass, conf);
     });
 
     it('should get a class for a model name', function() {

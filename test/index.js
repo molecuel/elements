@@ -34,6 +34,7 @@ __decorate([
     __metadata('design:type', Number)
 ], Post.prototype, "_id", void 0);
 __decorate([
+    ELD.Mapping(),
     V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5']), 
     __metadata('design:type', String)
 ], Post.prototype, "text", void 0);
@@ -48,16 +49,19 @@ let SmallTestClass = class SmallTestClass extends Element_1.Element {
     }
 };
 __decorate([
-    V.Contains('hello'), 
+    V.ValidateType(String),
+    V.Contains('hello'),
+    ELD.Mapping(), 
     __metadata('design:type', Object)
 ], SmallTestClass.prototype, "prop", void 0);
 __decorate([
+    ELD.Mapping(),
     V.ValidateNested(), 
-    __metadata('design:type', Object)
+    __metadata('design:type', Post)
 ], SmallTestClass.prototype, "obj", void 0);
 SmallTestClass = __decorate([
     ELD.UseMongoCollection('Post'), 
-    __metadata('design:paramtypes', [Object, Object])
+    __metadata('design:paramtypes', [Object, Post])
 ], SmallTestClass);
 describe('mlcl', function () {
     let el;
@@ -78,8 +82,8 @@ describe('mlcl', function () {
         it('should register a new data model and a new elasticsearch index', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 yield el.registerClass('post', Post);
-                let settings = { number_of_shards: 3 };
-                yield el.registerClass('test', SmallTestClass, settings);
+                let conf = { settings: { number_of_shards: 3 } };
+                yield el.registerClass('test', SmallTestClass, conf);
             });
         });
         it('should get a class for a model name', function () {

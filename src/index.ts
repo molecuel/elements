@@ -474,7 +474,7 @@ export class Elements {
    * Update or upsert a single Element based object in Elasticsearch; return response
    * @param  {IElement} element   [description]
    * @param  {boolean}  [upsert]  [description]
-   * @return {Promise<any>} [description]
+   * @return {Promise<any>}       [description]
    */
   protected async updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any> {
     let _body = element.toDbObject();
@@ -501,111 +501,127 @@ export class Elements {
   }
 
   /**
-   * Create an index and coresponding mapping for a supplied class
+   * Create an index and corresponding mapping for a supplied class
    * @param  {any} definition  [description]
    * @return {Promise<any>}    [description]
    */
   protected async registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any> {
-    let _type: string = definition.prototype.constructor.name;
-    let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(name)), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(name)));
-    // console.log(objectDecorators);
-    let decoratedProperties = _.keyBy(objectDecorators, function(o: any) {
-      if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
-        && o.property !== definition.prototype.constructor.name
-        && o.property !== '_id') {
-        return o.property;
-      }
-    });
-    let propertyType = this.getPropertyType(definition, objectDecorators);
     let configuration = {
-      settings: {},
       mappings: {}
     };
-    for (let setting in indexSettings) {
-      configuration['settings'][setting] = indexSettings[setting];
+    configuration.mappings[definition.name] = this.getMappingProperties(definition);
+    if (indexSettings) {
+      if (indexSettings.settings) {
+        configuration['settings'] = indexSettings.settings;
+      }
+      if (indexSettings.aliases) {
+        configuration['aliases'] = indexSettings.aliases;
+      }
     }
-    configuration.mappings[_type] = { properties: {} };
     return await this.getElasticConnection().indices.create({
       index: this.getIndexName(this.getClassInstance(name)),
       body: configuration
     });
   }
 
-  // protected getMappingProperties(decoratedProperties: any, type: string): Object {
-  //   let result = { properties: {} };
-  //   let propertyType = this.getPropertyType(name, definition, objectDecorators);
-  //   _.each(decoratedProperties, (decorator) => { // @todo recursive rework for nested obj
-  //     if (decorator && !configuration.mappings[_type].properties[decorator]) {
-  //       configuration.mappings[_type].properties[decorator.property] = {
-  //         type: _.get(propertyTypes, decorator.property)
-  //       };
-  //     }
-  //   });
-  // }
+  /**
+   * Build Mapping for index based on applied decorators
+   * @param  {any}     model  [description]
+   * @return {Object}         [description]
+   */
+  protected getMappingProperties(model: any): Object {
+    let result = {};
+    let propertyDecorators: any[] = _.concat(Reflect.getMetadata(TSV.METADATAKEY, new model()), Reflect.getMetadata(ELD.METADATAKEY, new model()));
+    _.each(propertyDecorators, (decorator) => {
+      if (decorator && _.find(propertyDecorators, function(checkedDecorator: any) {
+        return (checkedDecorator
+          && checkedDecorator.property === decorator.property
+          && checkedDecorator.type === ELD.Decorators.INDEX_MAPPING
+          && checkedDecorator.property !== model.name
+          && checkedDecorator.property !== '_id');
+      }) && !_.find(propertyDecorators, function(checkedDecorator: any) {
+        return (checkedDecorator
+          && checkedDecorator.property === decorator.property
+          && checkedDecorator.type === ELD.Decorators.NOT_FOR_ELASTIC
+          && checkedDecorator.property !== model.name
+          && checkedDecorator.property !== '_id');
+      })) {
+        if (!result['properties']) {
+          result = { properties: {} };
+        }
+        if (_.find(propertyDecorators, (checkedDecorator) => {
+          return (checkedDecorator
+            && checkedDecorator.property === decorator.property
+            && checkedDecorator.type === TSV.DecoratorTypes.NESTED);
+        })) {
+          result['properties'][decorator.property] = this.getMappingProperties(Reflect.getMetadata('design:type', new model(), decorator.property));
+        }
+        else if (!result['properties'][decorator.property]) {
+          result['properties'][decorator.property] = { type: _.get(this.getPropertyType(model, decorator.property, propertyDecorators), decorator.property) };
+        }
+      }
+    });
+    return result;
+  }
 
   /**
-   * Return an object with the Elasticsearch required type for each property
-   * @param   [description]
-   * @return  [description]
+   * Return an object with the Elasticsearch required type for any property
+   * @param  {any}    model       [description]
+   * @param  {string} property    [description]
+   * @param  {any}    decorators  [description]
+   * @return {Object}             [description]
    */
-  protected getPropertyType(source: any, decorators: any): Object {
+  protected getPropertyType(model: any, property: string, decorators: any): Object {
     let result = {};
     _.each(decorators, (decorator) => {
-      if (decorator && !result[decorator.property]
-        && decorator.property !== source.prototype.constructor.name) {
+      if (decorator && !result[property]
+        && decorator.property === property) {
 
         switch (decorator.type) {
           case TSV.DecoratorTypes.IS_INT:
-            result[decorator.property] = 'integer';
+            result[property] = 'integer';
             break;
           case TSV.DecoratorTypes.IS_FLOAT:
           case TSV.DecoratorTypes.IS_DECIMAL:
-            result[decorator.property] = 'float';
+            result[property] = 'float';
             break;
           case TSV.DecoratorTypes.IP_ADDRESS:
           case TSV.DecoratorTypes.MAC_ADDRESS:
           case TSV.DecoratorTypes.EMAIL:
           case TSV.DecoratorTypes.ALPHA:
-            result[decorator.property] = 'string';
+            result[property] = 'string';
             break;
           case TSV.DecoratorTypes.DATE:
           case TSV.DecoratorTypes.DATE_AFTER:
           case TSV.DecoratorTypes.DATE_BEFORE:
           case TSV.DecoratorTypes.DATE_ISO8601:
-            result[decorator.property] = 'date';
-            break;
-          case TSV.DecoratorTypes.NESTED:
-            console.log('HERE BE DRAGONS!');
-            console.log('TARGETING ' + decorator.property + ' OF ' + source + ' -> ' + source[decorator.property]);
-            console.log('TARGETING ' + decorator.property + ' OF ' + source.prototype + ' -> ' + source.prototype[decorator.property]);
-            // this.getPropertyType(source[decorator.property]);
-            // result[decorator.property] = 'nested';
-            break;
-          default:
-            switch (Reflect.getMetadata('design:type', new source(), decorator.property).name) {
-              // declared type: string
-              case 'String':
-                result[decorator.property] = 'string';
-                break;
-              // declared type: number
-              case 'Number':
-                result[decorator.property] = 'integer';
-                break;
-              // declared type: boolean
-              case 'Boolean':
-                result[decorator.property] = 'boolean';
-                break;
-              // declared type: any
-              case 'Object':
-              // declared type: object
-              default:
-                result[decorator.property] = 'object';
-                break;
-            }
+            result[property] = 'date';
             break;
         }
       }
     });
+    if (!result[property]) {
+      switch (Reflect.getMetadata('design:type', new model(), property).name) {
+        // declared type: string
+        case 'String':
+          result[property] = 'string';
+          break;
+        // declared type: number
+        case 'Number':
+          result[property] = 'integer';
+          break;
+        // declared type: boolean
+        case 'Boolean':
+          result[property] = 'boolean';
+          break;
+        // declared type: any
+        case 'Object':
+        // declared type: object
+        default:
+          result[property] = 'object';
+          break;
+      }
+    }
     return result;
   }
 

@@ -1,11 +1,26 @@
 "use strict";
 class Decorators {
     static get NOT_FOR_ELASTIC() { return 'NotForElastic'; }
+    static get INDEX_MAPPING() { return 'Mapping'; }
     static get USE_MONGO_COLLECTION() { return 'UseMongoCollection'; }
     static get USE_ELASTIC_TYPE() { return 'UseElasticType'; }
 }
 exports.Decorators = Decorators;
 exports.METADATAKEY = 'mlcl_elements:validators';
+function Mapping() {
+    return function (target, propertyName) {
+        let metadata = Reflect.getMetadata(exports.METADATAKEY, target);
+        if (!metadata) {
+            metadata = [];
+        }
+        metadata.push({
+            type: Decorators.INDEX_MAPPING,
+            property: propertyName
+        });
+        Reflect.defineMetadata(exports.METADATAKEY, metadata, target);
+    };
+}
+exports.Mapping = Mapping;
 function NotForElastic() {
     return function (target, propertyName) {
         let metadata = Reflect.getMetadata(exports.METADATAKEY, target);

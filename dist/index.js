@@ -349,80 +349,103 @@ class Elements {
     }
     registerIndex(name, definition, indexSettings) {
         return __awaiter(this, void 0, Promise, function* () {
-            let _type = definition.prototype.constructor.name;
-            let objectDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, this.getClassInstance(name)), Reflect.getMetadata(ELD.METADATAKEY, this.getClassInstance(name)));
-            let decoratedProperties = _.keyBy(objectDecorators, function (o) {
-                if (o && o.type !== ELD.Decorators.NOT_FOR_ELASTIC
-                    && o.property !== definition.prototype.constructor.name
-                    && o.property !== '_id') {
-                    return o.property;
-                }
-            });
-            let propertyType = this.getPropertyType(definition, objectDecorators);
             let configuration = {
-                settings: {},
                 mappings: {}
             };
-            for (let setting in indexSettings) {
-                configuration['settings'][setting] = indexSettings[setting];
+            configuration.mappings[definition.name] = this.getMappingProperties(definition);
+            if (indexSettings) {
+                if (indexSettings.settings) {
+                    configuration['settings'] = indexSettings.settings;
+                }
+                if (indexSettings.aliases) {
+                    configuration['aliases'] = indexSettings.aliases;
+                }
             }
-            configuration.mappings[_type] = { properties: {} };
             return yield this.getElasticConnection().indices.create({
                 index: this.getIndexName(this.getClassInstance(name)),
                 body: configuration
             });
         });
     }
-    getPropertyType(source, decorators) {
+    getMappingProperties(model) {
+        let result = {};
+        let propertyDecorators = _.concat(Reflect.getMetadata(TSV.METADATAKEY, new model()), Reflect.getMetadata(ELD.METADATAKEY, new model()));
+        _.each(propertyDecorators, (decorator) => {
+            if (decorator && _.find(propertyDecorators, function (checkedDecorator) {
+                return (checkedDecorator
+                    && checkedDecorator.property === decorator.property
+                    && checkedDecorator.type === ELD.Decorators.INDEX_MAPPING
+                    && checkedDecorator.property !== model.name
+                    && checkedDecorator.property !== '_id');
+            }) && !_.find(propertyDecorators, function (checkedDecorator) {
+                return (checkedDecorator
+                    && checkedDecorator.property === decorator.property
+                    && checkedDecorator.type === ELD.Decorators.NOT_FOR_ELASTIC
+                    && checkedDecorator.property !== model.name
+                    && checkedDecorator.property !== '_id');
+            })) {
+                if (!result['properties']) {
+                    result = { properties: {} };
+                }
+                if (_.find(propertyDecorators, (checkedDecorator) => {
+                    return (checkedDecorator
+                        && checkedDecorator.property === decorator.property
+                        && checkedDecorator.type === TSV.DecoratorTypes.NESTED);
+                })) {
+                    result['properties'][decorator.property] = this.getMappingProperties(Reflect.getMetadata('design:type', new model(), decorator.property));
+                }
+                else if (!result['properties'][decorator.property]) {
+                    result['properties'][decorator.property] = { type: _.get(this.getPropertyType(model, decorator.property, propertyDecorators), decorator.property) };
+                }
+            }
+        });
+        return result;
+    }
+    getPropertyType(model, property, decorators) {
         let result = {};
         _.each(decorators, (decorator) => {
-            if (decorator && !result[decorator.property]
-                && decorator.property !== source.prototype.constructor.name) {
+            if (decorator && !result[property]
+                && decorator.property === property) {
                 switch (decorator.type) {
                     case TSV.DecoratorTypes.IS_INT:
-                        result[decorator.property] = 'integer';
+                        result[property] = 'integer';
                         break;
                     case TSV.DecoratorTypes.IS_FLOAT:
                     case TSV.DecoratorTypes.IS_DECIMAL:
-                        result[decorator.property] = 'float';
+                        result[property] = 'float';
                         break;
                     case TSV.DecoratorTypes.IP_ADDRESS:
                     case TSV.DecoratorTypes.MAC_ADDRESS:
                     case TSV.DecoratorTypes.EMAIL:
                     case TSV.DecoratorTypes.ALPHA:
-                        result[decorator.property] = 'string';
+                        result[property] = 'string';
                         break;
                     case TSV.DecoratorTypes.DATE:
                     case TSV.DecoratorTypes.DATE_AFTER:
                     case TSV.DecoratorTypes.DATE_BEFORE:
                     case TSV.DecoratorTypes.DATE_ISO8601:
-                        result[decorator.property] = 'date';
-                        break;
-                    case TSV.DecoratorTypes.NESTED:
-                        console.log('HERE BE DRAGONS!');
-                        console.log('TARGETING ' + decorator.property + ' OF ' + source + ' -> ' + source[decorator.property]);
-                        console.log('TARGETING ' + decorator.property + ' OF ' + source.prototype + ' -> ' + source.prototype[decorator.property]);
-                        break;
-                    default:
-                        switch (Reflect.getMetadata('design:type', new source(), decorator.property).name) {
-                            case 'String':
-                                result[decorator.property] = 'string';
-                                break;
-                            case 'Number':
-                                result[decorator.property] = 'integer';
-                                break;
-                            case 'Boolean':
-                                result[decorator.property] = 'boolean';
-                                break;
-                            case 'Object':
-                            default:
-                                result[decorator.property] = 'object';
-                                break;
-                        }
+                        result[property] = 'date';
                         break;
                 }
             }
         });
+        if (!result[property]) {
+            switch (Reflect.getMetadata('design:type', new model(), property).name) {
+                case 'String':
+                    result[property] = 'string';
+                    break;
+                case 'Number':
+                    result[property] = 'integer';
+                    break;
+                case 'Boolean':
+                    result[property] = 'boolean';
+                    break;
+                case 'Object':
+                default:
+                    result[property] = 'object';
+                    break;
+            }
+        }
         return result;
     }
     getIndexName(element) {
