@@ -1,4 +1,5 @@
 'use strict';
+import {Subject} from '@reactivex/rxjs/dist/es6/Subject.js';
 import mongodb = require('mongodb');
 import elasticsearch = require('elasticsearch');
 import 'reflect-metadata';

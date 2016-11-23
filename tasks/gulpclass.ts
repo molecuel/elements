@@ -69,7 +69,7 @@ export class Gulpfile {
     sourcepaths.push(this.config.paths.source);
     let tsResult = gulp.src(sourcepaths)
       .pipe(sourcemaps.init())
-      .pipe(ts(this.tsProject));
+      .pipe(this.tsProject()));
 
     return merge([
       tsResult.dts.pipe(gulp.dest(this.config.paths.dist)),
@@ -88,7 +88,7 @@ export class Gulpfile {
     sourcepaths.push(this.config.paths.testsource);
     let tsResult = gulp.src(sourcepaths)
       .pipe(plumber())
-      .pipe(ts(this.tsProject));
+      .pipe(this.tsProject());
 
     return merge([
       tsResult.js.pipe(gulp.dest('test/'))

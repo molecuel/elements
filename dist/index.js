@@ -30,13 +30,13 @@ class Elements {
         });
     }
     connect() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             yield this.connectElastic();
             yield this.connectMongo();
         });
     }
     registerClass(name, definition, indexSettings) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             definition.elements = this;
             this.elementStore.set(name, definition);
             return yield this.registerIndex(name, definition, indexSettings);
@@ -93,7 +93,7 @@ class Elements {
         return this.elasticClient;
     }
     getMongoCollections() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             return yield this.getMongoConnection().collections();
         });
     }
@@ -110,7 +110,7 @@ class Elements {
         return true;
     }
     findByQuery(collection, query, limit) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let input = collection;
             let collectionName;
             if (typeof input === 'string') {
@@ -128,7 +128,7 @@ class Elements {
         });
     }
     findById(id, collection) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let inputColl = collection;
             let inputId = id;
             let collectionName;
@@ -162,7 +162,7 @@ class Elements {
         });
     }
     search(query) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let input = query;
             if (this.elasticOptions.prefix) {
                 if (!input.index) {
@@ -179,7 +179,7 @@ class Elements {
         return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
     }
     connectMongo() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             this.mongoConnection = yield this.mongoConnectWrapper();
         });
     }
@@ -190,12 +190,12 @@ class Elements {
         });
     }
     connectElastic() {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             this.elasticConnection = yield this.elasticConnectWrapper();
         });
     }
     updateMongoElements(instances, collectionName, upsert) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!upsert) {
                 upsert = false;
             }
@@ -212,7 +212,7 @@ class Elements {
         });
     }
     updateMongoElementSingle(instance, collectionName, upsert) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!upsert) {
                 upsert = false;
             }
@@ -254,7 +254,7 @@ class Elements {
         }
     }
     mongoUpdate(collections, upsert) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let result = [];
             if (!upsert) {
                 upsert = false;
@@ -268,7 +268,7 @@ class Elements {
         });
     }
     saveInstances(instances, upsert) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!upsert) {
                 upsert = false;
             }
@@ -311,7 +311,7 @@ class Elements {
         });
     }
     createElastic(element) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let _body = element.toDbObject();
             delete _body._id;
             return yield this.getElasticConnection().create({
@@ -323,7 +323,7 @@ class Elements {
         });
     }
     updateElasticElementSingle(element, upsert) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let _body = element.toDbObject();
             delete _body._id;
             if (!upsert) {
@@ -348,7 +348,7 @@ class Elements {
         });
     }
     registerIndex(name, definition, indexSettings) {
-        return __awaiter(this, void 0, Promise, function* () {
+        return __awaiter(this, void 0, void 0, function* () {
             let configuration = {
                 mappings: {}
             };
