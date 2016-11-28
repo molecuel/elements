@@ -1,13 +1,10 @@
 'use strict';
 import {Subject} from '@reactivex/rxjs/dist/es6/Subject.js';
-import mongodb = require('mongodb');
-import elasticsearch = require('elasticsearch');
 import 'reflect-metadata';
 import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
 
 import * as ELD from './elementDecorators';
-import { ElasticOptions } from './classes/ElasticOptions';
 import { IElement } from './interfaces/IElement';
 import { IDocuments } from './interfaces/IDocuments';
 import { IIndexSettings } from './interfaces/IIndexSettings';
@@ -18,38 +15,11 @@ export { Element as Element } from './classes/Element';
 export class Elements {
   public static loaderversion = 2;
 
-  private mongoClient: mongodb.MongoClient;
-  private mongoConnection: Promise<mongodb.Db>;
-  private elasticClient: elasticsearch.Client;
-  private elasticConnection: PromiseLike<elasticsearch.Client>;
-  private elasticOptions: ElasticOptions;
   private elementStore: Map<string, IElement>;
 
   constructor(mlcl?: any, config?: any) {
     this.elementStore = new Map();
-    // @todo Get from config object
-
-    this.elasticOptions = new ElasticOptions();
-    this.elasticOptions.url = 'http://localhost:9200';
-    this.elasticOptions.loglevel = 'trace';
-    this.elasticOptions.timeout = 5000;
-
-    this.mongoClient = mongodb.MongoClient;
-    this.elasticClient = new elasticsearch.Client({
-      host: 'localhost:9200',
-      log: 'trace'
-    });
   }
-
-  /**
-   * Connect function to initialize the database connections to elastic and mongodb
-   * @return {[Promise]}
-   */
-  public async connect(): Promise<void> {
-    await this.connectElastic();
-    await this.connectMongo();
-  }
-
   /**
    * Register a class instance
    * @param {string} name       [description]
@@ -58,7 +28,6 @@ export class Elements {
   public async registerClass(name: string, definition: any, indexSettings?: IIndexSettings): Promise<void> {
     definition.elements = this;
     this.elementStore.set(name, definition);
-    return await this.registerIndex(name, definition, indexSettings);
   }
 
   /**
@@ -139,38 +108,6 @@ export class Elements {
   }
 
   /**
-   * Close mongo connection
-   * @return {Promise<any>} [description]
-   */
-  public mongoClose(): Promise<any> {
-    return this.getMongoConnection().close();
-  }
-
-  /**
-   * Return the mongo connection
-   * @return {any} [description]
-   */
-  protected getMongoConnection(): any {
-    return this.mongoConnection;
-  }
-
-  /**
-   * Return the mongo connection
-   * @return {any} [description]
-   */
-  protected getElasticConnection(): any {
-    return this.elasticClient;
-  }
-
-  /**
-   * Get all mongo collections
-   * @return {Promise<any>} [description]
-   */
-  public async getMongoCollections(): Promise<any> {
-    return await this.getMongoConnection().collections();
-  }
-
-  /**
    * Check object for defined IDocuments properties
    * @param  {any}          obj   [description]
    * @return {boolean}            [description]
@@ -186,158 +123,6 @@ export class Elements {
       }
     }
     return true;
-  }
-
-  /**
-   * Get documents from MongoDb based on query
-   * @param  {IElement}     model [description]
-   * @param  {any}          query [description]
-   * @return {Promise<any>}       [description]
-   */
-  public async findByQuery(collection: string | IElement, query?: any, limit?: number): Promise<any> {
-    let input: any = collection;
-    let collectionName: string;
-    if (typeof input === 'string') {
-      collectionName = input;
-    }
-    else if ('prototype' in input) {
-      collectionName = input.prototype.constructor.name;
-    }
-    else {
-      collectionName = input.constructor.name;
-    }
-    return await this.getMongoConnection().collection(collectionName).find(query).limit(limit || 0).toArray().then((res) => {
-      return this.toElementArray({ collection: collectionName, documents: res });
-    });
-  }
-
-  /**
-   * Get Element based object from MongoDb by supplied collection and Id
-   * @param {number | string | IElement} id          [description]
-   * @param {string | IElement}          collection  [description]
-   * @return  [description]
-   */
-  public async findById(id: number | string | IElement, collection?: string | IElement): Promise<any> {
-    let inputColl: any = collection;
-    let inputId: any = id;
-    let collectionName: string;
-    if (typeof collection !== 'undefined') {
-      if (typeof inputColl === 'string') {
-        collectionName = inputColl;
-      }
-      else if ('prototype' in inputColl) {
-        collectionName = inputColl.prototype.constructor.name;
-      }
-      else {
-        collectionName = inputColl.constructor.name;
-      }
-    }
-    else if (typeof inputId !== 'number'
-      && typeof inputId !== 'string') {
-      if ('constructor' in inputId) {
-        collectionName = id.constructor.name;
-      }
-      if ('_id' in inputId) {
-        inputId = inputId._id;
-      }
-      else {
-        return Promise.reject(new Error('No valid id supplied.'));
-      }
-    }
-    else {
-      return Promise.reject(new Error('Could not determine target collection.'));
-    }
-    return await this.findByQuery(collectionName, { _id: inputId }, 1);
-  }
-
-  /**
-   *
-   * @param   [description]
-   * @return  [description]
-   */
-  public async search(query: Object): Promise<any> {
-    let input: any = query;
-    if (this.elasticOptions.prefix) {
-      if (!input.index) {
-        input.index = this.elasticOptions.prefix + '-*';
-      }
-      else if (!input.index.match(new RegExp('^' + this.elasticOptions.prefix + '-'))) {
-        input.index = this.elasticOptions.prefix + '-' + input.index;
-      }
-    }
-    return await this.getElasticConnection().search(input);
-  }
-
-  /**
-   * Wrapper for mongodb to return a promise needed by the async function
-   * @return {Promise<any>} [Returns the connection promise]
-   */
-  protected mongoConnectWrapper(): Promise<any> {
-    return this.mongoClient.connect('mongodb://localhost/elements?connectTimeoutMS=10000&socketTimeoutMS=10000', { promiseLibrary: Promise });
-  }
-
-  /**
-   * Async function for the mongo database connection
-   * @return {[type]} [description]
-   */
-  protected async connectMongo(): Promise<void> {
-    this.mongoConnection = await this.mongoConnectWrapper();
-  }
-
-  /**
-   * Return the elasticsearch connection
-   * @return {PromiseLike<any>} [description]
-   */
-  protected elasticConnectWrapper(): PromiseLike<any> {
-    return this.elasticClient.ping({
-      requestTimeout: this.elasticOptions.timeout,
-      hello: 'elasticsearch'
-    });
-  }
-
-  /**
-   * Async elasticsearch connection function
-   * @return {Promise<void>} [Return the promise for the elasticsearch connection]
-   */
-  protected async connectElastic(): Promise<void> {
-    this.elasticConnection = await this.elasticConnectWrapper();
-  }
-
-  /**
-   * Bulk insert of mongodb documents
-   * @param  {Object[]}                            instances      [description]
-   * @param  {string}                              collectionName [description]
-   * @param  {mongodb.CollectionInsertManyOptions} options        [description]
-   * @return {Promise<any>}                                       [description]
-   */
-  protected async updateMongoElements(instances: IElement[], collectionName: string, upsert?: boolean): Promise<any> {
-    if (!upsert) {
-      upsert = false;
-    }
-    let bulk = await this.getMongoConnection().collection(collectionName).initializeUnorderedBulkOp();
-    _.each(instances, (instance) => {
-      if (upsert) {
-        bulk.find({ _id: instance._id }).upsert().updateOne(instance);
-      }
-      else {
-        bulk.find({ _id: instance._id }).updateOne(instance);
-      }
-    });
-    return await bulk.execute();
-  }
-
-  /**
-   * Insert single mongodb document
-   * @param  {Object}                             instance       [description]
-   * @param  {string}                             collectionName [description]
-   * @param  {mongodb.CollectionInsertOneOptions} options        [description]
-   * @return {Promise<any>}                                      [description]
-   */
-  protected async updateMongoElementSingle(instance: IElement, collectionName: string, upsert?: boolean): Promise<any> {
-    if (!upsert) {
-      upsert = false;
-    }
-    return await this.getMongoConnection().collection(collectionName).updateOne({ _id: instance._id }, instance, { upsert: upsert });
   }
 
   /**
@@ -385,25 +170,6 @@ export class Elements {
   }
 
   /**
-   * Bulk update/upsert of elements into respective collection
-   * @param  {Object}                              collections [description]
-   * @param  {boolean}                             upsert      [description]
-   * @return {Promise<any>}                                    [description]
-   */
-  protected async mongoUpdate(collections: Object, upsert?: boolean): Promise<any> {
-    let result: any[] = [];
-    if (!upsert) {
-      upsert = false;
-    }
-    for (let collectionName in collections) {
-      let collectionFullName: string = collectionName;
-      let prom = await this.updateMongoElements(collections[collectionName], collectionFullName, upsert);
-      result.push({ [collectionName]: prom });
-    }
-    return Promise.resolve(result);
-  }
-
-  /**
    * Wrapper for instance save
    * @param  {IElement[]}                          instances [description]
    * @param  {boolean}                             upsert    [description]
@@ -430,99 +196,11 @@ export class Elements {
             collectionName = entry.value;
           }
         });
-        let that = this;
-        return await this.updateMongoElementSingle(
-          instances[0].toDbObject(),
-          collectionName,
-          upsert).then(async function(mres) {
-            if (mres
-              && ((mres.upsertedId && instances[0]._id === mres.upsertedId._id)
-                || (mres.modified && mres.modified >= 1))) {
-
-              await that.updateElasticElementSingle(instances[0], upsert).then((eres) => {
-                // @todo bind resolve in outer resolve
-                return eres;
-              });
-            }
-            return [{ result: mres.result, ops: mres.ops, upsertedCount: mres.upsertedCount, upsertedId: mres.upsertedId }];
-          });
       }
     }
     else {
-      return this.validateAndSort(instances).then((res) => {
-        return this.mongoUpdate(res, upsert);
-      });
-    }
-  }
 
-  /**
-   * Index a single Element based object, if it is not yet indexed; return  response
-   * @param  {IElement} element [description]
-   * @return {Promise<any>}     [description]
-   */
-  public async createElastic(element: IElement): Promise<any> {
-    let _body = element.toDbObject();
-    delete _body._id;
-    return await this.getElasticConnection().create({
-      index: this.getIndexName(element),
-      type: element.constructor.name,
-      id: element._id,
-      body: _body
-    });
-  }
-
-  /**
-   * Update or upsert a single Element based object in Elasticsearch; return response
-   * @param  {IElement} element   [description]
-   * @param  {boolean}  [upsert]  [description]
-   * @return {Promise<any>}       [description]
-   */
-  protected async updateElasticElementSingle(element: IElement, upsert?: boolean): Promise<any> {
-    let _body = element.toDbObject();
-    delete _body._id;
-    if (!upsert) {
-      upsert = false;
     }
-    if (upsert) {
-      return await this.getElasticConnection().index({
-        index: this.getIndexName(element),
-        type: element.constructor.name,
-        id: element._id,
-        body: _body
-      });
-    }
-    else {
-      return await this.getElasticConnection().update({
-        index: this.getIndexName(element),
-        type: element.constructor.name,
-        id: element._id,
-        body: _body
-      });
-    }
-  }
-
-  /**
-   * Create an index and corresponding mapping for a supplied class
-   * @param  {any} definition  [description]
-   * @return {Promise<any>}    [description]
-   */
-  protected async registerIndex(name: string, definition: any, indexSettings?: IIndexSettings): Promise<any> {
-    let configuration = {
-      mappings: {}
-    };
-    configuration.mappings[definition.name] = this.getMappingProperties(definition);
-    if (indexSettings) {
-      if (indexSettings.settings) {
-        configuration['settings'] = indexSettings.settings;
-      }
-      if (indexSettings.aliases) {
-        configuration['aliases'] = indexSettings.aliases;
-      }
-    }
-    return await this.getElasticConnection().indices.create({
-      index: this.getIndexName(this.getClassInstance(name)),
-      body: configuration
-    });
   }
 
   /**
@@ -626,48 +304,4 @@ export class Elements {
     return result;
   }
 
-  /**
-   * Returns the index name for a given Element based Object
-   * @param  {IElement} element [description]
-   * @return {string}           [description]
-   */
-  protected getIndexName(element: IElement): string {
-    if (this.elasticOptions.prefix) {
-      return (this.elasticOptions.prefix + '-' + element.constructor.name).toLowerCase();
-    }
-    else {
-      return element.constructor.name.toLowerCase();
-    }
-  }
-
-  /**
-   * Convert document search result to array of Element objects
-   * @param  {IDocuments}   collection [description]
-   * @return {Promise<any>}            [description]
-   */
-  protected toElementArray(collection: IDocuments): Promise<any> {
-    let that: any = this;
-    let result: any[] = [];
-    if (that.containsIDocuments(collection)) {
-      // build array of collection based elements
-      for (let i = 0; i < collection.documents.length; i++) {
-        let currDoc: any = collection.documents[i];
-        let mappedName;
-        this.elementStore.forEach((value, key, map) => {
-          let constr: any = value;
-          if (constr && !mappedName && constr.name.toLowerCase() === collection.collection.toString().toLowerCase()) {
-            mappedName = key;
-          }
-        });
-        result.push(that.getClassInstance(mappedName));
-        for (let key in currDoc) {
-          result[i][key] = currDoc[key];
-        }
-      }
-      return Promise.resolve(result);
-    }
-    else {
-      return Promise.reject(new Error('Could not determine class'));
-    }
-  }
 }
