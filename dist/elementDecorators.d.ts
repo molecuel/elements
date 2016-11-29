@@ -1,3 +1,4 @@
+/// <reference types="should" />
 export declare class Decorators {
     static readonly NOT_FOR_ELASTIC: string;
     static readonly INDEX_MAPPING: string;

@@ -174,12 +174,7 @@ export class Elements {
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public async saveInstances(instances: IElement[], upsert?: boolean): Promise<any> {
-    if (!upsert) {
-      upsert = false;
-    }
-    console.log(instances[0].constructor);
-    console.log(Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor));
+  public async saveInstances(instances: IElement[], upsert: boolean = false): Promise<any> {
     // check if there is only one instance 
     if (instances.length === 1) {
       // check if there were errors on validation

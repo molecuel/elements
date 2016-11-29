@@ -1,3 +1,4 @@
+/// <reference types="should" />
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import { IElement } from './interfaces/IElement';

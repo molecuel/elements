@@ -110,13 +110,8 @@ class Elements {
             return Promise.resolve(collections);
         }
     }
-    saveInstances(instances, upsert) {
+    saveInstances(instances, upsert = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!upsert) {
-                upsert = false;
-            }
-            console.log(instances[0].constructor);
-            console.log(Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor));
             if (instances.length === 1) {
                 if (instances[0].validate().length > 0) {
                     return Promise.reject(instances[0].validate());
