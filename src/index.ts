@@ -1,5 +1,4 @@
 'use strict';
-import {Subject} from '@reactivex/rxjs/dist/es6/Subject.js';
 import 'reflect-metadata';
 import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
@@ -136,7 +135,7 @@ export class Elements {
 
     // validate all instances and sort transformed objects into array based collections per model name;
     for (let instance of instances) {
-
+      // get the metadata - ELD.METADATAKEY is defined in elementDecorators.ts
       let metadata = Reflect.getMetadata(ELD.METADATAKEY, instance.constructor);
       let collectionName: string = instance.constructor.name;
       _.each(metadata, (entry) => {
@@ -179,11 +178,14 @@ export class Elements {
     if (!upsert) {
       upsert = false;
     }
+    console.log(instances[0].constructor);
+    console.log(Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor));
+    // check if there is only one instance 
     if (instances.length === 1) {
+      // check if there were errors on validation
       if (instances[0].validate().length > 0) {
         return Promise.reject(instances[0].validate());
-      }
-      else {
+      } else {
         let metadata = Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor);
         let collectionName: string = instances[0].constructor.name;
         _.each(metadata, (entry) => {
@@ -194,12 +196,12 @@ export class Elements {
             && entry.property === instances[0].constructor.name) {
 
             collectionName = entry.value;
+            console.log(collectionName);
           }
         });
       }
     }
     else {
-
     }
   }
 

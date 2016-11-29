@@ -115,6 +115,8 @@ class Elements {
             if (!upsert) {
                 upsert = false;
             }
+            console.log(instances[0].constructor);
+            console.log(Reflect.getMetadata(ELD.METADATAKEY, instances[0].constructor));
             if (instances.length === 1) {
                 if (instances[0].validate().length > 0) {
                     return Promise.reject(instances[0].validate());
@@ -129,6 +131,7 @@ class Elements {
                             && 'property' in entry
                             && entry.property === instances[0].constructor.name) {
                             collectionName = entry.value;
+                            console.log(collectionName);
                         }
                     });
                 }
