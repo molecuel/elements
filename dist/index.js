@@ -2,25 +2,36 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-require('reflect-metadata');
-const _ = require('lodash');
-const TSV = require('tsvalidate');
-const ELD = require('./elementDecorators');
-var Element_1 = require('./classes/Element');
+require("reflect-metadata");
+const _ = require("lodash");
+const TSV = require("tsvalidate");
+const ELD = require("./classes/ElementDecorators");
+var Element_1 = require("./classes/Element");
 exports.Element = Element_1.Element;
 class Elements {
     constructor(mlcl, config) {
         this.elementStore = new Map();
+        this.databases = new Map();
     }
-    registerClass(name, definition, indexSettings) {
+    registerDatabase(key, database) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.databases.set(key, database);
+        });
+    }
+    registerClass(name, definition, registerAsModel = false) {
         return __awaiter(this, void 0, void 0, function* () {
             definition.elements = this;
             this.elementStore.set(name, definition);
+            if (registerAsModel) {
+                for (let [key, database] of this.databases) {
+                    database.register(this.getClassInstance(name));
+                }
+            }
         });
     }
     getClass(name) {
@@ -84,7 +95,7 @@ class Elements {
             let collectionName = instance.constructor.name;
             _.each(metadata, (entry) => {
                 if ('type' in entry
-                    && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+                    && entry.type === ELD.Decorators.USE_PERSISTANCE_TABLE
                     && 'value' in entry
                     && 'property' in entry
                     && entry.property === instance.constructor.name) {
@@ -121,17 +132,18 @@ class Elements {
                     let collectionName = instances[0].constructor.name;
                     _.each(metadata, (entry) => {
                         if ('type' in entry
-                            && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+                            && entry.type === ELD.Decorators.USE_PERSISTANCE_TABLE
                             && 'value' in entry
                             && 'property' in entry
                             && entry.property === instances[0].constructor.name) {
                             collectionName = entry.value;
-                            console.log(collectionName);
                         }
                     });
                 }
             }
             else {
+                return this.validateAndSort(instances).then((res) => {
+                });
             }
         });
     }
@@ -148,7 +160,7 @@ class Elements {
             }) && !_.find(propertyDecorators, function (checkedDecorator) {
                 return (checkedDecorator
                     && checkedDecorator.property === decorator.property
-                    && checkedDecorator.type === ELD.Decorators.NOT_FOR_ELASTIC
+                    && checkedDecorator.type === ELD.Decorators.NOT_FOR_POPULATION
                     && checkedDecorator.property !== model.name
                     && checkedDecorator.property !== '_id');
             })) {

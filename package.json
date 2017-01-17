@@ -19,9 +19,9 @@
   "typings": "dist/index.d.ts",
   "homepage": "https://github.com/molecuel/mlcl_elements#readme",
   "devDependencies": {
-    "@types/async": "^2.0.34",
+    "@types/async": "^2.0.36",
     "@types/del": "^2.2.31",
-    "@types/elasticsearch": "^5.0.1",
+    "@types/elasticsearch": "^5.0.9",
     "@types/glob": "^5.0.30",
     "@types/gulp": "^3.8.32",
     "@types/gulp-plumber": "0.0.29",
@@ -52,7 +52,7 @@
     "lodash": "^4.13.1",
     "merge2": "^1.0.1",
     "mocha": "*",
-    "should": ">= 0.0.1",
+    "should": "^11.1.2",
     "tslint": "^3.5.0",
     "tslint-stylish": "^2.1.0-beta",
     "typescript": "^2.0.0"

@@ -9,7 +9,7 @@ import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
 import { IElement } from '../dist/interfaces/IElement';
 import * as V from 'tsvalidate';
-import * as ELD from '../dist/elementDecorators';
+import * as ELD from '../dist/classes/elementDecorators';
 
 class Post extends Element {
   @V.ValidateType()
@@ -20,7 +20,7 @@ class Post extends Element {
   text: string;
 }
 
-@ELD.UseMongoCollection('Post')
+@ELD.UsePersistanceTable('Post')
 class SmallTestClass extends Element {
   constructor(value?: any, obj?: Post) {
     super();
@@ -52,9 +52,9 @@ describe('mlcl', function() {
 
     it('should register a new data model and a new elasticsearch index', async function() {
       await el.registerClass('post', Post);
-      let conf = { settings: { number_of_shards: 3 } };
+      // let conf = { settings: { number_of_shards: 3 } };
       // console.log(SmallTestClass['obj']);
-      await el.registerClass('test', SmallTestClass, conf);
+      await el.registerClass('test', SmallTestClass, true);
     });
 
     it('should get a class for a model name', function() {

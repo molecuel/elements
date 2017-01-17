@@ -1,8 +1,8 @@
 "use strict";
 class Decorators {
-    static get NOT_FOR_ELASTIC() { return 'NotForElastic'; }
+    static get NOT_FOR_POPULATION() { return 'NotForPopulation'; }
     static get INDEX_MAPPING() { return 'Mapping'; }
-    static get USE_MONGO_COLLECTION() { return 'UseMongoCollection'; }
+    static get USE_PERSISTANCE_TABLE() { return 'UsePersistanceTable'; }
     static get USE_ELASTIC_TYPE() { return 'UseElasticType'; }
 }
 exports.Decorators = Decorators;
@@ -21,21 +21,21 @@ function Mapping() {
     };
 }
 exports.Mapping = Mapping;
-function NotForElastic() {
+function NotForPopulation() {
     return function (target, propertyName) {
         let metadata = Reflect.getMetadata(exports.METADATAKEY, target);
         if (!metadata) {
             metadata = [];
         }
         metadata.push({
-            type: Decorators.NOT_FOR_ELASTIC,
+            type: Decorators.NOT_FOR_POPULATION,
             property: propertyName
         });
         Reflect.defineMetadata(exports.METADATAKEY, metadata, target);
     };
 }
-exports.NotForElastic = NotForElastic;
-function UseMongoCollection(collection) {
+exports.NotForPopulation = NotForPopulation;
+function UsePersistanceTable(collection) {
     return function (target) {
         let input = target;
         let className;
@@ -50,14 +50,14 @@ function UseMongoCollection(collection) {
             metadata = [];
         }
         metadata.push({
-            type: Decorators.USE_MONGO_COLLECTION,
+            type: Decorators.USE_PERSISTANCE_TABLE,
             property: className,
             value: collection
         });
         Reflect.defineMetadata(exports.METADATAKEY, metadata, target);
     };
 }
-exports.UseMongoCollection = UseMongoCollection;
+exports.UsePersistanceTable = UsePersistanceTable;
 function UseElasticType(type) {
     return function (target) {
         let input = target;
@@ -82,4 +82,4 @@ function UseElasticType(type) {
 }
 exports.UseElasticType = UseElasticType;
 
-//# sourceMappingURL=elementDecorators.js.map
+//# sourceMappingURL=ElementDecorators.js.map

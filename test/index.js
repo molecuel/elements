@@ -11,31 +11,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 let BSON = require('bson');
-require('reflect-metadata');
-const should = require('should');
-const assert = require('assert');
-const _ = require('lodash');
-const dist_1 = require('../dist');
-const Element_1 = require('../dist/classes/Element');
-const V = require('tsvalidate');
-const ELD = require('../dist/elementDecorators');
+require("reflect-metadata");
+const should = require("should");
+const assert = require("assert");
+const _ = require("lodash");
+const dist_1 = require("../dist");
+const Element_1 = require("../dist/classes/Element");
+const V = require("tsvalidate");
+const ELD = require("../dist/classes/elementDecorators");
 class Post extends Element_1.Element {
 }
 __decorate([
     V.ValidateType(),
-    V.ClearValidators(), 
-    __metadata('design:type', Number)
+    V.ClearValidators(),
+    __metadata("design:type", Number)
 ], Post.prototype, "_id", void 0);
 __decorate([
     ELD.Mapping(),
-    V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5']), 
-    __metadata('design:type', String)
+    V.InArray(['hello', 'world', 'earth1', 'earth2', 'earth3', 'earth4', 'earth5']),
+    __metadata("design:type", String)
 ], Post.prototype, "text", void 0);
 let SmallTestClass = class SmallTestClass extends Element_1.Element {
     constructor(value, obj) {
@@ -50,17 +50,17 @@ let SmallTestClass = class SmallTestClass extends Element_1.Element {
 __decorate([
     V.ValidateType(String),
     V.Contains('hello'),
-    ELD.Mapping(), 
-    __metadata('design:type', Object)
+    ELD.Mapping(),
+    __metadata("design:type", Object)
 ], SmallTestClass.prototype, "prop", void 0);
 __decorate([
     ELD.Mapping(),
-    V.ValidateNested(), 
-    __metadata('design:type', Post)
+    V.ValidateNested(),
+    __metadata("design:type", Post)
 ], SmallTestClass.prototype, "obj", void 0);
 SmallTestClass = __decorate([
-    ELD.UseMongoCollection('Post'), 
-    __metadata('design:paramtypes', [Object, Post])
+    ELD.UsePersistanceTable('Post'),
+    __metadata("design:paramtypes", [Object, Post])
 ], SmallTestClass);
 describe('mlcl', function () {
     let el;
@@ -75,8 +75,7 @@ describe('mlcl', function () {
         it('should register a new data model and a new elasticsearch index', function () {
             return __awaiter(this, void 0, void 0, function* () {
                 yield el.registerClass('post', Post);
-                let conf = { settings: { number_of_shards: 3 } };
-                yield el.registerClass('test', SmallTestClass, conf);
+                yield el.registerClass('test', SmallTestClass, true);
             });
         });
         it('should get a class for a model name', function () {

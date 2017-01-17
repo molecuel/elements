@@ -1,7 +1,7 @@
 export class Decorators {
-  public static get NOT_FOR_ELASTIC(): string { return 'NotForElastic'; }
+  public static get NOT_FOR_POPULATION(): string { return 'NotForPopulation'; }
   public static get INDEX_MAPPING(): string { return 'Mapping'; }
-  public static get USE_MONGO_COLLECTION(): string { return 'UseMongoCollection'; }
+  public static get USE_PERSISTANCE_TABLE(): string { return 'UsePersistanceTable'; }
   public static get USE_ELASTIC_TYPE(): string { return 'UseElasticType'; }
 }
 
@@ -22,21 +22,21 @@ export function Mapping() {
 }
 
 
-export function NotForElastic() {
+export function NotForPopulation() {
   return function(target: Object, propertyName: string) {
     let metadata = Reflect.getMetadata(METADATAKEY, target);
     if (!metadata) {
       metadata = [];
     }
     metadata.push({
-      type: Decorators.NOT_FOR_ELASTIC,
+      type: Decorators.NOT_FOR_POPULATION,
       property: propertyName
     });
     Reflect.defineMetadata(METADATAKEY, metadata, target);
   };
 }
 
-export function UseMongoCollection(collection: string) {
+export function UsePersistanceTable(collection: string) {
   return function(target: Object) {
     let input: any = target;
     let className: string;
@@ -51,7 +51,7 @@ export function UseMongoCollection(collection: string) {
       metadata = [];
     }
     metadata.push({
-      type: Decorators.USE_MONGO_COLLECTION,
+      type: Decorators.USE_PERSISTANCE_TABLE,
       property: className,
       value: collection
     });

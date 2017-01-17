@@ -1,5 +1,5 @@
 "use strict";
-require('reflect-metadata');
+require("reflect-metadata");
 class ElasticOptions {
 }
 exports.ElasticOptions = ElasticOptions;

@@ -3,56 +3,71 @@ import 'reflect-metadata';
 import * as _ from 'lodash';
 import * as TSV from 'tsvalidate';
 
-import * as ELD from './elementDecorators';
-import { IElement } from './interfaces/IElement';
-import { IDocuments } from './interfaces/IDocuments';
-import { IIndexSettings } from './interfaces/IIndexSettings';
-// import { Element } from './classes/Element';
+import * as ELD from './classes/ElementDecorators';
+import * as Interfaces from './Interfaces';
+import { Element } from './classes/Element';
 export { Element as Element } from './classes/Element';
-
+// @todo: export all decorators in single accessor
 
 export class Elements {
   public static loaderversion = 2;
 
-  private elementStore: Map<string, IElement>;
+  private elementStore: Map<string, Interfaces.IElement>;
+  private databases: Map<string, Interfaces.IDatabaseAdapter>;
 
   constructor(mlcl?: any, config?: any) {
     this.elementStore = new Map();
+    this.databases = new Map();
   }
+
+  /**
+   * Register a database instance
+   * @param {string} key       [description]
+   * @param {any}    database  [description]
+   */
+  public async registerDatabase(key: string, database: any): Promise<void> {
+    this.databases.set(key, database);
+  }
+
   /**
    * Register a class instance
    * @param {string} name       [description]
    * @param {any}    definition [description]
    */
-  public async registerClass(name: string, definition: any, indexSettings?: IIndexSettings): Promise<void> {
+  public async registerClass(name: string, definition: any, registerAsModel: boolean = false): Promise<void> {
     definition.elements = this;
     this.elementStore.set(name, definition);
+    if(registerAsModel) {
+      for (let [key, database] of this.databases) {
+        database.register(this.getClassInstance(name)); // instance or model??
+      }
+    }
   }
 
   /**
    * Get a registered class
    * @param  {string}   name [description]
-   * @return {IElement}      [description]
+   * @return {Interfaces.Interfaces.IElement}      [description]
    */
-  public getClass(name: string): IElement {
+  public getClass(name: string): Interfaces.IElement {
     return this.elementStore.get(name);
   }
 
   /**
    * Return a class instance
    * @param  {string}   name [description]
-   * @return {IElement}      [description]
+   * @return {Interfaces.IElement}      [description]
    */
   public getClassInstance(name: string): any {
     let elementClass: any = this.elementStore.get(name);
-    let classInstance: IElement = new elementClass();
+    let classInstance: Interfaces.IElement = new elementClass();
     classInstance.setFactory(this);
     return classInstance;
   }
 
   /**
    * Validator function for the instances
-   * @param  {IElement}      instance [description]
+   * @param  {Interfaces.IElement}      instance [description]
    * @return {Promise<void>}          [description]
    */
   public validate(instance: Object): TSV.IValidatorError[] {
@@ -62,10 +77,10 @@ export class Elements {
 
   /**
    * Convert object which can be saved in database
-   * @param  {IElement} subElement [description]
+   * @param  {Interfaces.IElement} element [description]
    * @return {any}                 [description]
    */
-  public toDbObject(element: IElement): any {
+  public toDbObject(element: Interfaces.IElement): any {
     return this.toDbObjRecursive(element, false);
   }
 
@@ -87,6 +102,7 @@ export class Elements {
       if (Object.hasOwnProperty.call(that, key)
         && that[key] !== undefined
         && propertiesValidatorDecorators[key]) {
+        // @todo: use key from IDatabaseAdapter
         // check for _id
         if (key === '_id'
           && !nested) {
@@ -99,6 +115,7 @@ export class Elements {
           result[key] = this.toDbObjRecursive(that[key], true);
         }
         else if (typeof that[key] !== 'function') {
+
           result[key] = that[key];
         }
       }
@@ -112,7 +129,7 @@ export class Elements {
    * @return {boolean}            [description]
    */
   protected containsIDocuments(obj: any): boolean {
-    let template: IDocuments = {
+    let template: Interfaces.IDocuments = {
       collection: 'collectionName',
       documents: []
     };
@@ -125,11 +142,11 @@ export class Elements {
   }
 
   /**
-   * validate multiple instances of IElement
-   * @param  {IElement[]}   instances [Array of instances which implements IElement]
-   * @return {Promise<any>}           [description]
+   * validate multiple instances of Interfaces.IElement
+   * @param  {Interfaces.IElement[]}   instances [Array of instances which implements Interfaces.IElement]
+   * @return {Promise<any>}                      [description]
    */
-  protected validateAndSort(instances: IElement[]): Promise<any> {
+  protected validateAndSort(instances: Interfaces.IElement[]): Promise<any> {
     let errors: TSV.IValidatorError[] = [];
     let collections: any = {};
 
@@ -140,7 +157,7 @@ export class Elements {
       let collectionName: string = instance.constructor.name;
       _.each(metadata, (entry) => {
         if ('type' in entry
-          && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+          && entry.type === ELD.Decorators.USE_PERSISTANCE_TABLE
           && 'value' in entry
           && 'property' in entry
           && entry.property === instance.constructor.name) {
@@ -170,11 +187,11 @@ export class Elements {
 
   /**
    * Wrapper for instance save
-   * @param  {IElement[]}                          instances [description]
+   * @param  {Interfaces.IElement[]}                          instances [description]
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public async saveInstances(instances: IElement[], upsert: boolean = false): Promise<any> {
+  public async saveInstances(instances: Interfaces.IElement[], upsert: boolean = false): Promise<any> {
     // check if there is only one instance 
     if (instances.length === 1) {
       // check if there were errors on validation
@@ -185,18 +202,20 @@ export class Elements {
         let collectionName: string = instances[0].constructor.name;
         _.each(metadata, (entry) => {
           if ('type' in entry
-            && entry.type === ELD.Decorators.USE_MONGO_COLLECTION
+            && entry.type === ELD.Decorators.USE_PERSISTANCE_TABLE
             && 'value' in entry
             && 'property' in entry
             && entry.property === instances[0].constructor.name) {
 
             collectionName = entry.value;
-            console.log(collectionName);
           }
         });
       }
     }
     else {
+      return this.validateAndSort(instances).then((res) => {
+        // @todo: save all to databases
+      });
     }
   }
 
@@ -218,7 +237,7 @@ export class Elements {
       }) && !_.find(propertyDecorators, function(checkedDecorator: any) {
         return (checkedDecorator
           && checkedDecorator.property === decorator.property
-          && checkedDecorator.type === ELD.Decorators.NOT_FOR_ELASTIC
+          && checkedDecorator.type === ELD.Decorators.NOT_FOR_POPULATION
           && checkedDecorator.property !== model.name
           && checkedDecorator.property !== '_id');
       })) {
