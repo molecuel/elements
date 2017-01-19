@@ -34,7 +34,10 @@ export class Elements {
    * @param {string} name       [description]
    * @param {any}    definition [description]
    */
-  public async registerClass(name: string, definition: any, registerAsModel: boolean = false): Promise<void> {
+  public async registerClass(name: string, definition: any, registerAsModel?: boolean): Promise<void> {
+    if (!registerAsModel) {
+      registerAsModel = false; // ES6 default value failing in CI
+    }
     definition.elements = this;
     this.elementStore.set(name, definition);
     if(registerAsModel) {

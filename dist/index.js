@@ -23,8 +23,11 @@ class Elements {
             this.databases.set(key, database);
         });
     }
-    registerClass(name, definition, registerAsModel = false) {
+    registerClass(name, definition, registerAsModel) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!registerAsModel) {
+                registerAsModel = false;
+            }
             definition.elements = this;
             this.elementStore.set(name, definition);
             if (registerAsModel) {
