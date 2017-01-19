@@ -9,10 +9,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 require("reflect-metadata");
-const tsvalidate_1 = require("tsvalidate");
-class Element {
-    getElements() {
-        return Element.elements;
+const MlclElements_1 = require("./MlclElements");
+const TSV = require("tsvalidate");
+const di_1 = require("@molecuel/di");
+let Element = class Element {
+    constructor(elements) {
+        this.elements = elements;
+    }
+    getFactory() {
+        return this.elements;
     }
     setFactory(elements) {
         this.elements = elements;
@@ -29,11 +34,15 @@ class Element {
     toDbObject() {
         return this.elements.toDbObject(this);
     }
-}
+};
 __decorate([
-    tsvalidate_1.MongoID(),
+    TSV.ValidateType(),
     __metadata("design:type", Object)
-], Element.prototype, "_id", void 0);
+], Element.prototype, "id", void 0);
+Element = __decorate([
+    di_1.injectable,
+    __metadata("design:paramtypes", [MlclElements_1.MlclElements])
+], Element);
 exports.Element = Element;
 
 //# sourceMappingURL=Element.js.map

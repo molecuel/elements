@@ -1,7 +1,7 @@
-import { Elements } from '../index';
+'use strict';
 export interface IElement {
   _id: any;
-  elements: Elements;
+  elements;
   setFactory(elements);
   validate();
   toDbObject();

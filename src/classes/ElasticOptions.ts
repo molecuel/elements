@@ -1,7 +1,12 @@
+'use strict';
 import 'reflect-metadata';
+import {injectable} from '@molecuel/di';
+@injectable
 export class ElasticOptions {
-  public url: string;
-  public timeout: number;
-  public loglevel: string;
-  public prefix: string;
+  constructor(
+    public url: string,
+    public timeout: number,
+    public loglevel: string,
+    public prefix: string
+  ) {}
 }

@@ -4,4 +4,5 @@ export declare class ElasticOptions {
     timeout: number;
     loglevel: string;
     prefix: string;
+    constructor(url: string, timeout: number, loglevel: string, prefix: string);
 }

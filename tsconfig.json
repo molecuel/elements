@@ -6,24 +6,11 @@
     "declaration": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "sourceMap": false,
+    "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
   "files": [
-    "typings/index.d.ts",
-    "test/index.ts",
-    "src/index.ts",
-    "src/config.ts",    
-    "dist/index.d.ts",
-    "interfaces/IDocuments.ts",
-    "interfaces/IDatabaseAdapter.ts",
-    "interfaces/IDatabaseLayerType.ts",
-    "interfaces/IElement.ts",    
-    "interfaces/IIndexSettings.ts",
-    "classes/ElasticOptions.ts",
-    "classes/Element.ts",
-    "classes/ElementDecorators.ts"
   ],
   "exclude": [],
   "atom": {

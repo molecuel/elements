@@ -1,8 +1,7 @@
 language: node_js
 node_js:
   - "6"
-services:
-  - mongodb
-  - elasticsearch
 before_script:
-  - sleep 10
+  - gulp build
+after_success:
+  - npm run coveralls
