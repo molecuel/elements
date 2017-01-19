@@ -9,7 +9,7 @@ import { Elements } from '../dist';
 import { Element } from '../dist/classes/Element';
 import { IElement } from '../dist/interfaces/IElement';
 import * as V from 'tsvalidate';
-import * as ELD from '../dist/classes/elementDecorators';
+import * as ELD from '../dist/classes/ElementDecorators';
 
 class Post extends Element {
   @V.ValidateType()
