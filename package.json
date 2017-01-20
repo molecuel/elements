@@ -44,7 +44,8 @@
     "typescript": "^2.1.0"
   },
   "dependencies": {
-    "@molecuel/di": "^0.0.2",
+    "@molecuel/core": "^2.0.6",
+    "@molecuel/di": "^0.0.4",
     "@reactivex/rxjs": "^5.0.0-rc.5",
     "config": "^1.24.0",
     "reflect-metadata": "^0.1.3",

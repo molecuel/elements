@@ -4,12 +4,11 @@ import * as TSV from 'tsvalidate';
 import * as _ from 'lodash';
 // import * as ELD from './ElementDecorators';
 import * as Interfaces from '../interfaces';
-import {Element} from './Element';
-import {injectable} from '@molecuel/di';
+import {injectable, di} from '@molecuel/di';
 
 @injectable
 export class MlclElements {
-  constructor(private databases?: Interfaces.IDatabaseAdapter[]) {
+  constructor(private databases: Interfaces.IDatabaseAdapter[] = []) {
 
   }
 
@@ -31,6 +30,17 @@ export class MlclElements {
    */
   public toDbObject(element: Element): any {
     return this.toDbObjRecursive(element, false);
+  }
+
+
+  public getClasses(): string[] {
+    let result: string[] = [];
+    for (let [name, injectable] of di.injectables) {
+      if (injectable.injectable && new injectable.injectable() instanceof Element && name !== Element.name) {
+        result.push(name);
+      }
+    }
+    return result;
   }
 
   /**
@@ -83,3 +93,5 @@ export class MlclElements {
     return Promise.reject(instances);
   }
 }
+
+import {Element} from './Element';

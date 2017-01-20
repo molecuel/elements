@@ -8,7 +8,7 @@ import { injectable } from '@molecuel/di';
 @injectable
 export class Element {
   constructor(private elements: MlclElements) {}
-  @TSV.ValidateType()
+  @TSV.IsDefined()
   public id: any;
   public getFactory(): MlclElements {
     return this.elements;

@@ -36,7 +36,7 @@ let Element = class Element {
     }
 };
 __decorate([
-    TSV.ValidateType(),
+    TSV.IsDefined(),
     __metadata("design:type", Object)
 ], Element.prototype, "id", void 0);
 Element = __decorate([
