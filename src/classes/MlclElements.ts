@@ -20,7 +20,7 @@ export class MlclElements {
    * @return {Promise<void>}          [description]
    */
   public validate(instance: Object): TSV.IValidatorError[] {
-      return new TSV.Validator().validate(instance);
+      return (new TSV.Validator()).validate(instance);
   }
 
   /**
@@ -32,7 +32,10 @@ export class MlclElements {
     return this.toDbObjRecursive(element, false);
   }
 
-
+  /**
+   * Return string array of injectable Element extending classes
+   * @return {string[]}                 [description]
+   */
   public getClasses(): string[] {
     let result: string[] = [];
     for (let [name, injectable] of di.injectables) {
@@ -56,6 +59,7 @@ export class MlclElements {
     let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
       return o.property;
     });
+    console.log(obj);
     for (let key in that) {
       // check for non-prototype, validator-decorated property
       if (Object.hasOwnProperty.call(that, key)
