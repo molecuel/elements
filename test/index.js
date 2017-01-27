@@ -11,11 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 require("reflect-metadata");
 const should = require("should");
 const assert = require("assert");
+const _ = require("lodash");
 const di_1 = require("@molecuel/di");
 const V = require("tsvalidate");
 const dist_1 = require("../dist");
 should();
-describe('elements', () => {
+describe('Elements', () => {
     let el;
     before(() => {
         di_1.di.bootstrap();
@@ -29,9 +30,11 @@ describe('elements', () => {
     Post = __decorate([
         di_1.injectable
     ], Post);
-    let Engine = class Engine {
+    let Engine = Engine_1 = class Engine extends dist_1.Element {
         constructor(id, hp) {
+            super(...[...arguments].slice(Engine_1.length));
             this.horsepower = hp;
+            this.id = id;
         }
     };
     __decorate([
@@ -39,15 +42,15 @@ describe('elements', () => {
         V.IsDefined(),
         __metadata("design:type", Number)
     ], Engine.prototype, "horsepower", void 0);
-    Engine = __decorate([
+    Engine = Engine_1 = __decorate([
         di_1.injectable,
-        __metadata("design:paramtypes", [Object, Number])
+        __metadata("design:paramtypes", [Number, Number])
     ], Engine);
     let Car = Car_1 = class Car extends dist_1.Element {
         constructor(id, engine) {
             super(...[...arguments].slice(Car_1.length));
             this.engine = engine;
-            super.id = id;
+            this.id = id;
         }
     };
     __decorate([
@@ -57,12 +60,12 @@ describe('elements', () => {
     ], Car.prototype, "engine", void 0);
     Car = Car_1 = __decorate([
         di_1.injectable,
-        __metadata("design:paramtypes", [Object, Object])
+        __metadata("design:paramtypes", [Number, Engine])
     ], Car);
     describe('init', () => {
         it('should start Elements', function () {
             this.timeout(1500);
-            el = di_1.di.getInstance('MlclElements', []);
+            el = di_1.di.getInstance('MlclElements', [1]);
             assert(el);
         });
         it('should return a list of Element extending classes\' names', () => {
@@ -74,22 +77,33 @@ describe('elements', () => {
     });
     describe('validation', () => {
         it('should NOT validate erroneous Element instances', () => {
-            let elem = di_1.di.getInstance('Element');
-            elem.should.be.instanceOf(dist_1.Element);
-            let validationResult = elem.validate();
+            let post = el.getInstance('Post');
+            should.exist(post);
+            post.should.be.instanceOf(dist_1.Element);
+            let validationResult = post.validate();
             should.exist(validationResult);
             validationResult.length.should.equal(1);
         });
         it('should validate an Element inheriting instance', () => {
-            let car = di_1.di.getInstance('Car', 1, di_1.di.getInstance('Engine', 1, 110), 'someValueNotRelevantForConstructor');
+            let car = el.getInstance('Car', 1, el.getInstance('Engine', 1, 110));
+            should.exist(car);
             car.should.be.instanceOf(dist_1.Element);
-            car.id = 1;
             let validationResult = car.validate();
             should.exist(validationResult);
             validationResult.length.should.equal(0);
         });
     });
     describe('serialization', () => {
+        it('should serialize an Element inheriting instance', () => {
+            let car = el.getInstance('Car', 2, undefined);
+            car.engine.id = 2;
+            car.engine.elements = car.elements;
+            let ser = car.toDbObject();
+            let jsonSer = JSON.parse(JSON.stringify(ser));
+            assert(_.isEqual(ser, jsonSer));
+        });
     });
-    var Car_1;
+    describe('database interaction', () => {
+    });
+    var Engine_1, Car_1;
 });

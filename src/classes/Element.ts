@@ -2,7 +2,6 @@
 import 'reflect-metadata';
 import { MlclElements } from './MlclElements';
 import * as TSV from 'tsvalidate';
-// import * as Interfaces from '../Interfaces';
 import { injectable } from '@molecuel/di';
 
 @injectable
@@ -10,12 +9,6 @@ export class Element {
   constructor(private elements: MlclElements) {}
   @TSV.IsDefined()
   public id: any;
-  public getFactory(): MlclElements {
-    return this.elements;
-  }
-  public setFactory(elements: MlclElements) {
-    this.elements = elements;
-  }
   public validate(): TSV.IValidatorError[] {
     return this.elements.validate(this);
   }
