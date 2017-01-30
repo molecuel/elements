@@ -23,7 +23,7 @@ describe('Elements', () => {
   @injectable
   class Engine extends Element {
     constructor(id: number, hp?: number) {
-      super(...[...arguments].slice(Engine.length)); // DON'T FORGET!!
+      super(); // super(...[...arguments].slice(Engine.length)); // use to autoinject parent class dependencies
       this.horsepower = hp;
       this.id = id;
     }
@@ -34,7 +34,7 @@ describe('Elements', () => {
   @injectable
   class Car extends Element {
     constructor(id: number, engine: Engine) {
-      super(...[...arguments].slice(Car.length)); // DON'T FORGET!!
+      super();
       this.engine = engine;
       this.id = id;
     }
@@ -46,7 +46,7 @@ describe('Elements', () => {
   describe('init', () => {
     it('should start Elements', function() {
       this.timeout(1500);
-      el = di.getInstance('MlclElements', [1]);
+      el = di.getInstance('MlclElements', [{name: 'test', idPattern: '_id'}]);
       assert(el);
     });
     it('should return a list of Element extending classes\' names', () => {
@@ -66,9 +66,10 @@ describe('Elements', () => {
       validationResult.length.should.equal(1);
     });
     it('should validate an Element inheriting instance', () => {
-      let car: Car = el.getInstance('Car', 1, el.getInstance('Engine', 1, 110));
+      let car: Car = el.getInstance('Car', 1);
       should.exist(car);
       car.should.be.instanceOf(Element);
+      car.engine = el.getInstance('Engine', 1, 110);
       let validationResult = car.validate();
       should.exist(validationResult);
       validationResult.length.should.equal(0);
@@ -76,7 +77,7 @@ describe('Elements', () => {
   }); // category end
   describe('serialization', () => {
     it('should serialize an Element inheriting instance', () => {
-      let car = el.getInstance('Car', 2, undefined);
+      let car = el.getInstance('Car', 2);
       car.engine.id = 2;
       car.engine.elements = car.elements;
       let ser = car.toDbObject();

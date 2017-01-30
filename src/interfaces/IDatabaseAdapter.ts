@@ -1,8 +1,10 @@
-import { IDatabaseLayerType, IElement } from '.';
+import { IDatabaseLayerType } from '.';
 export interface IDatabaseAdapter {
+  name: string;
   type: IDatabaseLayerType;
-  register(model: IElement);
-  save(instance: IElement);
-  find(id?: string | IElement);
-  delete(id?: string | IElement);
+  idPattern: string;
+  register(model: Object);
+  save(instance: Object);
+  find(id?: string | number, query?: any);
+  delete(id?: string | number);
 }

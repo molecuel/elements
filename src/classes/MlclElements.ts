@@ -8,20 +8,43 @@ import {di, injectable} from '@molecuel/di';
 
 @injectable
 export class MlclElements {
-  private databases: Interfaces.IDatabaseAdapter[];
+  private databases: Map<string, Interfaces.IDatabaseAdapter> = new Map();
   constructor(databases: Interfaces.IDatabaseAdapter[]) {
-    this.databases = databases || [];
+    // this.databases = _.keyBy(databases, 'name');
+    if (databases && _.isArray(databases)) {
+      for (let database of databases) {
+        this.databases.set(database.name, database);
+      }
+    }
   }
 
   public get loaderversion(): number { return 2; }
 
+  /**
+   * modified getInstance of di, setting handler to current instance
+   * @param  {string}           name [description]
+   * @return {Promise<void>}         [description]
+   */
   public getInstance(name: string, ...params): any {
     if (_.includes(this.getClasses(), name)) {
-      return di.getInstance(name, ...(params.concat(this)));
+      let instance = di.getInstance(name, ...params);
+      if (instance && _.includes(Object.keys(instance), 'elements')) {
+        instance.elements = this;
+      }
+      return instance;
     }
     else {
       return undefined;
     }
+  }
+
+  /**
+   * explicit register of class for database(s)
+   * @param  {string}           databaseName [description]
+   * @return {Promise<void>}                 [description]
+   */
+  public registerModel(name: string): boolean {
+    return false;
   }
 
   /**
@@ -62,7 +85,7 @@ export class MlclElements {
    * @param  {boolean} nested  [description]
    * @return any               [description]
    */
-  protected toDbObjRecursive(obj: Object): any {
+  protected toDbObjRecursive(obj: Object, databaseName?: string): any {
     let that = obj;
     let result: any = {};
     let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
@@ -75,8 +98,8 @@ export class MlclElements {
         && that[key] !== undefined
         && propertiesValidatorDecorators[key]) {
         // @todo: use key from IDatabaseAdapter
-        // check for _id
-        if (key === '_id'
+        // check for id
+        if ((databaseName && this.databases.get(databaseName) && this.databases.get(databaseName).idPattern === key)
           || key === 'id') {
 
           result[key] = that[key];
@@ -102,13 +125,50 @@ export class MlclElements {
    * @return {Promise<any>}                                  [description]
    */
   public async saveInstances(instances: Element[], upsert: boolean = false): Promise<any> {
-    return Promise.reject(instances);
+    let result = {
+      successCount:  0,
+      errorCount: 0,
+      errors: []
+    };
+    for (let instance of instances) {
+      let persistDbs = _.filter([...this.databases.values()], 'type.persistanceLayer');
+      let persistSuccessCount = 0;
+      for (let persistDb of persistDbs) {
+        try {
+          await persistDb.save(instance.toDbObject);
+          persistSuccessCount++;
+        }
+        catch (err) {
+          result.errorCount++;
+          resullt.errors.push(err);
+        }
+      }
+      if (persistSuccessCount === persistDbs.length) {
+        result.successCount++;
+        let populDbs = _.filter([...this.databases.values()], 'type.populationLayer');
+        for (let populDb of populDbs) {
+          try {
+            await populDb.save(instance.toDbObject);
+          }
+          catch (err) {
+            result.errorCount++;
+            resullt.errors.push(err);
+          }
+        }
+      }
+    }
+    if (result.successCount) {
+      return Promise.resolve(result);
+    }
+    else {
+      return Promise.reject(result);
+    }
   }
 
   /**
    * Wrapper for instance get
-   * @param  {any}                                     query [description]
-   * @return {Promise<any>}                                  [description]
+   * @param  {any}                                   query [description]
+   * @return {Promise<any>}                                [description]
    */
   public async findInstances(query: any): Promise<any> {
     return Promise.reject(query);
@@ -116,8 +176,8 @@ export class MlclElements {
 
   /**
    * Wrapper for instance get by id
-   * @param  {any}                                        id [description]
-   * @return {Promise<any>}                                  [description]
+   * @param  {any}                                   id [description]
+   * @return {Promise<any>}                             [description]
    */
   public async findInstanceById(id: any): Promise<any> {
     return await this.findInstances(id);

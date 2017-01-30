@@ -1,8 +1,6 @@
 'use strict';
 export interface IElement {
-  _id: any;
-  elements;
-  setFactory(elements);
+  id: any;
   validate();
   toDbObject();
   save();

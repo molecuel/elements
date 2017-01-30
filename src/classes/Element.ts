@@ -1,11 +1,12 @@
 'use strict';
 import 'reflect-metadata';
 import { MlclElements } from './MlclElements';
+import { IElement } from '../interfaces/IElement';
 import * as TSV from 'tsvalidate';
 import { injectable } from '@molecuel/di';
 
 @injectable
-export class Element {
+export class Element implements IElement {
   constructor(private elements: MlclElements) {}
   @TSV.IsDefined()
   public id: any;
