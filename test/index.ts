@@ -86,6 +86,11 @@ describe('Elements', () => {
     });
   }); // category end
   describe('database interaction', () => {
+    // it('should register a model', async function() {
+    //   this.timeout(1500);
+    //   let success = el.registerModel(Post);
+    //   assert(success);
+    // });
     // it('should save an Element inheriting instance', async function() {
     //   this.timeout(1500);
     //   let post: Post = di.getInstance('Post', el);

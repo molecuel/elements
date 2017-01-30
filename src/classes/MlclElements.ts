@@ -40,11 +40,31 @@ export class MlclElements {
 
   /**
    * explicit register of class for database(s)
+   * @param  {any}              model        [description]
    * @param  {string}           databaseName [description]
    * @return {Promise<void>}                 [description]
    */
-  public registerModel(name: string): boolean {
-    return false;
+  public registerModel(model: any, databaseName?: string): boolean {
+    if (databaseName) {
+      let targetDb = this.databases.get(databaseName);
+      if (targetDb) {
+        try {
+          targetDb.register(model);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+      else {
+        return false;
+      }
+    }
+    else {
+      for (let currDb of [...this.databases.values()]) {
+        currDb.register(model);
+      }
+      return true;
+    }
   }
 
   /**
