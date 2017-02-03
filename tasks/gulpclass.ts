@@ -130,7 +130,7 @@ export class Gulpfile {
             out: './docs',
             mode: 'file',
             disableOutputCheck: false,
-            gaID: 'n',
+            gaID: 'UA-89800241-1',
             // TypeDoc options (see typedoc docs)
             ignoreCompilerErrors: true
         }));
