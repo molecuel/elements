@@ -3,23 +3,10 @@ import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import * as _ from 'lodash';
 // import * as ELD from './ElementDecorators';
-import * as Interfaces from '../interfaces';
 import {di, injectable} from '@molecuel/di';
 
 @injectable
 export class MlclElements {
-  private databases: Map<string, Interfaces.IDatabaseAdapter> = new Map();
-  constructor(databases: Interfaces.IDatabaseAdapter[]) {
-    // this.databases = _.keyBy(databases, 'name');
-    if (databases && _.isArray(databases)) {
-      for (let database of databases) {
-        this.databases.set(database.name, database);
-      }
-    }
-  }
-
-  public get loaderversion(): number { return 2; }
-
   /**
    * modified getInstance of di, setting handler to current instance
    * @param  {string}           name [description]
@@ -41,30 +28,16 @@ export class MlclElements {
   /**
    * explicit register of class for database(s)
    * @param  {any}              model        [description]
-   * @param  {string}           databaseName [description]
    * @return {Promise<void>}                 [description]
+   * @todo Convert to stream or broadcast
    */
-  public registerModel(model: any, databaseName?: string): boolean {
-    if (databaseName) {
-      let targetDb = this.databases.get(databaseName);
-      if (targetDb) {
-        try {
-          targetDb.register(model);
-          return true;
-        } catch (err) {
-          return false;
-        }
-      }
-      else {
-        return false;
-      }
-    }
-    else {
-      for (let currDb of [...this.databases.values()]) {
-        currDb.register(model);
-      }
-      return true;
-    }
+  public async registerModel(model: any): boolean {
+    let core = di.getInstance('MlclCore');
+    let registrationStream = core.createStream('elementsRegistration');
+    let myobs = Observable.from([model]);
+    myobs = registrationStream.renderStream(myobs);
+    let regResult = await myobs.toPromise();
+    return regResult;
   }
 
   /**
