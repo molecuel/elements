@@ -5,6 +5,8 @@ import * as _ from 'lodash';
 import {Observable} from '@reactivex/rxjs';
 // import * as ELD from './ElementDecorators';
 import {di, injectable} from '@molecuel/di';
+import * as jsonpatch from 'fast-json-patch';
+import {DiffObject} from './DiffObject';
 
 @injectable
 export class MlclElements {
@@ -87,6 +89,7 @@ export class MlclElements {
       return o.property;
     });
     for (let key in that) {
+      console.log(Object.hasOwnProperty.call(that, key));
       if (Object.hasOwnProperty.call(that, key)
         && that[key] !== undefined
         && propertiesValidatorDecorators[key]) {
@@ -99,6 +102,16 @@ export class MlclElements {
         result[key] = that[key];
       }
     }
+    return result;
+  }
+
+  public diffObjects(oldObj, newObj) {
+    let diff: Array<DiffObject> = jsonpatch.compare(newObj, oldObj);
+    return diff;
+  }
+
+  public revertObject(obj, patches: Array<DiffObject>) {
+    let result = jsonpatch.apply(obj, patches);
     return result;
   }
 

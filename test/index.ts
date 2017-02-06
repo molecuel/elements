@@ -5,6 +5,7 @@ import assert = require('assert');
 import * as _ from 'lodash';
 import {di, injectable} from '@molecuel/di';
 import * as V from 'tsvalidate';
+import * as _ from 'lodash';
 // import {Subject, Observable} from '@reactivex/rxjs';
 import {MlclElements, Element} from '../dist';
 should();
@@ -86,7 +87,51 @@ describe('Elements', () => {
       console.log(ser);
       let jsonSer = JSON.parse(JSON.stringify(ser));
       console.log(jsonSer);
+      assert(jsonSer.id !== undefined);
       assert(_.isEqual(ser, jsonSer));
     });
   }); // category end
+  describe('versioning', () => {
+    let oldObj = {
+        id: 12,
+        firstname: 'Diana',
+        lastname: 'Brown'
+      };
+    let newObj = {
+      id: 12,
+      firstname: 'Diana',
+      lastname: 'Green'
+    };
+    let newObj2 = {
+      id: 12,
+      firstname: 'Diana',
+      lastname: 'Smith',
+      age: 22,
+      eyecolor: 'yellow'
+    };
+    let diff;
+    let diff2;
+    it('should be possible to diff objects', () => {
+      diff = el.diffObjects(oldObj, newObj);
+      assert(diff[0].op === 'replace');
+      assert(diff[0].path === '/lastname');
+      assert(diff[0].value === 'Brown');
+    });
+    it('should be possible to diff with multiple changes', () => {
+      diff2 = el.diffObjects(newObj, newObj2);
+      assert(diff2[0].op === 'remove');
+      assert(diff2[0].path === '/eyecolor');
+      assert(diff2[1].op === 'remove');
+      assert(diff2[1].path === '/age');
+      assert(diff2[2].op === 'replace');
+      assert(diff2[2].path === '/lastname');
+      assert(diff2[2].value === 'Green');
+    });
+    it('should be possible to revert with a collection of diffs in correct order', () => {
+      let patches = _.concat(diff2, diff);
+      assert(newObj2.lastname === 'Smith');
+      el.revertObject(newObj2, patches);
+      assert(newObj2.lastname === 'Brown');
+    });
+  });
 }); // test end
