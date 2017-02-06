@@ -2,6 +2,7 @@
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import * as _ from 'lodash';
+import {Observable} from '@reactivex/rxjs';
 // import * as ELD from './ElementDecorators';
 import {di, injectable} from '@molecuel/di';
 
@@ -31,7 +32,7 @@ export class MlclElements {
    * @return {Promise<void>}                 [description]
    * @todo Save collectionname/tablenname as static on model
    */
-  public async registerModel(model: any): boolean {
+  public async registerModel(model: any) {
     let core = di.getInstance('MlclCore');
     let registrationStream = core.createStream('elementsRegistration');
     let myobs = Observable.from([model]);
@@ -81,31 +82,17 @@ export class MlclElements {
   protected toDbObjRecursive(obj: Object, databaseName?: string): any {
     let that = obj;
     let result: any = {};
-    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
-    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
-      return o.property;
-    });
+    // let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
+    // let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
+    //  return o.property;
+    // });
     for (let key in that) {
       // check for non-prototype, validator-decorated property
-      if (Object.hasOwnProperty.call(that, key)
-        && that[key] !== undefined
-        && propertiesValidatorDecorators[key]) {
-        // @todo: use key from IDatabaseAdapter
-        // check for id
-        if ((databaseName && this.databases.get(databaseName) && this.databases.get(databaseName).idPattern === key)
-          || key === 'id') {
-
-          result[key] = that[key];
-        }
-        // check if the property is an object
-        else if (typeof that[key] === 'object') {
-
-          result[key] = this.toDbObjRecursive(that[key]);
-        }
-        else if (typeof that[key] !== 'function') {
-
-          result[key] = that[key];
-        }
+      if (typeof that[key] === 'object') {
+        result[key] = this.toDbObjRecursive(that[key]);
+      }
+      else if (typeof that[key] !== 'function') {
+        result[key] = that[key];
       }
     }
     return result;
@@ -123,33 +110,6 @@ export class MlclElements {
       errorCount: 0,
       errors: []
     };
-    for (let instance of instances) {
-      let persistDbs = _.filter([...this.databases.values()], 'type.persistanceLayer');
-      let persistSuccessCount = 0;
-      for (let persistDb of persistDbs) {
-        try {
-          await persistDb.save(instance.toDbObject);
-          persistSuccessCount++;
-        }
-        catch (err) {
-          result.errorCount++;
-          resullt.errors.push(err);
-        }
-      }
-      if (persistSuccessCount === persistDbs.length) {
-        result.successCount++;
-        let populDbs = _.filter([...this.databases.values()], 'type.populationLayer');
-        for (let populDb of populDbs) {
-          try {
-            await populDb.save(instance.toDbObject);
-          }
-          catch (err) {
-            result.errorCount++;
-            resullt.errors.push(err);
-          }
-        }
-      }
-    }
     if (result.successCount) {
       return Promise.resolve(result);
     }

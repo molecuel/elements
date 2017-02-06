@@ -7,6 +7,11 @@ export class Decorators {
 
 export const METADATAKEY = 'mlcl_elements:validators';
 
+export function versionable(targetClass) {
+  // sets static on class
+  targetClass.versionable = true;
+}
+
 export function Mapping() {
   return function(target: Object, propertyName: string) {
     let metadata = Reflect.getMetadata(METADATAKEY, target);

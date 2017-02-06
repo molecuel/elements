@@ -2331,6 +2331,16 @@ remap-istanbul@^0.8.4:
     source-map ">=0.5.6"
     through2 "2.0.1"
 
+remap-istanbul@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/remap-istanbul/-/remap-istanbul-0.9.0.tgz#d115406b8422bfe42cb8c51be056844000947695"
+  dependencies:
+    amdefine "^1.0.0"
+    gulp-util "3.0.7"
+    istanbul "0.4.5"
+    source-map ">=0.5.6"
+    through2 "2.0.1"
+
 repeat-element@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/repeat-element/-/repeat-element-1.1.2.tgz#ef089a178d1483baae4d93eb98b4f9e4e11d990a"
