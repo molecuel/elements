@@ -5,8 +5,6 @@ import assert = require('assert');
 import * as _ from 'lodash';
 import {di, injectable} from '@molecuel/di';
 import * as V from 'tsvalidate';
-import * as _ from 'lodash';
-// import {Subject, Observable} from '@reactivex/rxjs';
 import {MlclElements, Element} from '../dist';
 should();
 
@@ -84,13 +82,36 @@ describe('Elements', () => {
       car.engine.id = 2;
       car.engine.elements = car.elements;
       let ser = car.toDbObject();
-      console.log(ser);
       let jsonSer = JSON.parse(JSON.stringify(ser));
-      console.log(jsonSer);
       assert(jsonSer.id !== undefined);
+      assert(jsonSer.model === 'M3');
       assert(_.isEqual(ser, jsonSer));
     });
   }); // category end
+  describe('deserialization', () => {
+    let carObject = {
+      id: 2,
+      model: 'M3',
+      engine: 2
+    };
+    it('should serialize an Element inheriting instance', () => {
+      car = el.toInstance('Car', carObject);
+      // check if element
+      assert(car.save !=== undefined);
+      assert(car.id === 2);
+      assert(car.model === 'M3');
+      assert(car.engine === 2);
+    });
+  }); // category end
+  describe('populate', () => {
+    it('should be possible to populate another database object', async () => {
+      let car = el.getInstance('Car', 2);
+      car.model = 'M3';
+      car.engine = 2;
+      await car.populate('engine');
+      assert(car.engine.id === 2);
+    });
+  });
   describe('versioning', () => {
     let oldObj = {
         id: 12,
