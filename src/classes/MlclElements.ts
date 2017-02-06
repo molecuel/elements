@@ -82,13 +82,18 @@ export class MlclElements {
   protected toDbObjRecursive(obj: Object, databaseName?: string): any {
     let that = obj;
     let result: any = {};
-    // let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
-    // let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
-    //  return o.property;
-    // });
+    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
+    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
+      return o.property;
+    });
+    console.log(propertiesValidatorDecorators);
     for (let key in that) {
-      // check for non-prototype, validator-decorated property
-      if (typeof that[key] === 'object') {
+      if (Object.hasOwnProperty.call(that, key)
+        && that[key] !== undefined
+        && propertiesValidatorDecorators[key]) {
+        // check for non-prototype, validator-decorated property
+        console.log(key);
+      } else if (typeof that[key] === 'object') {
         result[key] = this.toDbObjRecursive(that[key]);
       }
       else if (typeof that[key] !== 'function') {

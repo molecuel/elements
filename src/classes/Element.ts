@@ -10,6 +10,7 @@ export class Element implements IElement {
   constructor(private elements: MlclElements) {}
   @TSV.IsDefined()
   public id: any;
+  public _version: number;
   public validate(): TSV.IValidatorError[] {
     return this.elements.validate(this);
   }

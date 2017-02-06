@@ -81,38 +81,10 @@ describe('Elements', () => {
       car.engine.id = 2;
       car.engine.elements = car.elements;
       let ser = car.toDbObject();
+      console.log(ser);
       let jsonSer = JSON.parse(JSON.stringify(ser));
+      console.log(jsonSer);
       assert(_.isEqual(ser, jsonSer));
     });
-  }); // category end
-  describe('database interaction', () => {
-    // it('should register a model', async function() {
-    //   this.timeout(1500);
-    //   let success = el.registerModel(Post);
-    //   assert(success);
-    // });
-    // it('should save an Element inheriting instance', async function() {
-    //   this.timeout(1500);
-    //   let post: Post = di.getInstance('Post', el);
-    //   should.exist(post);
-    //   try {
-    //     let response = await post.save();
-    //     should.exist(response);
-    //   }
-    //   catch (err) {
-    //     should.not.exist(err);
-    //   }
-    // });
-    // it('should get an Element inheriting instance by id', async function() {
-    //   this.timeout(1500);
-    //   let id = 'd1515da1d';
-    //   try {
-    //     let response = await el.getInstanceById(id);
-    //     should.exist(response);
-    //   }
-    //   catch (err) {
-    //     should.not.exist(err);
-    //   }
-    // });
   }); // category end
 }); // test end
