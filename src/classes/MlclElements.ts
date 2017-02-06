@@ -86,7 +86,6 @@ export class MlclElements {
     let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
       return o.property;
     });
-    console.log(propertiesValidatorDecorators);
     for (let key in that) {
       if (Object.hasOwnProperty.call(that, key)
         && that[key] !== undefined

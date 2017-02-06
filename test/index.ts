@@ -41,6 +41,7 @@ describe('Elements', () => {
     @V.ValidateType(Engine)
     @V.ValidateNested()
     public engine: any;
+    public model: string;
   }
 
   describe('init', () => {
@@ -78,6 +79,7 @@ describe('Elements', () => {
   describe('serialization', () => {
     it('should serialize an Element inheriting instance', () => {
       let car = el.getInstance('Car', 2);
+      car.model = 'M3';
       car.engine.id = 2;
       car.engine.elements = car.elements;
       let ser = car.toDbObject();
