@@ -37,6 +37,10 @@
   dependencies:
     symbol-observable "^1.0.1"
 
+"@types/fast-json-patch@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@types/fast-json-patch/-/fast-json-patch-1.0.4.tgz#94ed45675d6a919926e1e6dd315b2e186c68312a"
+
 "@types/fs-extra@0.0.33":
   version "0.0.33"
   resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-0.0.33.tgz#a8719c417b080c012d3497b28e228ac09745fdf2"
@@ -713,6 +717,10 @@ fancy-log@^1.1.0:
   dependencies:
     chalk "^1.1.1"
     time-stamp "^1.0.0"
+
+fast-json-patch@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/fast-json-patch/-/fast-json-patch-1.1.4.tgz#4f280f0fb0b35b96bdc6fa146fb1c152334a1af7"
 
 fast-levenshtein@~2.0.4:
   version "2.0.6"

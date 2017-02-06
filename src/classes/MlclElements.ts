@@ -29,7 +29,7 @@ export class MlclElements {
    * explicit register of class for database(s)
    * @param  {any}              model        [description]
    * @return {Promise<void>}                 [description]
-   * @todo Convert to stream or broadcast
+   * @todo Save collectionname/tablenname as static on model
    */
   public async registerModel(model: any): boolean {
     let core = di.getInstance('MlclCore');
