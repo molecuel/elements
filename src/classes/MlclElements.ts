@@ -45,8 +45,8 @@ export class MlclElements {
 
   /**
    * Validator function for the instances
-   * @param  {Object}        instance [description]
-   * @return {Promise<void>}          [description]
+   * @param  {Object}           instance [description]
+   * @return {Promise<void>}             [description]
    */
   public validate(instance: Object): TSV.IValidatorError[] {
       return (new TSV.Validator()).validate(instance);
@@ -54,8 +54,8 @@ export class MlclElements {
 
   /**
    * Convert object which can be saved in database
-   * @param  {Element}     element [description]
-   * @return {any}                 [description]
+   * @param  {Element}       element [description]
+   * @return {any}                   [description]
    */
   public toDbObject(element: Element): any {
     return this.toDbObjRecursive(element);
@@ -75,31 +75,63 @@ export class MlclElements {
     return result;
   }
 
+  public async populate(obj: Object, properties?: string): Promise<any> {
+    let core = di.getInstance('MlclCore');
+    let populationStream = core.createStream('elementsPopulation');
+    let pobs = Observable.from([{object: obj, properties: properties}]);
+    pobs = populationStream.renderStream(pobs);
+    let populResult = await pobs.toPromise();
+    // use this.toInstance(obj.constructor.name, <resolved promise>)
+    return populResult;
+  }
+
+  /**
+   * Return new instance of requested class with supplied data
+   * @param  {string} className              [description]
+   * @param  {Object} data                   [description]
+   * @return any                             [description]
+   */
+  public toInstance(className: string, data: Object): any {
+    let instance = this.getInstance(className);
+    if (instance) {
+      // console.log(Object.keys(instance));
+      for (let key in data) {
+        if (key in instance) {
+          instance[key] = data[key];
+        }
+      }
+    }
+    return instance;
+  }
+
   /**
    * Protected recursive object serialization
-   * @param  {Object}  obj     [description]
-   * @param  {boolean} nested  [description]
-   * @return any               [description]
+   * @param  {Object}  obj                 [description]
+   * @param  {boolean} nested              [description]
+   * @return any                           [description]
    */
   protected toDbObjRecursive(obj: Object, databaseName?: string): any {
-    let that = obj;
     let result: any = {};
-    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, that);
-    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) {
+    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, obj); // get all validator decorators
+    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) { // map by property name
       return o.property;
     });
-    for (let key in that) {
-      console.log(Object.hasOwnProperty.call(that, key));
-      if (Object.hasOwnProperty.call(that, key)
-        && that[key] !== undefined
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)
+        && obj[key] !== undefined
         && propertiesValidatorDecorators[key]) {
-        // check for non-prototype, validator-decorated property
-        console.log(key);
-      } else if (typeof that[key] === 'object') {
-        result[key] = this.toDbObjRecursive(that[key]);
-      }
-      else if (typeof that[key] !== 'function') {
-        result[key] = that[key];
+          // check for non-prototype, validator-decorated property
+        if (typeof obj[key] === 'object') { // property is object
+          if (obj[key].id) { // property has _id-property itself (use DB-id later)
+            result[key] = obj[key].id;
+          }
+          else if (!('id' in obj[key])) { // resolve property
+            result[key] = this.toDbObjRecursive(obj[key], databaseName);
+          }
+        }
+        else if (typeof obj[key] !== 'function') {
+          result[key] = obj[key];
+        }
       }
     }
     return result;
@@ -140,7 +172,7 @@ export class MlclElements {
    * @param  {any}                                   query [description]
    * @return {Promise<any>}                                [description]
    */
-  public async findInstances(query: any): Promise<any> {
+  public async find(query: any): Promise<any> {
     return Promise.reject(query);
   }
 
@@ -149,8 +181,8 @@ export class MlclElements {
    * @param  {any}                                   id [description]
    * @return {Promise<any>}                             [description]
    */
-  public async findInstanceById(id: any): Promise<any> {
-    return await this.findInstances(id);
+  public async findById(id: any): Promise<any> {
+    return await this.find(id);
   }
 }
 
