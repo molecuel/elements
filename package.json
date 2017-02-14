@@ -11,6 +11,7 @@
   },
   "keywords": [],
   "devDependencies": {
+    "@molecuel/mongodb": "^2.0.0-alpha",
     "@types/fast-json-patch": "^1.0.4",
     "@types/gulp": "^3.8.32",
     "@types/gulp-plumber": "^0.0.29",

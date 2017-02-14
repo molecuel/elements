@@ -75,16 +75,6 @@ export class MlclElements {
     return result;
   }
 
-  public async populate(obj: Object, properties?: string): Promise<any> {
-    let core = di.getInstance('MlclCore');
-    let populationStream = core.createStream('elementsPopulation');
-    let pobs = Observable.from([{object: obj, properties: properties}]);
-    pobs = populationStream.renderStream(pobs);
-    let populResult = await pobs.toPromise();
-    // use this.toInstance(obj.constructor.name, <resolved promise>)
-    return populResult;
-  }
-
   /**
    * Return new instance of requested class with supplied data
    * @param  {string} className              [description]
@@ -94,9 +84,11 @@ export class MlclElements {
   public toInstance(className: string, data: Object): any {
     let instance = this.getInstance(className);
     if (instance) {
-      // console.log(Object.keys(instance));
       for (let key in data) {
-        if (key in instance) {
+        if (key === '_id' && key.slice(1) in instance) {
+          instance[key.slice(1)] = data[key];
+        }
+        else if (key in instance && (typeof data[key] !== 'object' || !_.isEmpty(data[key]))) {
           instance[key] = data[key];
         }
       }
@@ -134,6 +126,18 @@ export class MlclElements {
         }
       }
     }
+    if ((obj['collection'] || obj.constructor['collection']) && !result['collection']) {
+      let classCollectionDescriptor = Object.getOwnPropertyDescriptor(obj.constructor, 'collection');
+      // check for static getter on class; instance getter has priority -> continue in any case
+      if (classCollectionDescriptor && typeof classCollectionDescriptor.get === 'function') {
+        Object.defineProperty(result, 'collection', classCollectionDescriptor);
+      }
+      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(obj, 'collection');
+      // check for instance getter
+      if (instanceCollectionDescriptor && typeof instanceCollectionDescriptor.get === 'function') {
+        Object.defineProperty(result, 'collection', instanceCollectionDescriptor);
+      }
+    }
     return result;
   }
 
@@ -159,6 +163,31 @@ export class MlclElements {
       errorCount: 0,
       errors: []
     };
+    let dbHandler = di.getInstance('MlclDatabase');
+    if (dbHandler && dbHandler.connections) {
+      for (let instance of instances) {
+        let validationResult = instance.validate;
+        if (validationResult.length === 0) {
+          try {
+            await dbHandler.persistenceDatabases.save(instance.toDbObject());
+            result.successCount++;
+            // await this.populate(instance); // subcollections?
+            // await dbHandler.populationDatabases.save(instance);
+          } catch (error) {
+            result.errorCount++;
+            result.errors.push(error);
+          }
+        }
+        else {
+          result.errorCount += validationResult ? validationResult.length : 1;
+          result.errors = result.errors.concat(result.errors, validationResult);
+        }
+      }
+    }
+    else {
+      result.errorCount++;
+      result.errors.push(new Error('No connected databases.'));
+    }
     if (result.successCount) {
       return Promise.resolve(result);
     }
@@ -167,13 +196,50 @@ export class MlclElements {
     }
   }
 
+  // public async populate(obj: Object, properties?: string): Promise<any> {
+  //   // let core = di.getInstance('MlclCore');
+  //   // let populationStream = core.createStream('elementsPopulation');
+  //   // let pobs = Observable.from([{object: obj, properties: properties}]);
+  //   // pobs = populationStream.renderStream(pobs);
+  //   // let populResult = await pobs.toPromise();
+  //   // return populResult;
+  //   let dbHandler = di.getInstance('MlclDatabase');
+  //   if (dbHandler && dbHandler.connections) {
+  //     try {
+  //       let result = await dbHandler.populationDatabases.populate(obj, properties);
+  //       if (_.includes(this.getClasses(), obj.constructor.name)) {
+  //         return Promise.resolve(this.toInstance(obj.constructor.name, result));
+  //       }
+  //       else {
+  //         return Promise.resolve(result);
+  //       }
+  //     } catch (error) {
+  //       return Promise.reject(error);
+  //     }
+  //   }
+  //   else {
+  //     return Promise.reject(new Error('No connected databases.'));
+  //   }
+  // }
+
   /**
    * Wrapper for instance get
    * @param  {any}                                   query [description]
    * @return {Promise<any>}                                [description]
    */
-  public async find(query: any): Promise<any> {
-    return Promise.reject(query);
+  public async find(query: any, collection: string): Promise<any> {
+    try {
+      let dbHandler = di.getInstance('MlclDatabase');
+      if (dbHandler && dbHandler.connections) {
+        let result = await dbHandler.find(query, collection);
+        return Promise.resolve(result);
+      }
+      else {
+        Promise.reject(new Error('No connected databases.'));
+      }
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   /**
@@ -181,8 +247,13 @@ export class MlclElements {
    * @param  {any}                                   id [description]
    * @return {Promise<any>}                             [description]
    */
-  public async findById(id: any): Promise<any> {
-    return await this.find(id);
+  public async findById(id: any, collection: string): Promise<any> {
+    try {
+      let result = await this.find({_id: id}, collection);
+      return Promise.resolve(result[0]);
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 }
 

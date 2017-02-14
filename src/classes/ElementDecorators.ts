@@ -1,8 +1,9 @@
 export class Decorators {
   public static get NOT_FOR_POPULATION(): string { return 'NotForPopulation'; }
   public static get INDEX_MAPPING(): string { return 'Mapping'; }
-  public static get USE_PERSISTANCE_TABLE(): string { return 'UsePersistanceTable'; }
+  public static get USE_PERSISTANCE_COLLECTION_OR_TABLE(): string { return 'UsePersistanceCollectionOrTable'; }
   public static get USE_ELASTIC_TYPE(): string { return 'UseElasticType'; }
+  public static get IS_REF_TO(): string { return 'IsReferenceTo'; }
 }
 
 export const METADATAKEY = 'mlcl_elements:validators';
@@ -18,7 +19,7 @@ export function Mapping() {
     if (!metadata) {
       metadata = [];
     }
-    metadata.push({
+    metadata = metadata.concat({
       type: Decorators.INDEX_MAPPING,
       property: propertyName
     });
@@ -33,7 +34,7 @@ export function NotForPopulation() {
     if (!metadata) {
       metadata = [];
     }
-    metadata.push({
+    metadata = metadata.concat({
       type: Decorators.NOT_FOR_POPULATION,
       property: propertyName
     });
@@ -41,7 +42,7 @@ export function NotForPopulation() {
   };
 }
 
-export function UsePersistanceTable(collection: string) {
+export function UsePersistanceCollectionOrTable(collectionOrTable: string) {
   return function(target: Object) {
     let input: any = target;
     let className: string;
@@ -55,10 +56,45 @@ export function UsePersistanceTable(collection: string) {
     if (!metadata) {
       metadata = [];
     }
-    metadata.push({
-      type: Decorators.USE_PERSISTANCE_TABLE,
+    metadata = metadata.concat({
+      type: Decorators.USE_PERSISTANCE_COLLECTION_OR_TABLE,
       property: className,
-      value: collection
+      value: collectionOrTable
+    });
+    Reflect.defineMetadata(METADATAKEY, metadata, target);
+  };
+}
+
+export function IsReferenceTo(model: string|any) {
+  return function(target: Object) {
+    let input: any = target;
+    let className: string;
+    let modelName: string;
+    if (typeof model === 'string') {
+      modelName = model;
+    }
+    else {
+      if ('prototype' in model) {
+        modelName = model.prototype.constructor.name;
+      }
+      else {
+        modelName = model.constructor.name;
+      }
+    }
+    if ('prototype' in input) {
+      className = input.prototype.constructor.name;
+    }
+    else {
+      className = input.constructor.name;
+    }
+    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    if (!metadata) {
+      metadata = [];
+    }
+    metadata = metadata.concat({
+      type: Decorators.IS_REF_TO,
+      property: className,
+      value: modelName
     });
     Reflect.defineMetadata(METADATAKEY, metadata, target);
   };
@@ -78,7 +114,7 @@ export function UseElasticType(type: string) {
     if (!metadata) {
       metadata = [];
     }
-    metadata.push({
+    metadata = metadata.concat({
       type: Decorators.USE_ELASTIC_TYPE,
       property: className,
       value: type
