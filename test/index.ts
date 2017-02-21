@@ -33,12 +33,12 @@ describe('Elements', () => {
 
   @injectable
   class Post extends Element {
-    public static get collection(): string { return 'Post'; };
+    public static get collection(): string { return 'post'; };
     public recipient: string = 'me';
   }
   @injectable
   class Engine extends Element {
-    public static get collection(): string { return 'Engines'; };
+    public static get collection(): string { return 'engines'; };
     constructor(id: number, hp?: number) {
       super(); // super(...[...arguments].slice(Engine.length)); // use to manually inject parent class dependencies
       this.horsepower = hp;
@@ -50,7 +50,6 @@ describe('Elements', () => {
   }
   @injectable
   class Wheels {
-    public static get collection(): string { return 'Wheels'; };
     constructor(count?: number, manufacturer?: string) {
       this.count = count;
       this.manufacturer = manufacturer;
@@ -62,7 +61,7 @@ describe('Elements', () => {
   }
   @injectable
   class Car extends Element {
-    public static get collection(): string { return 'Cars'; };
+    public static get collection(): string { return 'cars'; };
     constructor(id: number, engine: Engine, wheels: Wheels) {
       super();
       this.id = id;
@@ -93,6 +92,10 @@ describe('Elements', () => {
       should.exist(classNames);
       classNames.length.should.be.above(0);
       classNames[0].should.be.type('string');
+    });
+    it('should not generate a new instance of unconfigured classes', () => {
+      let compareInstance = el.getInstance('Robot');
+      should.not.exist(compareInstance);
     });
   }); // category end
   describe('validation', () => {
@@ -130,20 +133,42 @@ describe('Elements', () => {
     });
   }); // category end
   describe('deserialization', () => {
-    let carObject = {
-      id: 2,
-      model: 'M3',
-      engine: 2
-    };
     it('should deserialize an instance to requested Element-Subclass', () => {
-      let car = el.toInstance('Car', carObject);
-      // check if element
+      @injectable
+      class Robot extends Element {
+        @V.IsDefined()
+        public _id;
+        @V.ValidateType()
+        public arms: number;
+        @V.ValidateType()
+        public legs: number;
+        @V.InArray(['steel', 'brass', 'bronze'])
+        public alloy;
+      }
+       let carData = {
+        id: 2,
+        model: 'M3',
+        engine: 2
+      };
+      let robotData = {
+        _id: 'PR0T0TYP3',
+        arms: 2,
+        legs: 2,
+        alloy: 'steel'
+      };
+      let car = el.toInstance('Car', carData);
       car.should.be.instanceOf(Car);
-      // console.log(car);
       assert(car.save !== undefined);
-      assert(car.id === 2);
-      assert(car.model === 'M3');
-      assert(car.engine === 2);
+      assert(car.id === carData.id);
+      assert(car.model === carData.model);
+      assert(car.engine === carData.engine);
+      let robot = el.toInstance('Robot', robotData);
+      robot.should.be.instanceOf(Robot);
+      assert(robot.save !== undefined);
+      assert(robot.id === robotData._id);
+      assert(robot.arms === robotData.arms);
+      assert(robot.legs === robotData.legs);
+      assert(robot.alloy === robotData.alloy);
     });
   }); // category end
   describe('DB interaction', () => {
@@ -152,10 +177,54 @@ describe('Elements', () => {
     before(async () => {
       dbHandler = di.getInstance('MlclDatabase');
       dbHandler.addDatabasesFrom(config);
+      try {
+        let failPost: Post = el.getInstance('Post');
+        failPost.id = 42;
+        let response = await failPost.save();
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        should.exist(error.message);
+        error.message.should.equal('No connected databases.');
+      }
+      try {
+        let response = await el.findById({}, Post.collection);
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        should.exist(error.message);
+        error.message.should.equal('No connected databases.');
+      }
+      try {
+        let response = await el.find({}, Post.collection);
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        should.exist(error.message);
+        error.message.should.equal('No connected databases.');
+      }
       await dbHandler.init();
     });
     it('should not save invalid or collection-less instances', async () => {
-
+      let failEngine: Engine = el.getInstance('Engine');
+      failEngine.id = 'V8';
+      failEngine.horsepower = undefined;
+      let response;
+      try {
+        response = await failEngine.save();
+      } catch (error) {
+        should.exist(error);
+        should.exist(error.errors);
+        error.errors.length.should.be.above(0);
+      }
+      should.not.exist(response);
+      delete failEngine.collection;
+      try {
+        response = await failEngine.save();
+      } catch (error) {
+        should.exist(error);
+      }
+      should.not.exist(response);
     });
     it('should save to all configured and connected databases after validation (persistence first)', async () => {
       // console.log(Reflect.getMetadata(ELD.METADATAKEY, Car));
@@ -164,7 +233,8 @@ describe('Elements', () => {
       car.model = 'BRM';
       car.engine = el.getInstance('Engine');
       car.engine.id = 'V6';
-      Object.defineProperty(car, 'collection', { configurable: true, get: function() { return 'Cars'; }}); // define instance getter
+      car.engine.horsepower = 9001;
+      Object.defineProperty(car, 'collection', { configurable: true, get: function() { return 'cars'; }}); // define instance getter
       let response;
       try {
         response = await car.save();
@@ -175,10 +245,63 @@ describe('Elements', () => {
       should.exist(response.successCount);
       response.successCount.should.equal(1);
     });
+    it('should not find unsaved objects', async () => {
+      let response;
+      try {
+        response = await el.findById(404, car.collection);
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.not.exist(response);
+    });
+    it('should error during save, find and findbyId (permissions)', async () => {
+      let con = dbHandler.connections[0];
+      try {
+        await con.database.close();
+        let failPost: Post = el.getInstance('Post');
+        failPost.id = 42;
+        let response = await failPost.save();
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        // console.log(error);
+        // should.exist(error.message);
+        // error.message.should.equal('No connected databases.');
+      }
+      finally {
+        await con.database.open();
+      }
+      try {
+        await con.database.close();
+        let response = await el.findById(42, Post.collection);
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        // console.log(error);
+        // should.exist(error.message);
+        // error.message.should.equal('No connected databases.');
+      }
+      finally {
+        await con.database.open();
+      }
+      try {
+        await con.database.close();
+        let response = await el.find({}, Post.collection);
+        should.not.exist(response);
+      } catch (error) {
+        should.exist(error);
+        // console.log(error);
+        // should.exist(error.message);
+        // error.message.should.equal('No connected databases.');
+      }
+      finally {
+        await con.database.open();
+      }
+    });
     it('should find the saved object', async () => {
       let response;
       try {
-        response = await el.findById(101, Car.collection);
+        response = await el.findById(101, car.collection);
       } catch (error) {
         should.not.exist(error);
       }
@@ -193,23 +316,20 @@ describe('Elements', () => {
       newCar.engine.should.equal(car.engine.id);
       assert(_.isEqual(newCar.wheels, car.wheels));
     });
-    it('should not find unsaved objects', async () => {
-
-    });
-  //   it('should be possible to populate another database object', async () => {
-  //     let car = el.getInstance('Car', 2);
-  //     car.model = 'M3';
-  //     car.engine = 2;
-  //     await car.populate('engine');
-  //     assert(car.engine.id === 2);
-  //   });
+    //   it('should be possible to populate another database object', async () => {
+    //     let car = el.getInstance('Car', 2);
+    //     car.model = 'M3';
+    //     car.engine = 2;
+    //     await car.populate('engine');
+    //     assert(car.engine.id === 2);
+    //   });
   }); // category end
   describe('versioning', () => {
     let oldObj = {
-        id: 12,
-        firstname: 'Diana',
-        lastname: 'Brown'
-      };
+      id: 12,
+      firstname: 'Diana',
+      lastname: 'Brown'
+    };
     let newObj = {
       id: 12,
       firstname: 'Diana',
@@ -247,4 +367,14 @@ describe('Elements', () => {
       assert(newObj2.lastname === 'Brown');
     });
   }); // category end
+  after(async () => {
+    let dbHandler: MlclDatabase = di.getInstance('MlclDatabase');
+    for (let con of dbHandler.connections) {
+      try {
+        await con.database.dropDatabase();
+      } catch (error) {
+        should.not.exist(error);
+      }
+    }
+  });
 }); // test end

@@ -2,11 +2,11 @@
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
 import * as _ from 'lodash';
-import {Observable} from '@reactivex/rxjs';
+import * as Jsonpatch from 'fast-json-patch';
+import {DiffObject} from './classes/DiffObject';
+// import {Observable} from '@reactivex/rxjs';
 // import * as ELD from './ElementDecorators';
 import {di, injectable} from '@molecuel/di';
-import * as jsonpatch from 'fast-json-patch';
-import {DiffObject} from './DiffObject';
 
 @injectable
 export class MlclElements {
@@ -28,20 +28,20 @@ export class MlclElements {
     }
   }
 
-  /**
-   * explicit register of class for database(s)
-   * @param  {any}              model        [description]
-   * @return {Promise<void>}                 [description]
-   * @todo Save collectionname/tablenname as static on model
-   */
-  public async registerModel(model: any) {
-    let core = di.getInstance('MlclCore');
-    let registrationStream = core.createStream('elementsRegistration');
-    let myobs = Observable.from([model]);
-    myobs = registrationStream.renderStream(myobs);
-    let regResult = await myobs.toPromise();
-    return regResult;
-  }
+  // /**
+  //  * explicit register of class for database(s)
+  //  * @param  {any}              model        [description]
+  //  * @return {Promise<void>}                 [description]
+  //  * @todo Save collectionname/tablenname as static on model
+  //  */
+  // public async registerModel(model: any) {
+  //   let core = di.getInstance('MlclCore');
+  //   let registrationStream = core.createStream('elementsRegistration');
+  //   let myobs = Observable.from([model]);
+  //   myobs = registrationStream.renderStream(myobs);
+  //   let regResult = await myobs.toPromise();
+  //   return regResult;
+  // }
 
   /**
    * Validator function for the instances
@@ -84,11 +84,18 @@ export class MlclElements {
   public toInstance(className: string, data: Object): any {
     let instance = this.getInstance(className);
     if (instance) {
+      let metakeys = Reflect.getMetadataKeys(instance);
+      let meta = [];
+      for (let metakey of metakeys) {
+        if (!metakey.includes('design:')) {
+          meta = meta.concat(Reflect.getMetadata(metakey, instance));
+        }
+      }
       for (let key in data) {
-        if (key === '_id' && key.slice(1) in instance) {
+        if (key === '_id' && (key.slice(1) in instance || _.includes(_.map(meta, 'property'), key.slice(1)))) {
           instance[key.slice(1)] = data[key];
         }
-        else if (key in instance && (typeof data[key] !== 'object' || !_.isEmpty(data[key]))) {
+        else if ((key in instance || _.includes(_.map(meta, 'property'), key)) && (typeof data[key] !== 'object' || !_.isEmpty(data[key]))) {
           instance[key] = data[key];
         }
       }
@@ -142,12 +149,12 @@ export class MlclElements {
   }
 
   public diffObjects(oldObj, newObj) {
-    let diff: Array<DiffObject> = jsonpatch.compare(newObj, oldObj);
+    let diff: Array<DiffObject> = Jsonpatch.compare(newObj, oldObj);
     return diff;
   }
 
   public revertObject(obj, patches: Array<DiffObject>) {
-    let result = jsonpatch.apply(obj, patches);
+    let result = Jsonpatch.apply(obj, patches);
     return result;
   }
 
@@ -166,7 +173,7 @@ export class MlclElements {
     let dbHandler = di.getInstance('MlclDatabase');
     if (dbHandler && dbHandler.connections) {
       for (let instance of instances) {
-        let validationResult = instance.validate;
+        let validationResult = instance.validate();
         if (validationResult.length === 0) {
           try {
             await dbHandler.persistenceDatabases.save(instance.toDbObject());
@@ -185,8 +192,7 @@ export class MlclElements {
       }
     }
     else {
-      result.errorCount++;
-      result.errors.push(new Error('No connected databases.'));
+      return Promise.reject(new Error('No connected databases.'));
     }
     if (result.successCount) {
       return Promise.resolve(result);
@@ -228,17 +234,17 @@ export class MlclElements {
    * @return {Promise<any>}                                [description]
    */
   public async find(query: any, collection: string): Promise<any> {
-    try {
-      let dbHandler = di.getInstance('MlclDatabase');
-      if (dbHandler && dbHandler.connections) {
+    let dbHandler = di.getInstance('MlclDatabase');
+    if (dbHandler && dbHandler.connections) {
+      try {
         let result = await dbHandler.find(query, collection);
         return Promise.resolve(result);
+      } catch (error) {
+        return Promise.reject(error);
       }
-      else {
-        Promise.reject(new Error('No connected databases.'));
-      }
-    } catch (error) {
-      return Promise.reject(error);
+    }
+    else {
+      return Promise.reject(new Error('No connected databases.'));
     }
   }
 
@@ -248,11 +254,25 @@ export class MlclElements {
    * @return {Promise<any>}                             [description]
    */
   public async findById(id: any, collection: string): Promise<any> {
-    try {
-      let result = await this.find({_id: id}, collection);
-      return Promise.resolve(result[0]);
-    } catch (error) {
-      return Promise.reject(error);
+    let dbHandler = di.getInstance('MlclDatabase');
+    if (dbHandler && dbHandler.connections) {
+      let idPattern = dbHandler.connections[0].idPattern || dbHandler.connections[0].constructor.idPattern;
+      let query = {};
+      query[idPattern] = id;
+      try {
+        let result = await this.find(query, collection);
+        if (result && result[0]) {
+          return Promise.resolve(result[0]);
+        }
+        else {
+          return Promise.resolve(undefined);
+        }
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+    else {
+      return Promise.reject(new Error('No connected databases.'));
     }
   }
 }
