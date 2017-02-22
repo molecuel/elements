@@ -1,8 +1,15 @@
 language: node_js
 node_js:
   - "6"
+sudo: required
 services:
-  - mongodb
+- mongodb
+addons:
+  apt:
+    sources:
+    - mongodb-3.0-precise
+    packages:
+    - mongodb-org-server
 before_script:
   - gulp build
 after_success:
