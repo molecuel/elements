@@ -13,7 +13,8 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@molecuel/mongodb": "^2.0.0-alpha",
+    "@molecuel/database": "^2.0.0-alpha",
+    "@molecuel/mongodb": "^2.0.1-alpha1",
     "@types/fast-json-patch": "^1.0.4",
     "@types/gulp": "^3.8.32",
     "@types/gulp-plumber": "^0.0.29",
@@ -52,6 +53,7 @@
     "@molecuel/core": "^2.0.6",
     "@molecuel/di": "^0.2.0",
     "@reactivex/rxjs": "^5.0.0-rc.5",
+    "fast-json-patch": "^1.1.6",
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.3",
     "tsvalidate": "^0.0.11"
