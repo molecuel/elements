@@ -3,13 +3,12 @@ import 'reflect-metadata';
 import should = require('should');
 import assert = require('assert');
 import * as _ from 'lodash';
-import * as V from 'tsvalidate';
 import {di, injectable} from '@molecuel/di';
 import {MlclCore} from '@molecuel/core';
 import {MlclMongoDb} from '@molecuel/mongodb';
 import {MlclDatabase, PERSISTENCE_LAYER, POPULATION_LAYER} from '@molecuel/database';
-import {MlclElements, Element} from '../dist';
-// import * as ELD from '../dist/classes/ElementDecorators';
+import {MlclElements, Element, GetDecorators} from '../dist';
+const D = GetDecorators();
 should();
 
 let config: any = {
@@ -44,8 +43,8 @@ describe('Elements', () => {
       this.horsepower = hp;
       this.id = id;
     }
-    @V.ValidateType()
-    @V.IsDefined()
+    @D.ValidateType()
+    @D.IsDefined()
     public horsepower: number;
   }
   @injectable
@@ -54,9 +53,9 @@ describe('Elements', () => {
       this.count = count;
       this.manufacturer = manufacturer;
     }
-    @V.IsInt()
+    @D.IsInt()
     public count: number;
-    @V.ValidateType()
+    @D.ValidateType()
     public manufacturer: string;
   }
   @injectable
@@ -68,13 +67,13 @@ describe('Elements', () => {
       this.engine = engine;
       this.wheels = wheels;
     }
-    // @ELD.IsReferenceTo(Engine);
-    @V.ValidateType(Engine)
-    @V.ValidateNested()
+    @D.IsReferenceTo(Engine)
+    @D.ValidateType(Engine)
+    @D.ValidateNested()
     public engine: any;
-    @V.ValidateNested()
+    @D.ValidateNested()
     public wheels: Wheels;
-    @V.IsDefined()
+    @D.IsDefined()
     public model: string = undefined;
   }
 
@@ -136,13 +135,13 @@ describe('Elements', () => {
     it('should deserialize an instance to requested Element-Subclass', () => {
       @injectable
       class Robot extends Element {
-        @V.IsDefined()
+        @D.IsDefined()
         public _id;
-        @V.ValidateType()
+        @D.ValidateType()
         public arms: number;
-        @V.ValidateType()
+        @D.ValidateType()
         public legs: number;
-        @V.InArray(['steel', 'brass', 'bronze'])
+        @D.InArray(['steel', 'brass', 'bronze'])
         public alloy;
       }
        let carData = {
@@ -227,7 +226,6 @@ describe('Elements', () => {
       should.not.exist(response);
     });
     it('should save to all configured and connected databases after validation (persistence first)', async () => {
-      // console.log(Reflect.getMetadata(ELD.METADATAKEY, Car));
       car = el.getInstance('Car');
       car.id = 101;
       car.model = 'BRM';
@@ -243,7 +241,16 @@ describe('Elements', () => {
       }
       should.exist(response);
       should.exist(response.successCount);
-      response.successCount.should.equal(1);
+      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
+      let engine = car.engine;
+      try {
+        response = await engine.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
     });
     it('should not find unsaved objects', async () => {
       let response;
@@ -316,13 +323,13 @@ describe('Elements', () => {
       newCar.engine.should.equal(car.engine.id);
       assert(_.isEqual(newCar.wheels, car.wheels));
     });
-    //   it('should be possible to populate another database object', async () => {
-    //     let car = el.getInstance('Car', 2);
-    //     car.model = 'M3';
-    //     car.engine = 2;
-    //     await car.populate('engine');
-    //     assert(car.engine.id === 2);
-    //   });
+      it('should be possible to populate another database object', async () => {
+        let car = el.getInstance('Car', 2);
+        car.model = 'M3';
+        car.engine = 'V6';
+        await car.populate();
+        assert(car.engine.horsepower > 9000);
+      });
   }); // category end
   describe('versioning', () => {
     let oldObj = {
@@ -371,7 +378,7 @@ describe('Elements', () => {
     let dbHandler: MlclDatabase = di.getInstance('MlclDatabase');
     for (let con of dbHandler.connections) {
       try {
-        await con.database.dropDatabase();
+        // await con.database.dropDatabase();
       } catch (error) {
         should.not.exist(error);
       }

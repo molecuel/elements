@@ -1,9 +1,10 @@
 'use strict';
 import 'reflect-metadata';
 import * as TSV from 'tsvalidate';
+import * as ELD from './ElementDecorators';
 import * as _ from 'lodash';
 import * as Jsonpatch from 'fast-json-patch';
-import {DiffObject} from './classes/DiffObject';
+import {DiffObject} from './DiffObject';
 // import {Observable} from '@reactivex/rxjs';
 // import * as ELD from './ElementDecorators';
 import {di, injectable} from '@molecuel/di';
@@ -120,7 +121,7 @@ export class MlclElements {
         && obj[key] !== undefined
         && propertiesValidatorDecorators[key]) {
           // check for non-prototype, validator-decorated property
-        if (typeof obj[key] === 'object') { // property is object
+        if (typeof obj[key] === 'object' && !_.isArray(obj[key])) { // property is object
           if (obj[key].id) { // property has _id-property itself (use DB-id later)
             result[key] = obj[key].id;
           }
@@ -173,13 +174,20 @@ export class MlclElements {
     let dbHandler = di.getInstance('MlclDatabase');
     if (dbHandler && dbHandler.connections) {
       for (let instance of instances) {
-        let validationResult = instance.validate();
+        let validationResult = [];
+        try {
+          validationResult = instance.validate();
+        } catch (error) {
+          console.log(error);
+          result.errorCount++;
+          result.errors.push(error);
+        }
         if (validationResult.length === 0) {
           try {
             await dbHandler.persistenceDatabases.save(instance.toDbObject());
             result.successCount++;
-            // await this.populate(instance); // subcollections?
-            // await dbHandler.populationDatabases.save(instance);
+            await this.populate(instance);
+            await dbHandler.populationDatabases.save(instance);
           } catch (error) {
             result.errorCount++;
             result.errors.push(error);
@@ -202,31 +210,40 @@ export class MlclElements {
     }
   }
 
-  // public async populate(obj: Object, properties?: string): Promise<any> {
-  //   // let core = di.getInstance('MlclCore');
-  //   // let populationStream = core.createStream('elementsPopulation');
-  //   // let pobs = Observable.from([{object: obj, properties: properties}]);
-  //   // pobs = populationStream.renderStream(pobs);
-  //   // let populResult = await pobs.toPromise();
-  //   // return populResult;
-  //   let dbHandler = di.getInstance('MlclDatabase');
-  //   if (dbHandler && dbHandler.connections) {
-  //     try {
-  //       let result = await dbHandler.populationDatabases.populate(obj, properties);
-  //       if (_.includes(this.getClasses(), obj.constructor.name)) {
-  //         return Promise.resolve(this.toInstance(obj.constructor.name, result));
-  //       }
-  //       else {
-  //         return Promise.resolve(result);
-  //       }
-  //     } catch (error) {
-  //       return Promise.reject(error);
-  //     }
-  //   }
-  //   else {
-  //     return Promise.reject(new Error('No connected databases.'));
-  //   }
-  // }
+  public async populate(obj: Object, properties?: string): Promise<any> {
+    let meta = Reflect.getMetadata(ELD.METADATAKEY, obj).filter((entry) => {
+      return (entry.type === ELD.Decorators.IS_REF_TO && (!properties || _.includes(properties.split(' '), entry.property)));
+    });
+    let queryCollections = meta.map((entry) => {
+      let instance = this.getInstance(entry.value);
+      if (instance) {
+        return instance.collection || instance.constructor.collection;
+      }
+    });
+    let queryProperties = meta.map((entry) => {
+      return entry.property;
+    });
+    let dbHandler = di.getInstance('MlclDatabase');
+    if (dbHandler && dbHandler.connections) {
+      try {
+        let result = await dbHandler.populate(obj, queryProperties, queryCollections);
+        if (_.includes(this.getClasses(), obj.constructor.name)) {
+          let deepResult;
+          await this.toInstance(obj.constructor.name, result).populate().then((value) => { deepResult = value; }).catch((error) => { deepResult = error; });
+          return Promise.resolve(deepResult);
+        }
+        else {
+          return Promise.resolve(result);
+        }
+      } catch (error) {
+        console.log(error);
+        return Promise.reject(error);
+      }
+    }
+    else {
+      return Promise.reject(new Error('No connected databases.'));
+    }
+  }
 
   /**
    * Wrapper for instance get

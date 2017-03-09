@@ -23,12 +23,13 @@ export class Element implements IElement {
   public toDbObject(): any {
     return this.elements.toDbObject(this);
   }
-  // public async populate(properties?: string) {
-  //   let population = await this.elements.populate(this, properties);
-  //   if (population) {
-  //     // console.log([population, population.constructor, population instanceof this.constructor]);
-  //     // this = population;
-  //   }
-  // }
+  public async populate(properties?: string) {
+    let population = await this.elements.populate(this, properties);
+    if (population) {
+      for (let prop in population) {
+        this[prop] = population[prop];
+      }
+    }
+  }
 
 }
