@@ -236,7 +236,6 @@ export class MlclElements {
           return Promise.resolve(result);
         }
       } catch (error) {
-        console.log(error);
         return Promise.reject(error);
       }
     }
