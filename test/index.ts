@@ -378,7 +378,7 @@ describe('Elements', () => {
     let dbHandler: MlclDatabase = di.getInstance('MlclDatabase');
     for (let con of dbHandler.connections) {
       try {
-        // await con.database.dropDatabase();
+        await con.database.dropDatabase();
       } catch (error) {
         should.not.exist(error);
       }
