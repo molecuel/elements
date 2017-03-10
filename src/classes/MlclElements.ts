@@ -110,23 +110,30 @@ export class MlclElements {
    * @param  {boolean} nested              [description]
    * @return any                           [description]
    */
-  protected toDbObjRecursive(obj: Object, databaseName?: string): any {
-    let result: any = {};
-    let objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, obj); // get all validator decorators
+  protected toDbObjRecursive(obj: Object, idPattern?: string): any {
+    if (!idPattern) {
+      idPattern = 'id';
+    }
+    let result: any = _.isArray(obj) ? [] : {};
+    let objectValidatorDecorators = _.isArray(obj) ? [] : Reflect.getMetadata(TSV.METADATAKEY, obj); // get all validator decorators
     let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) { // map by property name
       return o.property;
     });
     for (let key in obj) {
       if (obj.hasOwnProperty(key)
         && obj[key] !== undefined
-        && propertiesValidatorDecorators[key]) {
+        && (propertiesValidatorDecorators[key]
+        || _.isArray(obj))) {
           // check for non-prototype, validator-decorated property
-        if (typeof obj[key] === 'object' && !_.isArray(obj[key])) { // property is object
-          if (obj[key].id) { // property has _id-property itself (use DB-id later)
-            result[key] = obj[key].id;
+        if (_.isArray(obj[key])) {
+          result[key] = this.toDbObjRecursive(obj[key]);
+        }
+        else if (typeof obj[key] === 'object') { // property is object
+          if (obj[key][idPattern]) { // property has _id-property itself (use DB-id later)
+            result[key] = obj[key][idPattern];
           }
-          else if (!('id' in obj[key])) { // resolve property
-            result[key] = this.toDbObjRecursive(obj[key], databaseName);
+          else if (!(idPattern in obj[key])) { // resolve property
+            result[key] = this.toDbObjRecursive(obj[key]);
           }
         }
         else if (typeof obj[key] !== 'function') {
@@ -186,11 +193,26 @@ export class MlclElements {
           try {
             await dbHandler.persistenceDatabases.save(instance.toDbObject());
             result.successCount++;
-            await this.populate(instance);
-            await dbHandler.populationDatabases.save(instance);
           } catch (error) {
             result.errorCount++;
             result.errors.push(error);
+          }
+          try {
+            await this.populate(instance);
+          } catch (error) {
+            let reason = new Error('Population failed');
+            reason.object = error;
+            delete reason.stack;
+            result.errorCount++;
+            result.errors.push(reason);
+          }
+          try {
+            await dbHandler.populationDatabases.save(instance.toDbObject());
+          } catch (error) {
+            if (typeof error.errorCount === 'undefined' || error.errorCount > 0) {
+              result.errorCount++;
+              result.errors.push(error);
+            }
           }
         }
         else {
@@ -211,9 +233,9 @@ export class MlclElements {
   }
 
   public async populate(obj: Object, properties?: string): Promise<any> {
-    let meta = Reflect.getMetadata(ELD.METADATAKEY, obj).filter((entry) => {
+    let meta = Reflect.getMetadata(ELD.METADATAKEY, obj) ? Reflect.getMetadata(ELD.METADATAKEY, obj).filter((entry) => {
       return (entry.type === ELD.Decorators.IS_REF_TO && (!properties || _.includes(properties.split(' '), entry.property)));
-    });
+    }) : [];
     let queryCollections = meta.map((entry) => {
       let instance = this.getInstance(entry.value);
       if (instance) {

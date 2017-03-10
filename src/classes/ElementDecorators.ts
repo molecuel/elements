@@ -65,28 +65,29 @@ export function UsePersistanceCollectionOrTable(collectionOrTable: string) {
   };
 }
 
-export function IsReferenceTo(model: string|any) {
+export function IsReferenceTo(...models: string[]|any[]) {
   return function(target: Object, propertyName: string) {
-    // let input: any = target;
-    // let className: string;
-    let modelName: string;
-    if (typeof model === 'string') {
-      modelName = model;
-    }
-    else {
-      if ('prototype' in model) {
-        modelName = model.prototype.constructor.name;
+    let references: string|string[] = [];
+    for (let model of models) {
+      let modelName: string;
+      if (model) {
+        if (typeof model === 'string') {
+          modelName = model;
+        }
+        else {
+          if ('prototype' in model) {
+            modelName = model.prototype.constructor.name;
+          }
+          else {
+            modelName = model.constructor.name;
+          }
+        }
       }
-      else {
-        modelName = model.constructor.name;
-      }
+      references = references.concat(modelName);
     }
-    // if ('prototype' in input) {
-    //   className = input.prototype.constructor.name;
-    // }
-    // else {
-    //   className = input.constructor.name;
-    // }
+    if (!(references.length > 1)) {
+      references = references.pop();
+    }
     let metadata = Reflect.getMetadata(METADATAKEY, target);
     if (!metadata) {
       metadata = [];
@@ -94,7 +95,7 @@ export function IsReferenceTo(model: string|any) {
     metadata = metadata.concat({
       type: Decorators.IS_REF_TO,
       property: propertyName,
-      value: modelName
+      value: references
     });
     Reflect.defineMetadata(METADATAKEY, metadata, target);
   };
