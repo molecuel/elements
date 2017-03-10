@@ -83,9 +83,9 @@
   dependencies:
     "@types/node" "*"
 
-"@types/gulp@^3.8.32":
-  version "3.8.32"
-  resolved "https://registry.yarnpkg.com/@types/gulp/-/gulp-3.8.32.tgz#83c59c681cc233d1ec7f82d269555566fa133156"
+"@types/gulp@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@types/gulp/-/gulp-4.0.0.tgz#b7eac5414397028cc0efc084c3af74af4b471c79"
   dependencies:
     "@types/node" "*"
     "@types/orchestrator" "*"
@@ -743,6 +743,10 @@ fancy-log@^1.1.0:
     chalk "^1.1.1"
     time-stamp "^1.0.0"
 
+fast-json-patch@^1.1.6:
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/fast-json-patch/-/fast-json-patch-1.1.8.tgz#8db58c9d12c3ff9c23456ee812cc29fac722b772"
+
 fast-levenshtein@~2.0.4:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
@@ -1212,9 +1216,9 @@ gulp@^3.9.0, gulp@^3.9.1:
     v8flags "^2.0.2"
     vinyl-fs "^0.3.0"
 
-gulpclass@0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/gulpclass/-/gulpclass-0.0.8.tgz#fd50b1f348a014ebbd9881e2ea3b412ee813a32d"
+gulpclass@0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/gulpclass/-/gulpclass-0.1.2.tgz#d26f5c39dc399e11c45a908787c86490bc31e850"
   dependencies:
     gulp "^3.9.0"
     merge2 "^0.3.6"
@@ -2868,9 +2872,9 @@ typescript@2.1.5:
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.1.5.tgz#6fe9479e00e01855247cea216e7561bafcdbcd4a"
 
-typescript@^2.1.5:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.0.tgz#626f2fc70087d2480f21ebb12c1888288c8614e3"
+typescript@^2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.1.tgz#4862b662b988a4c8ff691cc7969622d24db76ae9"
 
 uglify-js@^2.6:
   version "2.7.5"
