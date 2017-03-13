@@ -301,6 +301,7 @@ export class MlclElements {
       try {
         let result = await this.find(query, collection);
         if (result && result[0]) {
+          result[0][idPattern] = id;
           return Promise.resolve(result[0]);
         }
         else {
