@@ -1,6 +1,6 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-alpha",
+  "version": "2.0.0-alpha1",
   "description": "Molecuel Elements Module",
   "main": "dist/index.js",
   "scripts": {
@@ -13,8 +13,8 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@molecuel/database": "^2.0.0-alpha",
-    "@molecuel/mongodb": "^2.0.1-alpha1",
+    "@molecuel/database": "^2.0.0-alpha2",
+    "@molecuel/mongodb": "^2.0.1-alpha3",
     "@types/fast-json-patch": "^1.0.4",
     "@types/gulp": "^4.0.0",
     "@types/gulp-plumber": "^0.0.29",

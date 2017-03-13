@@ -33,6 +33,7 @@ describe('Elements', () => {
   @injectable
   class Post extends Element {
     public static get collection(): string { return 'post'; };
+    @D.IsDefined()
     public recipient: string = 'me';
   }
   @injectable
@@ -102,6 +103,7 @@ describe('Elements', () => {
       let post: Post = el.getInstance('Post');
       should.exist(post);
       post.should.be.instanceOf(Element);
+      delete post.recipient;
       let validationResult = post.validate();
       should.exist(validationResult);
       validationResult.length.should.equal(1);

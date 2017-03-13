@@ -176,6 +176,7 @@ export class MlclElements {
     let result = {
       successCount:  0,
       errorCount: 0,
+      successes: [],
       errors: []
     };
     let dbHandler = di.getInstance('MlclDatabase');
@@ -185,14 +186,14 @@ export class MlclElements {
         try {
           validationResult = instance.validate();
         } catch (error) {
-          console.log(error);
           result.errorCount++;
           result.errors.push(error);
         }
         if (validationResult.length === 0) {
           try {
-            await dbHandler.persistenceDatabases.save(instance.toDbObject());
+            let response = await dbHandler.persistenceDatabases.save(instance.toDbObject());
             result.successCount++;
+            result.successes = result.successes.concat(response.successes);
           } catch (error) {
             result.errorCount++;
             result.errors.push(error);

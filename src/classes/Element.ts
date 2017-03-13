@@ -8,7 +8,7 @@ import { injectable } from '@molecuel/di';
 @injectable
 export class Element implements IElement {
   constructor(private elements: MlclElements) {}
-  @TSV.IsDefined()
+  @TSV.ValidateType()
   public id: any;
   public _version: number;
   public validate(): TSV.IValidatorError[] {
