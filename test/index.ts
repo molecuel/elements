@@ -1,6 +1,6 @@
 'use strict';
 import 'reflect-metadata';
-import should = require('should');
+import * as should from 'should';
 import assert = require('assert');
 import * as _ from 'lodash';
 import {di, injectable} from '@molecuel/di';
@@ -9,7 +9,6 @@ import {MlclMongoDb} from '@molecuel/mongodb';
 import {MlclDatabase, PERSISTENCE_LAYER, POPULATION_LAYER} from '@molecuel/database';
 import {MlclElements, Element, GetDecorators} from '../dist';
 const D = GetDecorators();
-should();
 
 let config: any = {
   molecuel: {
