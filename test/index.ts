@@ -1,7 +1,7 @@
 'use strict';
 import 'reflect-metadata';
 import * as should from 'should';
-import assert = require('assert');
+import * as assert from 'assert';
 import * as _ from 'lodash';
 import {di, injectable} from '@molecuel/di';
 import {MlclCore} from '@molecuel/core';
