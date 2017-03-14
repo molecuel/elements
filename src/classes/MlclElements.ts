@@ -202,7 +202,7 @@ export class MlclElements {
             await this.populate(instance);
           } catch (error) {
             let reason = new Error('Population failed');
-            reason.object = error;
+            (<any>reason).object = error;
             delete reason.stack;
             result.errorCount++;
             result.errors.push(reason);

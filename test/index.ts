@@ -38,8 +38,8 @@ describe('Elements', () => {
   @injectable
   class Engine extends Element {
     public static get collection(): string { return 'engines'; };
-    constructor(id: number, hp?: number) {
-      super(); // super(...[...arguments].slice(Engine.length)); // use to manually inject parent class dependencies
+    constructor(id: number, hp?: number, elementHandler?: any) {
+      super(elementHandler); // super(...[...arguments].slice(Engine.length)); // use to manually inject parent class dependencies
       this.horsepower = hp;
       this.id = id;
     }
@@ -61,8 +61,8 @@ describe('Elements', () => {
   @injectable
   class Car extends Element {
     public static get collection(): string { return 'cars'; };
-    constructor(id: number, engine: Engine, wheels: Wheels) {
-      super();
+    constructor(id: number, engine: Engine, wheels: Wheels, elementHandler?: any) {
+      super(elementHandler);
       this.id = id;
       this.engine = engine;
       this.wheels = wheels;
@@ -78,7 +78,7 @@ describe('Elements', () => {
   }
 
   before(() => {
-    di.bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
+    (<any>di).bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
   });
   describe('init', () => {
     it('should start Elements', function() {
@@ -218,7 +218,7 @@ describe('Elements', () => {
         error.errors.length.should.be.above(0);
       }
       should.not.exist(response);
-      delete failEngine.collection;
+      delete (<any>failEngine).collection;
       try {
         response = await failEngine.save();
       } catch (error) {
@@ -256,7 +256,7 @@ describe('Elements', () => {
     it('should not find unsaved objects', async () => {
       let response;
       try {
-        response = await el.findById(404, car.collection);
+        response = await el.findById(404, (<any>car).collection);
       } catch (error) {
         should.not.exist(error);
       }
@@ -309,7 +309,7 @@ describe('Elements', () => {
     it('should find the saved object', async () => {
       let response;
       try {
-        response = await el.findById(101, car.collection);
+        response = await el.findById(101, (<any>car).collection);
       } catch (error) {
         should.not.exist(error);
       }

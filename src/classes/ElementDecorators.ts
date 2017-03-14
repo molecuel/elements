@@ -65,7 +65,7 @@ export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
   };
 }
 
-export function IsReferenceTo(...models: string[]|any[]) {
+export function IsReferenceTo(...models: any[]) {
   return function(target: Object, propertyName: string) {
     let references: string|string[] = [];
     for (let model of models) {
