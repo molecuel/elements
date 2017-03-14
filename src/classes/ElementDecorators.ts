@@ -42,7 +42,7 @@ export function NotForPopulation() {
   };
 }
 
-export function UsePersistanceCollectionOrTable(collectionOrTable: string) {
+export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
   return function(target: Object) {
     let input: any = target;
     let className: string;

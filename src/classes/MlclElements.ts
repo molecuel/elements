@@ -85,11 +85,11 @@ export class MlclElements {
   public toInstance(className: string, data: Object): any {
     let instance = this.getInstance(className);
     if (instance) {
-      let metakeys = Reflect.getMetadataKeys(instance);
+      let metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
       let meta = [];
       for (let metakey of metakeys) {
         if (!metakey.includes('design:')) {
-          meta = meta.concat(Reflect.getMetadata(metakey, instance));
+          meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)));
         }
       }
       for (let key in data) {
@@ -115,7 +115,7 @@ export class MlclElements {
       idPattern = 'id';
     }
     let result: any = _.isArray(obj) ? [] : {};
-    let objectValidatorDecorators = _.isArray(obj) ? [] : Reflect.getMetadata(TSV.METADATAKEY, obj); // get all validator decorators
+    let objectValidatorDecorators = _.isArray(obj) ? [] : Reflect.getMetadata(TSV.METADATAKEY, Reflect.getPrototypeOf(obj)); // get all validator decorators
     let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, function(o: any) { // map by property name
       return o.property;
     });
@@ -234,7 +234,7 @@ export class MlclElements {
   }
 
   public async populate(obj: Object, properties?: string): Promise<any> {
-    let meta = Reflect.getMetadata(ELD.METADATAKEY, obj) ? Reflect.getMetadata(ELD.METADATAKEY, obj).filter((entry) => {
+    let meta = Reflect.getMetadata(ELD.METADATAKEY, Reflect.getPrototypeOf(obj)) ? Reflect.getMetadata(ELD.METADATAKEY, Reflect.getPrototypeOf(obj)).filter((entry) => {
       return (entry.type === ELD.Decorators.IS_REF_TO && (!properties || _.includes(properties.split(' '), entry.property)));
     }) : [];
     let queryCollections = meta.map((entry) => {
