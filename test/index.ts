@@ -59,20 +59,17 @@ describe('Elements', () => {
     public horsepower: number;
   }
   @injectable
-  class Wheels {
-    constructor(count?: number, manufacturer?: string) {
-      this.count = count;
+  class Wheel {
+    constructor(manufacturer?: string) {
       this.manufacturer = manufacturer;
     }
-    @IsInt()
-    public count: number;
     @ValidateType()
     public manufacturer: string;
   }
   @injectable
   @Collection('cars')
   class Car extends Element {
-    constructor(id: number, engine: Engine, wheels: Wheels, elementHandler?: any) {
+    constructor(id: number, engine: Engine, wheels: Wheel[], elementHandler?: any) {
       super(elementHandler);
       this.id = id;
       this.engine = engine;
@@ -83,7 +80,7 @@ describe('Elements', () => {
     @ValidateNested()
     public engine: any;
     @ValidateNested()
-    public wheels: Wheels;
+    public wheels: Wheel[];
     @IsDefined()
     public model: string = undefined;
   }
@@ -135,7 +132,8 @@ describe('Elements', () => {
       car.model = 'M3';
       car.engine.id = 2;
       car.engine.elements = car.elements;
-      car.wheels = new Wheels(4, 'Fireyear');
+      let oneWheel = new Wheel('Fireyear');
+      car.wheels = [oneWheel, oneWheel, oneWheel, oneWheel]
       let ser = car.toDbObject();
       let jsonSer = JSON.parse(JSON.stringify(ser));
       assert(jsonSer.id !== undefined);

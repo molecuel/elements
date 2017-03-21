@@ -181,7 +181,7 @@ export class MlclElements {
       }
       // make sure there is always one collection getter
       if (!target['collection']) {
-        bject.defineProperty(target, 'collection', {
+        Object.defineProperty(target, 'collection', {
           configurable: true, get: function(): string {
             return model.constructor.name;
           }
