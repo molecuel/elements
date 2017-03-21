@@ -16,7 +16,7 @@
     "@molecuel/mongodb": "^2.0.1-alpha4",
     "@types/fast-json-patch": "^1.0.4",
     "@types/gulp": "^4.0.0",
-    "@types/gulp-plumber": "^0.0.29",
+    "@types/gulp-plumber": "^0.0.30",
     "@types/gulp-tslint": "^3.6.30",
     "@types/gulp-typescript": "^0.0.33",
     "@types/lodash": "^4.14.42",
