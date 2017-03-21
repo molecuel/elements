@@ -5,10 +5,19 @@ import * as assert from 'assert';
 import * as _ from 'lodash';
 import {di, injectable} from '@molecuel/di';
 import {MlclCore} from '@molecuel/core';
-import {MlclMongoDb} from '@molecuel/mongodb';
 import {MlclDatabase, PERSISTENCE_LAYER, POPULATION_LAYER} from '@molecuel/database';
-import {MlclElements, Element, GetDecorators} from '../dist';
-const D = GetDecorators();
+import {MlclMongoDb} from '@molecuel/mongodb';
+import {
+  MlclElements,
+  Element,
+  Collection,
+  IsDefined,
+  ValidateType,
+  IsReferenceTo,
+  ValidateNested,
+  InArray,
+  IsInt
+} from '../dist';
 
 let config: any = {
   molecuel: {
@@ -30,21 +39,23 @@ describe('Elements', () => {
   let el: MlclElements;
 
   @injectable
+  @Collection('post')
   class Post extends Element {
-    public static get collection(): string { return 'post'; };
-    @D.IsDefined()
+    // public static get collection(): string { return 'post'; };
+    @IsDefined()
     public recipient: string = 'me';
   }
   @injectable
+  @Collection('engines')
   class Engine extends Element {
-    public static get collection(): string { return 'engines'; };
+    // public static get collection(): string { return 'engines'; };
     constructor(id: number, hp?: number, elementHandler?: any) {
-      super(elementHandler); // super(...[...arguments].slice(Engine.length)); // use to manually inject parent class dependencies
+      super(elementHandler);
       this.horsepower = hp;
       this.id = id;
     }
-    @D.ValidateType()
-    @D.IsDefined()
+    @ValidateType()
+    @IsDefined()
     public horsepower: number;
   }
   @injectable
@@ -53,27 +64,27 @@ describe('Elements', () => {
       this.count = count;
       this.manufacturer = manufacturer;
     }
-    @D.IsInt()
+    @IsInt()
     public count: number;
-    @D.ValidateType()
+    @ValidateType()
     public manufacturer: string;
   }
   @injectable
+  @Collection('cars')
   class Car extends Element {
-    public static get collection(): string { return 'cars'; };
     constructor(id: number, engine: Engine, wheels: Wheels, elementHandler?: any) {
       super(elementHandler);
       this.id = id;
       this.engine = engine;
       this.wheels = wheels;
     }
-    @D.IsReferenceTo(Engine)
-    @D.ValidateType(Engine)
-    @D.ValidateNested()
+    @IsReferenceTo(Engine)
+    @ValidateType(Engine)
+    @ValidateNested()
     public engine: any;
-    @D.ValidateNested()
+    @ValidateNested()
     public wheels: Wheels;
-    @D.IsDefined()
+    @IsDefined()
     public model: string = undefined;
   }
 
@@ -136,13 +147,13 @@ describe('Elements', () => {
     it('should deserialize an instance to requested Element-Subclass', () => {
       @injectable
       class Robot extends Element {
-        @D.IsDefined()
+        @IsDefined()
         public _id;
-        @D.ValidateType()
+        @ValidateType()
         public arms: number;
-        @D.ValidateType()
+        @ValidateType()
         public legs: number;
-        @D.InArray(['steel', 'brass', 'bronze'])
+        @InArray(['steel', 'brass', 'bronze'])
         public alloy;
       }
        let carData = {
@@ -188,7 +199,7 @@ describe('Elements', () => {
         error.message.should.equal('No connected databases.');
       }
       try {
-        let response = await el.findById({}, Post.collection);
+        let response = await el.findById({}, Post['collection']);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -196,7 +207,7 @@ describe('Elements', () => {
         error.message.should.equal('No connected databases.');
       }
       try {
-        let response = await el.find({}, Post.collection);
+        let response = await el.find({}, Post['collection']);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -218,7 +229,7 @@ describe('Elements', () => {
         error.errors.length.should.be.above(0);
       }
       should.not.exist(response);
-      delete (<any>failEngine).collection;
+      delete failEngine['collection'];
       try {
         response = await failEngine.save();
       } catch (error) {
@@ -256,7 +267,7 @@ describe('Elements', () => {
     it('should not find unsaved objects', async () => {
       let response;
       try {
-        response = await el.findById(404, (<any>car).collection);
+        response = await el.findById(404, car['collection']);
       } catch (error) {
         should.not.exist(error);
       }
@@ -281,7 +292,7 @@ describe('Elements', () => {
       }
       try {
         await con.database.close();
-        let response = await el.findById(42, Post.collection);
+        let response = await el.findById(42, Post['collection']);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -294,7 +305,7 @@ describe('Elements', () => {
       }
       try {
         await con.database.close();
-        let response = await el.find({}, Post.collection);
+        let response = await el.find({}, Post['collection']);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -309,7 +320,7 @@ describe('Elements', () => {
     it('should find the saved object', async () => {
       let response;
       try {
-        response = await el.findById(101, (<any>car).collection);
+        response = await el.findById(101, car['collection']);
       } catch (error) {
         should.not.exist(error);
       }

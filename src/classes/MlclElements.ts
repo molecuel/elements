@@ -11,6 +11,8 @@ import {di, injectable} from '@molecuel/di';
 
 @injectable
 export class MlclElements {
+  private get METADATAKEY(): string { return 'mlcl_elements:validators'; };
+
   /**
    * modified getInstance of di, setting handler to current instance
    * @param  {string}           name [description]
@@ -22,6 +24,7 @@ export class MlclElements {
       if (instance && _.includes(Object.keys(instance), 'elements')) {
         instance.elements = this;
       }
+      this.addCollectionTo(instance);
       return instance;
     }
     else {
@@ -101,6 +104,7 @@ export class MlclElements {
         }
       }
     }
+    this.addCollectionTo(instance);
     return instance;
   }
 
@@ -141,19 +145,49 @@ export class MlclElements {
         }
       }
     }
-    if ((obj['collection'] || obj.constructor['collection']) && !result['collection']) {
-      let classCollectionDescriptor = Object.getOwnPropertyDescriptor(obj.constructor, 'collection');
-      // check for static getter on class; instance getter has priority -> continue in any case
-      if (classCollectionDescriptor && typeof classCollectionDescriptor.get === 'function') {
-        Object.defineProperty(result, 'collection', classCollectionDescriptor);
+    this.addCollectionTo(result, obj);
+    return result;
+  }
+
+  protected addCollectionTo(target: Object, model?: Object) {
+    if (!model) {
+      model = target;
+    }
+    let collectionDecorator = _.find(Reflect.getMetadata(this.METADATAKEY, model.constructor), ['type', ELD.Decorators.COLLECTION]);
+    if ((collectionDecorator || model['collection'] || model.constructor['collection']) && !target['collection']) {
+      // check for decorator
+      if(collectionDecorator) {
+        Object.defineProperty(target, 'collection', {
+          configurable: true, get: function(): string {
+            return collectionDecorator['value'];
+          }
+        });
       }
-      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(obj, 'collection');
-      // check for instance getter
+      // other getters have priority -> continue anyway
+      let classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, 'collection');
+      // check for static getter on class
+      if (classCollectionDescriptor && typeof classCollectionDescriptor.get === 'function') {
+        Object.defineProperty(target, 'collection', classCollectionDescriptor);
+      }
+      let protoCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), 'collection');
+      // check for getter on prototype
+      if (protoCollectionDescriptor && typeof protoCollectionDescriptor.get === 'function') {
+        Object.defineProperty(target, 'collection', protoCollectionDescriptor);
+      }
+      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), 'collection');
+      // check for getter on instance
       if (instanceCollectionDescriptor && typeof instanceCollectionDescriptor.get === 'function') {
-        Object.defineProperty(result, 'collection', instanceCollectionDescriptor);
+        Object.defineProperty(target, 'collection', instanceCollectionDescriptor);
+      }
+      // make sure there is always one collection getter
+      if (!target['collection']) {
+        bject.defineProperty(target, 'collection', {
+          configurable: true, get: function(): string {
+            return model.constructor.name;
+          }
+        });
       }
     }
-    return result;
   }
 
   public diffObjects(oldObj, newObj) {
@@ -234,13 +268,13 @@ export class MlclElements {
   }
 
   public async populate(obj: Object, properties?: string): Promise<any> {
-    let meta = Reflect.getMetadata(ELD.METADATAKEY, Reflect.getPrototypeOf(obj)) ? Reflect.getMetadata(ELD.METADATAKEY, Reflect.getPrototypeOf(obj)).filter((entry) => {
+    let meta = Reflect.getMetadata(this.METADATAKEY, obj.constructor) ? Reflect.getMetadata(this.METADATAKEY, obj.constructor).filter((entry) => {
       return (entry.type === ELD.Decorators.IS_REF_TO && (!properties || _.includes(properties.split(' '), entry.property)));
     }) : [];
     let queryCollections = meta.map((entry) => {
       let instance = this.getInstance(entry.value);
       if (instance) {
-        return instance.collection || instance.constructor.collection;
+        return instance.collection || instance.constructor.collection || instance.constructor.name;
       }
     });
     let queryProperties = meta.map((entry) => {

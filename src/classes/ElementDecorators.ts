@@ -4,9 +4,10 @@ export class Decorators {
   public static get USE_PERSISTANCE_COLLECTION_OR_TABLE(): string { return 'UsePersistanceCollectionOrTable'; }
   public static get USE_ELASTIC_TYPE(): string { return 'UseElasticType'; }
   public static get IS_REF_TO(): string { return 'IsReferenceTo'; }
+  public static get COLLECTION(): string { return 'Collection'; }
 }
 
-export const METADATAKEY = 'mlcl_elements:validators';
+const METADATAKEY = 'mlcl_elements:validators';
 
 export function versionable(targetClass) {
   // sets static on class
@@ -15,7 +16,7 @@ export function versionable(targetClass) {
 
 export function Mapping() {
   return function(target: Object, propertyName: string) {
-    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
     }
@@ -23,14 +24,13 @@ export function Mapping() {
       type: Decorators.INDEX_MAPPING,
       property: propertyName
     });
-    Reflect.defineMetadata(METADATAKEY, metadata, target);
+    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
   };
 }
 
-
 export function NotForPopulation() {
   return function(target: Object, propertyName: string) {
-    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
     }
@@ -38,7 +38,7 @@ export function NotForPopulation() {
       type: Decorators.NOT_FOR_POPULATION,
       property: propertyName
     });
-    Reflect.defineMetadata(METADATAKEY, metadata, target);
+    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
   };
 }
 
@@ -52,7 +52,7 @@ export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
     else {
       className = input.constructor.name;
     }
-    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
     }
@@ -61,7 +61,7 @@ export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
       property: className,
       value: collectionOrTable
     });
-    Reflect.defineMetadata(METADATAKEY, metadata, target);
+    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
   };
 }
 
@@ -88,7 +88,7 @@ export function IsReferenceTo(...models: any[]) {
     if (!(references.length > 1)) {
       references = references.pop();
     }
-    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
     }
@@ -97,7 +97,26 @@ export function IsReferenceTo(...models: any[]) {
       property: propertyName,
       value: references
     });
+    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
+  };
+}
+
+export function Collection(collectionName: string) {
+  return function(target: Object) {
+    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    if (!metadata) {
+      metadata = [];
+    }
+    metadata = metadata.concat({
+      type: Decorators.COLLECTION,
+      value: collectionName
+    });
     Reflect.defineMetadata(METADATAKEY, metadata, target);
+    // Object.defineProperty(target, 'collection', {
+    //     configurable: true, get: function(): string {
+    //       return collectionName;
+    //     }
+    // });
   };
 }
 
@@ -111,7 +130,7 @@ export function UseElasticType(type: string) {
     else {
       className = input.constructor.name;
     }
-    let metadata = Reflect.getMetadata(METADATAKEY, target);
+    let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
     }
@@ -120,6 +139,6 @@ export function UseElasticType(type: string) {
       property: className,
       value: type
     });
-    Reflect.defineMetadata(METADATAKEY, metadata, target);
+    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
   };
 }
