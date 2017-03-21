@@ -2,7 +2,7 @@
 
 elements module for the Molecuel framework. Creating and configuring data models and validation for the database persistence layer. New database connections (mongodb + elasticsearch) are in progress. They will be implemented as adapters and it will be possible to save to different databases with one save method and define the population level of the data in a special population level to denormlize the data for aggregation and optimized reading.
 
-[npm-image]: https://badge.fury.io/js/@molecuel/elements.svg
+[npm-image]: https://badge.fury.io/js/%40molecuel%2Felements.svg
 [npm-url]: https://npmjs.org/package/@molecuel/elements
 [travis-image]: https://travis-ci.org/molecuel/elements.svg?branch=master
 [travis-url]: https://travis-ci.org/molecuel/elements
