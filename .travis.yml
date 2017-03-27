@@ -1,6 +1,7 @@
 language: node_js
 node_js:
-  - "7"
+- '6'
+- '7'
 sudo: required
 services:
 - mongodb
@@ -11,6 +12,14 @@ addons:
     packages:
     - mongodb-org-server
 before_script:
-  - gulp build
+- npm run build
 after_success:
-  - npm run coveralls
+- npm run coveralls
+deploy:
+  skip_cleanup: true
+  provider: npm
+  email: info@molecuel.org
+  api_key:
+    secure: EZp72D9Sdgf1cbLxLuL2jbjfbCwKvujYjfvP+vTVVsEbiplPyBa0ZqSKV5n7YNlnWQXKGY5EBLwqV0b9bqy6r4ZeydyOTLfXv4+s3tLnkVMeo1vEiIyljZlLm1SVlBGHwMFCRVpNI0yS4rtoja5+LYyBzbpL8th+rwwTV7sznTs=
+  on:
+    repo: molecuel/core
