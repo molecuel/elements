@@ -20,6 +20,6 @@ deploy:
   provider: npm
   email: info@molecuel.org
   api_key:
-    secure: EZp72D9Sdgf1cbLxLuL2jbjfbCwKvujYjfvP+vTVVsEbiplPyBa0ZqSKV5n7YNlnWQXKGY5EBLwqV0b9bqy6r4ZeydyOTLfXv4+s3tLnkVMeo1vEiIyljZlLm1SVlBGHwMFCRVpNI0yS4rtoja5+LYyBzbpL8th+rwwTV7sznTs=
+    secure: BjO8b/ol2P3CoOLgD05XAyQRyXgjqihTFnO7lknzNyZ8UDVdP61o5B05D5oYNFFxP3ixHdhAsTh3lwGLCno30sUr4wNCtlltayX8NpWTvgOQ0nhoUzkcJL1nqh/vqU0rQep6LxBs3+JPoRSjIyntcD73fPjKBXf6p+1hTSaP6H0=
   on:
     repo: molecuel/elements
