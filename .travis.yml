@@ -22,4 +22,4 @@ deploy:
   api_key:
     secure: EZp72D9Sdgf1cbLxLuL2jbjfbCwKvujYjfvP+vTVVsEbiplPyBa0ZqSKV5n7YNlnWQXKGY5EBLwqV0b9bqy6r4ZeydyOTLfXv4+s3tLnkVMeo1vEiIyljZlLm1SVlBGHwMFCRVpNI0yS4rtoja5+LYyBzbpL8th+rwwTV7sznTs=
   on:
-    repo: molecuel/core
+    repo: molecuel/elements
