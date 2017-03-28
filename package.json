@@ -25,7 +25,7 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@molecuel/mongodb": "^2.0.1-alpha4",
+    "@molecuel/mongodb": "2.0.1-alpha4",
     "@types/fast-json-patch": "^1.0.4",
     "@types/mocha": "^2.2.36",
     "@types/should": "^8.1.30",
