@@ -15,8 +15,7 @@ import {
   ValidateType,
   IsReferenceTo,
   ValidateNested,
-  InArray,
-  IsInt
+  InArray
 } from '../dist';
 
 let config: any = {
@@ -133,7 +132,7 @@ describe('Elements', () => {
       car.engine.id = 2;
       car.engine.elements = car.elements;
       let oneWheel = new Wheel('Fireyear');
-      car.wheels = [oneWheel, oneWheel, oneWheel, oneWheel]
+      car.wheels = [oneWheel, oneWheel, oneWheel, oneWheel];
       let ser = car.toDbObject();
       let jsonSer = JSON.parse(JSON.stringify(ser));
       assert(jsonSer.id !== undefined);
