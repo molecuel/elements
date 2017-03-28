@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@molecuel/core": "^2.0.17",
-    "@molecuel/di": "^0.2.1",
+    "@molecuel/di": "0.2.2",
     "@molecuel/database": "^2.0.0-alpha4",
     "@reactivex/rxjs": "^5.0.0-rc.5",
     "fast-json-patch": "^1.1.6",
