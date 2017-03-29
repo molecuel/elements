@@ -1,6 +1,6 @@
 export class DiffObject {
-  op: string;
-  path: string;
-  value?: any;
-  from?: string;
+  public op: string;
+  public path: string;
+  public value?: any;
+  public from?: string;
 }

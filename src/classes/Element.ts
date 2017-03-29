@@ -1,16 +1,16 @@
-'use strict';
-import 'reflect-metadata';
-import { MlclElements } from './MlclElements';
-import { IElement } from '../interfaces/IElement';
-import * as TSV from 'tsvalidate';
-import { injectable } from '@molecuel/di';
+"use strict";
+import { injectable } from "@molecuel/di";
+import * as TSV from "@molecuel/tsvalidate";
+import "reflect-metadata";
+import { IElement } from "../interfaces/IElement";
+import { MlclElements } from "./MlclElements";
 
 @injectable
 export class Element implements IElement {
-  constructor(private elements: MlclElements) {}
   @TSV.ValidateType()
   public id: any;
-  public _version: number;
+  public version: number;
+  constructor(private elements: MlclElements) {}
   /**
    * Validate this instance based on relevant decorators
    *
@@ -39,7 +39,9 @@ export class Element implements IElement {
     let population = await this.elements.populate(this, properties);
     if (population) {
       for (let prop in population) {
-        this[prop] = population[prop];
+        if (population[prop]) {
+          this[prop] = population[prop];
+        }
       }
     }
   }

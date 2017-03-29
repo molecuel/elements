@@ -1,7 +1,6 @@
-import { IDatabaseLayerType } from '.';
 export interface IDatabaseAdapter {
   name: string;
-  type: IDatabaseLayerType;
+  type: string;
   idPattern: string;
   register(model: Object);
   save(instance: Object);
