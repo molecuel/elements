@@ -285,13 +285,16 @@ export class MlclElements {
       try {
         let result = await dbHandler.populate(obj, queryProperties, queryCollections);
         if (_.includes(this.getClasses(), obj.constructor.name)) {
-          let deepResult;
-          await this.toInstance(obj.constructor.name, result).populate().then((value) => { deepResult = value; }).catch((error) => { deepResult = error; });
-          return Promise.resolve(deepResult);
+          result = this.toInstance(obj.constructor.name, result);
         }
-        else {
-          return Promise.resolve(result);
+        for (let prop in result) {
+          if (result[prop] && _.includes(this.getClasses(), result[prop].constructor.name)) {
+            await this.toInstance(result[prop].constructor.name, result[prop]).populate()
+              .then((value) => { result[prop] = value; })
+              .catch((error) => {});
+          }
         }
+        return Promise.resolve(result);
       } catch (error) {
         return Promise.reject(error);
       }
