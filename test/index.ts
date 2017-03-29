@@ -377,25 +377,25 @@ describe("Elements", () => {
     let diff2;
     it("should be possible to diff objects", () => {
       diff = el.diffObjects(oldObj, newObj);
-      assert(diff[0].op === "replace");
-      assert(diff[0].path === "/lastname");
-      assert(diff[0].value === "Brown");
+      diff[0].op.should.equal("replace");
+      diff[0].path.should.equal("/lastname");
+      diff[0].value.should.equal("Brown");
     });
     it("should be possible to diff with multiple changes", () => {
       diff2 = el.diffObjects(newObj, newObj2);
-      assert(diff2[0].op === "remove");
-      assert(diff2[0].path === "/eyecolor");
-      assert(diff2[1].op === "remove");
-      assert(diff2[1].path === "/age");
-      assert(diff2[2].op === "replace");
-      assert(diff2[2].path === "/lastname");
-      assert(diff2[2].value === "Green");
+      diff2[0].op.should.equal("replace");
+      diff2[0].path.should.equal("/lastname");
+      diff2[0].value.should.equal("Green");
+      diff2[1].op.should.equal("remove");
+      diff2[1].path.should.equal("/eyecolor");
+      diff2[2].op.should.equal("remove");
+      diff2[2].path.should.equal("/age");
     });
     it("should be possible to revert with a collection of diffs in correct order", () => {
       let patches = _.concat(diff2, diff);
-      assert(newObj2.lastname === "Smith");
+      newObj2.lastname.should.equal("Smith");
       el.revertObject(newObj2, patches);
-      assert(newObj2.lastname === "Brown");
+      newObj2.lastname.should.equal("Brown");
     });
   }); // category end
   after(async () => {
