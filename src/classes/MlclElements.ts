@@ -174,19 +174,19 @@ export class MlclElements {
       if (protoCollectionDescriptor && typeof protoCollectionDescriptor.get === 'function') {
         Object.defineProperty(target, 'collection', protoCollectionDescriptor);
       }
-      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), 'collection');
-      // check for getter on instance
-      if (instanceCollectionDescriptor && typeof instanceCollectionDescriptor.get === 'function') {
+      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(model, 'collection');
+      // check for value on instance
+      if (instanceCollectionDescriptor) {
         Object.defineProperty(target, 'collection', instanceCollectionDescriptor);
       }
-      // make sure there is always one collection getter
-      if (!target['collection']) {
-        Object.defineProperty(target, 'collection', {
-          configurable: true, get: function(): string {
-            return model.constructor.name;
-          }
-        });
-      }
+    }
+    // make sure there is always one collection getter
+    if (!target['collection']) {
+      Object.defineProperty(target, 'collection', {
+        configurable: true, get: function(): string {
+          return model.constructor.name;
+        }
+      });
     }
   }
 
@@ -206,7 +206,7 @@ export class MlclElements {
    * @param  {boolean}                             upsert    [description]
    * @return {Promise<any>}                                  [description]
    */
-  public async saveInstances(instances: Element[], upsert: boolean = false): Promise<any> {
+  public async saveInstances(instances: Element[], upsert: boolean = true): Promise<any> {
     let result = {
       successCount:  0,
       errorCount: 0,
@@ -267,6 +267,15 @@ export class MlclElements {
     }
   }
 
+  /**
+   * Populates an object instance
+   *
+   * @param {Object} obj            object instance to populate
+   * @param {string} [properties]   properties to populate; defaults to all
+   * @returns {Promise<any>}        populated instance or error
+   *
+   * @memberOf MlclElements
+   */
   public async populate(obj: Object, properties?: string): Promise<any> {
     let meta = Reflect.getMetadata(this.METADATAKEY, obj.constructor) ? Reflect.getMetadata(this.METADATAKEY, obj.constructor).filter((entry) => {
       return (entry.type === ELD.Decorators.IS_REF_TO && (!properties || _.includes(properties.split(' '), entry.property)));

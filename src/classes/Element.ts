@@ -11,13 +11,25 @@ export class Element implements IElement {
   @TSV.ValidateType()
   public id: any;
   public _version: number;
+  /**
+   * Validate this instance based on relevant decorators
+   *
+   * @returns {IValidatorError[]} Array of errors
+   *
+   * @memberOf Element
+   */
   public validate(): TSV.IValidatorError[] {
     return this.elements.validate(this);
   }
-  public save(upsert?: boolean): Promise<any> {
-    if (!upsert) {
-      upsert = false;
-    }
+  /**
+   * Save this instane to all configured and connected databases
+   *
+   * @param {boolean} [upsert=true]    wether to upsert during save; defaults to true
+   * @returns {Promise<any>}      info object with successes (&count) and errors (&count)
+   *
+   * @memberOf Element
+   */
+  public save(upsert: boolean = true): Promise<any> {
     return this.elements.saveInstances([this], upsert);
   }
   public toDbObject(): any {

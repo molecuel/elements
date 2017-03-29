@@ -11,12 +11,13 @@ import {
   MlclElements,
   Element,
   Collection,
-  IsDefined,
-  ValidateType,
-  IsReferenceTo,
-  ValidateNested,
-  InArray
+  IsDefined // ,
+  // ValidateType,
+  // IsReferenceTo,
+  // ValidateNested,
+  // InArray
 } from '../dist';
+import * as D from '../dist';
 
 let config: any = {
   molecuel: {
@@ -40,29 +41,30 @@ describe('Elements', () => {
   @injectable
   @Collection('post')
   class Post extends Element {
-    // public static get collection(): string { return 'post'; };
+    public static get collection(): string { return 'post'; }; // code coverage setting
     @IsDefined()
     public recipient: string = 'me';
   }
   @injectable
   @Collection('engines')
   class Engine extends Element {
-    // public static get collection(): string { return 'engines'; };
+    public get collection(): string { return 'engines'; }; // code coverage setting
     constructor(id: number, hp?: number, elementHandler?: any) {
       super(elementHandler);
       this.horsepower = hp;
       this.id = id;
     }
-    @ValidateType()
+    @D.ValidateType()
     @IsDefined()
     public horsepower: number;
   }
   @injectable
-  class Wheel {
-    constructor(manufacturer?: string) {
+  class Wheel extends Element {
+    constructor(manufacturer?: string, elementHandler?: any) {
+      super(elementHandler);
       this.manufacturer = manufacturer;
     }
-    @ValidateType()
+    @D.ValidateType()
     public manufacturer: string;
   }
   @injectable
@@ -74,18 +76,18 @@ describe('Elements', () => {
       this.engine = engine;
       this.wheels = wheels;
     }
-    @IsReferenceTo(Engine)
-    @ValidateType(Engine)
-    @ValidateNested()
+    @D.IsReferenceTo(Engine)
+    @D.ValidateType(Engine)
+    @D.ValidateNested()
     public engine: any;
-    @ValidateNested()
+    @D.ValidateNested()
     public wheels: Wheel[];
     @IsDefined()
     public model: string = undefined;
   }
 
   before(() => {
-    (<any>di).bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
+    di.bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
   });
   describe('init', () => {
     it('should start Elements', function() {
@@ -146,11 +148,11 @@ describe('Elements', () => {
       class Robot extends Element {
         @IsDefined()
         public _id;
-        @ValidateType()
+        @D.ValidateType()
         public arms: number;
-        @ValidateType()
+        @D.ValidateType()
         public legs: number;
-        @InArray(['steel', 'brass', 'bronze'])
+        @D.InArray(['steel', 'brass', 'bronze'])
         public alloy;
       }
        let carData = {
@@ -213,7 +215,7 @@ describe('Elements', () => {
       }
       await dbHandler.init();
     });
-    it('should not save invalid or collection-less instances', async () => {
+    it('should not save invalid instances', async () => {
       let failEngine: Engine = el.getInstance('Engine');
       failEngine.id = 'V8';
       failEngine.horsepower = undefined;
@@ -226,13 +228,24 @@ describe('Elements', () => {
         error.errors.length.should.be.above(0);
       }
       should.not.exist(response);
-      delete failEngine['collection'];
+    });
+    it('should save models without explicit colletion to one based on the model name', async () => {
+      let wheel: Wheel = el.getInstance('Wheel');
+      wheel.manufacturer = 'Goodstone';
+      let response;
       try {
-        response = await failEngine.save();
+        response = await wheel.save();
       } catch (error) {
-        should.exist(error);
+        should.not.exist(error);
       }
-      should.not.exist(response);
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
+      for (let con of dbHandler.persistenceDatabases.connections) {
+        let wheelColl = await con.database.collection(Wheel.name);
+        let wheelCount = await wheelColl.count();
+        wheelCount.should.equal(1);
+      }
     });
     it('should save to all configured and connected databases after validation (persistence first)', async () => {
       car = el.getInstance('Car');
@@ -241,7 +254,6 @@ describe('Elements', () => {
       car.engine = el.getInstance('Engine');
       car.engine.id = 'V6';
       car.engine.horsepower = 9001;
-      Object.defineProperty(car, 'collection', { configurable: true, get: function() { return 'cars'; }}); // define instance getter
       let response;
       try {
         response = await car.save();
@@ -270,7 +282,30 @@ describe('Elements', () => {
       }
       should.not.exist(response);
     });
-    it('should error during save, find and findbyId (permissions)', async () => {
+    it('should save to a different collection upon default override', async () => {
+      let response;
+      let foreignPost = el.getInstance('Post');
+      foreignPost.recipient = 'Mars';
+      Object.defineProperty(foreignPost, 'collection', {
+        configurable: true, get: function() {
+          return 'foreignPost';
+        }
+      });
+      try {
+        response = await foreignPost.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
+      for (let con of dbHandler.persistenceDatabases.connections) {
+        let fpColl = await con.database.collection(foreignPost['collection']);
+        let fpCount = await fpColl.count();
+        fpCount.should.equal(1);
+      }
+    });
+    it('should error during save, find and findbyId (closed connection)', async () => {
       let con = dbHandler.connections[0];
       try {
         await con.database.close();
@@ -280,9 +315,6 @@ describe('Elements', () => {
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
-        // console.log(error);
-        // should.exist(error.message);
-        // error.message.should.equal('No connected databases.');
       }
       finally {
         await con.database.open();
@@ -293,9 +325,6 @@ describe('Elements', () => {
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
-        // console.log(error);
-        // should.exist(error.message);
-        // error.message.should.equal('No connected databases.');
       }
       finally {
         await con.database.open();
@@ -306,9 +335,6 @@ describe('Elements', () => {
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
-        // console.log(error);
-        // should.exist(error.message);
-        // error.message.should.equal('No connected databases.');
       }
       finally {
         await con.database.open();
