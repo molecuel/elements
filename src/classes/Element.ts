@@ -36,9 +36,9 @@ export class Element implements IElement {
     return this.elements.toDbObject(this);
   }
   public async populate(properties?: string) {
-    let population = await this.elements.populate(this, properties);
+    const population = await this.elements.populate(this, properties);
     if (population) {
-      for (let prop in population) {
+      for (const prop in population) {
         if (population[prop]) {
           this[prop] = population[prop];
         }
