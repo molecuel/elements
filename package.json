@@ -48,7 +48,7 @@
     "@molecuel/core": "^2.0.17",
     "@molecuel/di": "^0.2.1",
     "@molecuel/database": "^2.0.0-alpha4",
-    "@molecuel/tsvalidate": "^0.0.14",
+    "@molecuel/tsvalidate": "^0.0.15",
     "@reactivex/rxjs": "^5.0.0-rc.5",
     "fast-json-patch": "^1.1.6",
     "lodash": "^4.17.4",
