@@ -23,7 +23,7 @@ import * as D from "../dist";
 // tslint:disable:max-classes-per-file
 // tslint:disable:variable-name
 
-let config: any = {
+const config: any = {
   molecuel: {
     databases: [{
       layer: PERSISTENCE_LAYER,
@@ -41,14 +41,18 @@ describe("Elements", () => {
   @injectable
   @Collection("post")
   class Post extends Element {
-    public static get collection(): string { return "post"; }; // code coverage setting
+    public static get collection(): string {
+      return "post";
+    }
     @IsDefined()
     public recipient: string = "me";
   }
   @injectable
   @Collection("engines")
   class Engine extends Element {
-    public get collection(): string { return "engines"; }; // code coverage setting
+    public get collection(): string {
+      return "engines";
+    }
     @D.ValidateType()
     @IsDefined()
     public horsepower: number;
@@ -95,47 +99,47 @@ describe("Elements", () => {
       assert(el);
     });
     it("should return a list of Element extending classes\' names", () => {
-      let classNames = el.getClasses();
+      const classNames = el.getClasses();
       should.exist(classNames);
       classNames.length.should.be.above(0);
       classNames[0].should.be.type("string");
     });
     it("should not generate a new instance of unconfigured classes", () => {
-      let compareInstance = el.getInstance("Robot");
+      const compareInstance = el.getInstance("Robot");
       should.not.exist(compareInstance);
     });
   }); // category end
   describe("validation", () => {
     it("should NOT validate erroneous Element instances", () => {
-      let post: Post = el.getInstance("Post");
+      const post: Post = el.getInstance("Post");
       should.exist(post);
       post.should.be.instanceOf(Element);
       delete post.recipient;
-      let validationResult = post.validate();
+      const validationResult = post.validate();
       should.exist(validationResult);
       validationResult.length.should.equal(1);
     });
     it("should validate an Element inheriting instance", () => {
-      let car: Car = el.getInstance("Car", 1);
+      const car: Car = el.getInstance("Car", 1);
       should.exist(car);
       car.should.be.instanceOf(Element);
       car.engine = el.getInstance("Engine", 1, 110);
       car.model = "VRM";
-      let validationResult = car.validate();
+      const validationResult = car.validate();
       should.exist(validationResult);
       validationResult.length.should.equal(0);
     });
   }); // category end
   describe("serialization", () => {
     it("should serialize an Element inheriting instance", () => {
-      let car = el.getInstance("Car", 2);
+      const car = el.getInstance("Car", 2);
       car.model = "M3";
       car.engine.id = 2;
       car.engine.elements = car.elements;
-      let oneWheel = new Wheel("Fireyear");
+      const oneWheel = new Wheel("Fireyear");
       car.wheels = [oneWheel, oneWheel, oneWheel, oneWheel];
-      let ser = car.toDbObject();
-      let jsonSer = JSON.parse(JSON.stringify(ser));
+      const ser = car.toDbObject();
+      const jsonSer = JSON.parse(JSON.stringify(ser));
       assert(jsonSer.id !== undefined);
       assert(jsonSer.model === "M3");
       assert(_.isEqual(ser, jsonSer));
@@ -154,22 +158,22 @@ describe("Elements", () => {
         @D.InArray(["steel", "brass", "bronze"])
         public alloy;
       }
-      let carData = {
+      const carData = {
         engine: 2,
         id: 2,
         model: "M3" };
-      let robotData = {
+      const robotData = {
         _id: "PR0T0TYP3",
         alloy: "steel",
         arms: 2,
         legs: 2 };
-      let car = el.toInstance("Car", carData);
+      const car = el.toInstance("Car", carData);
       car.should.be.instanceOf(Car);
       assert(car.save !== undefined);
       assert(car.id === carData.id);
       assert(car.model === carData.model);
       assert(car.engine === carData.engine);
-      let robot = el.toInstance("Robot", robotData);
+      const robot = el.toInstance("Robot", robotData);
       robot.should.be.instanceOf(Robot);
       assert(robot.save !== undefined);
       assert(robot.id === robotData._id);
@@ -185,9 +189,9 @@ describe("Elements", () => {
       dbHandler = di.getInstance("MlclDatabase");
       dbHandler.addDatabasesFrom(config);
       try {
-        let failPost: Post = el.getInstance("Post");
+        const failPost: Post = el.getInstance("Post");
         failPost.id = 42;
-        let response = await failPost.save();
+        const response = await failPost.save();
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -195,7 +199,7 @@ describe("Elements", () => {
         error.message.should.equal("No connected databases.");
       }
       try {
-        let response = await el.findById({}, (<any> Post).collection);
+        const response = await el.findById({}, (Post as any).collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -203,7 +207,7 @@ describe("Elements", () => {
         error.message.should.equal("No connected databases.");
       }
       try {
-        let response = await el.find({}, (<any> Post).collection);
+        const response = await el.find({}, (Post as any).collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -213,10 +217,10 @@ describe("Elements", () => {
       await dbHandler.init();
     });
     it("should not save invalid instances", async () => {
-      let failEngine: Engine = el.getInstance("Engine");
+      const failEngine: Engine = el.getInstance("Engine");
       failEngine.id = "V8";
       failEngine.horsepower = undefined;
-      let response;
+      let  response;
       try {
         response = await failEngine.save();
       } catch (error) {
@@ -227,7 +231,7 @@ describe("Elements", () => {
       should.not.exist(response);
     });
     it("should save models without explicit colletion to one based on the model name", async () => {
-      let wheel: Wheel = el.getInstance("Wheel");
+      const wheel: Wheel = el.getInstance("Wheel");
       wheel.manufacturer = "Goodstone";
       let response;
       try {
@@ -238,9 +242,9 @@ describe("Elements", () => {
       should.exist(response);
       should.exist(response.successCount);
       response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      for (let con of dbHandler.persistenceDatabases.connections) {
-        let wheelColl = await con.database.collection(Wheel.name);
-        let wheelCount = await wheelColl.count();
+      for (const con of dbHandler.persistenceDatabases.connections) {
+        const wheelColl = await con.database.collection(Wheel.name);
+        const wheelCount = await wheelColl.count();
         wheelCount.should.equal(1);
       }
     });
@@ -260,7 +264,7 @@ describe("Elements", () => {
       should.exist(response);
       should.exist(response.successCount);
       response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      let engine = car.engine;
+      const engine = car.engine;
       try {
         response = await engine.save();
       } catch (error) {
@@ -273,7 +277,7 @@ describe("Elements", () => {
     it("should not find unsaved objects", async () => {
       let response;
       try {
-        response = await el.findById(404, (<any> car).collection);
+        response = await el.findById(404, (car as any).collection);
       } catch (error) {
         should.not.exist(error);
       }
@@ -281,7 +285,7 @@ describe("Elements", () => {
     });
     it("should save to a different collection upon default override", async () => {
       let response;
-      let foreignPost = el.getInstance("Post");
+      const foreignPost = el.getInstance("Post");
       foreignPost.recipient = "Mars";
       Object.defineProperty(foreignPost, "collection", {
         configurable: true, get(): string {
@@ -294,19 +298,19 @@ describe("Elements", () => {
       should.exist(response);
       should.exist(response.successCount);
       response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      for (let con of dbHandler.persistenceDatabases.connections) {
-        let fpColl = await con.database.collection((<any> foreignPost).collection);
-        let fpCount = await fpColl.count();
+      for (const con of dbHandler.persistenceDatabases.connections) {
+        const fpColl = await con.database.collection((foreignPost as any).collection);
+        const fpCount = await fpColl.count();
         fpCount.should.equal(1);
       }
     });
     it("should error during save, find and findbyId (closed connection)", async () => {
-      let con = dbHandler.connections[0];
+      const con = dbHandler.connections[0];
       try {
         await con.database.close();
-        let failPost: Post = el.getInstance("Post");
+        const failPost: Post = el.getInstance("Post");
         failPost.id = 42;
-        let response = await failPost.save();
+        const response = await failPost.save();
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -315,7 +319,7 @@ describe("Elements", () => {
       }
       try {
         await con.database.close();
-        let response = await el.findById(42, (<any> Post).collection);
+        const response = await el.findById(42, (Post as any).collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -324,7 +328,7 @@ describe("Elements", () => {
       }
       try {
         await con.database.close();
-        let response = await el.find({}, (<any> Post).collection);
+        const response = await el.find({}, (Post as any).collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -335,23 +339,23 @@ describe("Elements", () => {
     it("should find the saved object", async () => {
       let response;
       try {
-        response = await el.findById(101, (<any> car).collection);
+        response = await el.findById(101, (car as any).collection);
       } catch (error) {
         should.not.exist(error);
       }
       should.exist(response);
-      let carJson = car.toDbObject();
+      const carJson = car.toDbObject();
       carJson.id.should.equal(response._id);
       carJson.model.should.equal(response.model);
       carJson.engine.should.equal(response.engine);
-      let newCar = el.toInstance("Car", response);
+      const newCar = el.toInstance("Car", response);
       newCar.id.should.equal(car.id);
       newCar.model.should.equal(car.model);
       newCar.engine.should.equal(car.engine.id);
       assert(_.isEqual(newCar.wheels, car.wheels));
     });
     it("should be possible to populate another database object", async () => {
-      let someCar = el.getInstance("Car", 2);
+      const someCar = el.getInstance("Car", 2);
       someCar.model = "M3";
       someCar.engine = "V6";
       await someCar.populate();
@@ -359,15 +363,15 @@ describe("Elements", () => {
     });
   }); // category end
   describe("versioning", () => {
-    let oldObj = {
+    const oldObj = {
       firstname: "Diana",
       id: 12,
       lastname: "Brown" };
-    let newObj = {
+    const newObj = {
       firstname: "Diana",
       id: 12,
       lastname: "Green" };
-    let newObj2 = {
+    const newObj2 = {
       age: 22,
       eyecolor: "yellow",
       firstname: "Diana",
@@ -392,15 +396,15 @@ describe("Elements", () => {
       diff2[2].path.should.equal("/age");
     });
     it("should be possible to revert with a collection of diffs in correct order", () => {
-      let patches = _.concat(diff2, diff);
+      const patches = _.concat(diff2, diff);
       newObj2.lastname.should.equal("Smith");
       el.revertObject(newObj2, patches);
       newObj2.lastname.should.equal("Brown");
     });
   }); // category end
   after(async () => {
-    let dbHandler: MlclDatabase = di.getInstance("MlclDatabase");
-    for (let con of dbHandler.connections) {
+    const dbHandler: MlclDatabase = di.getInstance("MlclDatabase");
+    for (const con of dbHandler.connections) {
       try {
         await con.database.dropDatabase();
       } catch (error) {

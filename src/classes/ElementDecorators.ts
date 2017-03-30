@@ -15,7 +15,7 @@ export function versionable(targetClass) {
 }
 
 export function Mapping() {
-  return (target: Object, propertyName: string) => {
+  return (target: object, propertyName: string) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
@@ -28,7 +28,7 @@ export function Mapping() {
 }
 
 export function NotForPopulation() {
-  return (target: Object, propertyName: string) => {
+  return (target: object, propertyName: string) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
@@ -41,8 +41,8 @@ export function NotForPopulation() {
 }
 
 export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
-  return (target: Object) => {
-    let input: any = target;
+  return (target: object) => {
+    const input: any = target;
     let className: string;
     if ("prototype" in input) {
       className = input.prototype.constructor.name;
@@ -62,9 +62,9 @@ export function UsePersistenceCollectionOrTable(collectionOrTable: string) {
 }
 
 export function IsReferenceTo(...models: any[]) {
-  return (target: Object, propertyName: string) => {
+  return (target: object, propertyName: string) => {
     let references: string|string[] = [];
-    for (let model of models) {
+    for (const model of models) {
       let modelName: string;
       if (model) {
         if (typeof model === "string") {
@@ -95,7 +95,7 @@ export function IsReferenceTo(...models: any[]) {
 }
 
 export function Collection(collectionName: string) {
-  return (target: Object) => {
+  return (target: object) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target);
     if (!metadata) {
       metadata = [];
@@ -113,8 +113,8 @@ export function Collection(collectionName: string) {
 }
 
 export function UseElasticType(type: string) {
-  return (target: Object) => {
-    let input: any = target;
+  return (target: object) => {
+    const input: any = target;
     let className: string;
     if ("prototype" in input) {
       className = input.prototype.constructor.name;

@@ -10,7 +10,9 @@ import * as ELD from "./ElementDecorators";
 
 @injectable
 export class MlclElements {
-  private get METADATAKEY(): string { return "mlcl_elements:validators"; };
+  private get METADATAKEY(): string {
+    return "mlcl_elements:validators";
+  }
 
   /**
    * modified getInstance of di, setting handler to current instance
@@ -19,7 +21,7 @@ export class MlclElements {
    */
   public getInstance(name: string, ...params): any {
     if (_.includes(this.getClasses(), name)) {
-      let instance = di.getInstance(name, ...params);
+      const instance = di.getInstance(name, ...params);
       if (instance && _.includes(Object.keys(instance), "elements")) {
         instance.elements = this;
       }
@@ -37,11 +39,11 @@ export class MlclElements {
   //  * @todo Save collectionname/tablenname as static on model
   //  */
   // public async registerModel(model: any) {
-  //   let core = di.getInstance('MlclCore');
-  //   let registrationStream = core.createStream('elementsRegistration');
-  //   let myobs = Observable.from([model]);
+  //   const core = di.getInstance('MlclCore');
+  //   const registrationStream = core.createStream('elementsRegistration');
+  //   const myobs = Observable.from([model]);
   //   myobs = registrationStream.renderStream(myobs);
-  //   let regResult = await myobs.toPromise();
+  //   const regResult = await myobs.toPromise();
   //   return regResult;
   // }
 
@@ -50,7 +52,7 @@ export class MlclElements {
    * @param  {Object}           instance [description]
    * @return {Promise<void>}             [description]
    */
-  public validate(instance: Object): TSV.IValidatorError[] {
+  public validate(instance: object): TSV.IValidatorError[] {
       return (new TSV.Validator()).validate(instance);
   }
 
@@ -68,8 +70,8 @@ export class MlclElements {
    * @return {string[]}                 [description]
    */
   public getClasses(): string[] {
-    let result: string[] = [];
-    for (let [name, injectable] of di.injectables) {
+    const result: string[] = [];
+    for (const [name, injectable] of di.injectables) {
       if (injectable.injectable && new injectable.injectable() instanceof Element && name !== Element.name) {
         result.push(name);
       }
@@ -83,17 +85,17 @@ export class MlclElements {
    * @param  {Object} data                   [description]
    * @return any                             [description]
    */
-  public toInstance(className: string, data: Object): any {
-    let instance = this.getInstance(className);
+  public toInstance(className: string, data: any): any {
+    const instance = this.getInstance(className);
     if (instance) {
-      let metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
+      const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
       let meta = [];
-      for (let metakey of metakeys) {
+      for (const metakey of metakeys) {
         if (!metakey.includes("design:")) {
           meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)));
         }
       }
-      for (let key in data) {
+      for (const key in data) {
         if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
           instance[key.slice(1)] = data[key];
         } else if ((key in instance || _.includes(_.map(meta, "property"), key))
@@ -108,12 +110,12 @@ export class MlclElements {
   }
 
   public diffObjects(oldObj, newObj) {
-    let diff: DiffObject[] = Jsonpatch.compare(newObj, oldObj);
+    const diff: DiffObject[] = Jsonpatch.compare(newObj, oldObj);
     return diff;
   }
 
   public revertObject(obj, patches: DiffObject[]) {
-    let result = Jsonpatch.apply(obj, patches);
+    const result = Jsonpatch.apply(obj, patches);
     return result;
   }
 
@@ -124,14 +126,14 @@ export class MlclElements {
    * @return {Promise<any>}                                  [description]
    */
   public async saveInstances(instances: Element[], upsert: boolean = true): Promise<any> {
-    let result = {
+    const result = {
       errorCount: 0,
       errors: [],
       successCount:  0,
       successes: [] };
-    let dbHandler = di.getInstance("MlclDatabase");
+    const dbHandler = di.getInstance("MlclDatabase");
     if (dbHandler && dbHandler.connections) {
-      for (let instance of instances) {
+      for (const instance of instances) {
         let validationResult = [];
         try {
           validationResult = instance.validate();
@@ -141,7 +143,7 @@ export class MlclElements {
         }
         if (validationResult.length === 0) {
           try {
-            let response = await dbHandler.persistenceDatabases.save(instance.toDbObject());
+            const response = await dbHandler.persistenceDatabases.save(instance.toDbObject());
             result.successCount++;
             result.successes = result.successes.concat(response.successes);
           } catch (error) {
@@ -151,8 +153,8 @@ export class MlclElements {
           try {
             await this.populate(instance);
           } catch (error) {
-            let reason = new Error("Population failed");
-            (<any> reason).object = error;
+            const reason = new Error("Population failed");
+            (reason as any).object = error;
             delete reason.stack;
             result.errorCount++;
             result.errors.push(reason);
@@ -189,7 +191,7 @@ export class MlclElements {
    *
    * @memberOf MlclElements
    */
-  public async populate(obj: Object, properties?: string): Promise<any> {
+  public async populate(obj: object, properties?: string): Promise<any> {
     let meta;
     if (Reflect.getMetadata(this.METADATAKEY, obj.constructor)) {
       meta = Reflect.getMetadata(this.METADATAKEY, obj.constructor).filter((entry) => {
@@ -199,23 +201,23 @@ export class MlclElements {
     } else {
       meta = [];
     }
-    let queryCollections = meta.map((entry) => {
-      let instance = this.getInstance(entry.value);
+    const queryCollections = meta.map((entry) => {
+      const instance = this.getInstance(entry.value);
       if (instance) {
         return instance.collection || instance.constructor.collection || instance.constructor.name;
       }
     });
-    let queryProperties = meta.map((entry) => {
+    const queryProperties = meta.map((entry) => {
       return entry.property;
     });
-    let dbHandler = di.getInstance("MlclDatabase");
+    const dbHandler = di.getInstance("MlclDatabase");
     if (dbHandler && dbHandler.connections) {
       try {
         let result = await dbHandler.populate(obj, queryProperties, queryCollections);
         if (_.includes(this.getClasses(), obj.constructor.name)) {
           result = this.toInstance(obj.constructor.name, result);
         }
-        for (let prop in result) {
+        for (const prop in result) {
           if (result[prop] && _.includes(this.getClasses(), result[prop].constructor.name)) {
             await this.toInstance(result[prop].constructor.name, result[prop]).populate()
               .then((value) => { result[prop] = value; })
@@ -237,10 +239,10 @@ export class MlclElements {
    * @return {Promise<any>}                                [description]
    */
   public async find(query: any, collection: string): Promise<any> {
-    let dbHandler = di.getInstance("MlclDatabase");
+    const dbHandler = di.getInstance("MlclDatabase");
     if (dbHandler && dbHandler.connections) {
       try {
-        let result = await dbHandler.find(query, collection);
+        const result = await dbHandler.find(query, collection);
         return Promise.resolve(result);
       } catch (error) {
         return Promise.reject(error);
@@ -256,13 +258,13 @@ export class MlclElements {
    * @return {Promise<any>}                             [description]
    */
   public async findById(id: any, collection: string): Promise<any> {
-    let dbHandler = di.getInstance("MlclDatabase");
+    const dbHandler = di.getInstance("MlclDatabase");
     if (dbHandler && dbHandler.connections) {
-      let idPattern = dbHandler.connections[0].idPattern || dbHandler.connections[0].constructor.idPattern;
-      let query = {};
+      const idPattern = dbHandler.connections[0].idPattern || dbHandler.connections[0].constructor.idPattern;
+      const query = {};
       query[idPattern] = id;
       try {
-        let result = await this.find(query, collection);
+        const result = await this.find(query, collection);
         if (result && result[0]) {
           result[0][idPattern] = id;
           return Promise.resolve(result[0]);
@@ -283,7 +285,7 @@ export class MlclElements {
    * @param  {boolean} nested              [description]
    * @return any                           [description]
    */
-  protected toDbObjRecursive(obj: Object, idPattern?: string): any {
+  protected toDbObjRecursive(obj: any, idPattern?: string): any {
     if (!idPattern) {
       idPattern = "id";
     }
@@ -296,11 +298,11 @@ export class MlclElements {
       // get all validator decorators
       objectValidatorDecorators = Reflect.getMetadata(TSV.METADATAKEY, Reflect.getPrototypeOf(obj));
     }
-    let propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, (o: any) => {
+    const propertiesValidatorDecorators = _.keyBy(objectValidatorDecorators, (o: any) => {
       // map by property name
       return o.property;
     });
-    for (let key in obj) {
+    for (const key in obj) {
       if (obj.hasOwnProperty(key)
         && obj[key] !== undefined
         && (propertiesValidatorDecorators[key]
@@ -323,43 +325,43 @@ export class MlclElements {
     return result;
   }
 
-  protected addCollectionTo(target: Object, model?: Object) {
+  protected addCollectionTo(target: object, model?: object) {
     if (!model) {
       model = target;
     }
-    let collectionDecorator = _.find(
+    const collectionDecorator = _.find(
       Reflect.getMetadata(this.METADATAKEY, model.constructor),
       ["type", ELD.Decorators.COLLECTION]);
-    if ((collectionDecorator || (<any> model).collection || (<any> model).constructor.collection)
-      && !(<any> target).collection) {
+    if ((collectionDecorator || (model as any).collection || (model as any).constructor.collection)
+      && ! (target as any).collection) {
 
       // check for decorator
       if (collectionDecorator) {
         Object.defineProperty(target, "collection", {
           configurable: true, get(): string {
-            return (<any> collectionDecorator).value;
+            return (collectionDecorator as any).value;
           },
         });
       }
       // other getters have priority -> continue anyway
-      let classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
+      const classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
       // check for static getter on class
       if (classCollectionDescriptor && typeof classCollectionDescriptor.get === "function") {
         Object.defineProperty(target, "collection", classCollectionDescriptor);
       }
-      let protoCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), "collection");
+      const protoCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), "collection");
       // check for getter on prototype
       if (protoCollectionDescriptor && typeof protoCollectionDescriptor.get === "function") {
         Object.defineProperty(target, "collection", protoCollectionDescriptor);
       }
-      let instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(model, "collection");
+      const instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(model, "collection");
       // check for value on instance
       if (instanceCollectionDescriptor) {
         Object.defineProperty(target, "collection", instanceCollectionDescriptor);
       }
     }
     // make sure there is always one collection getter
-    if (!(<any> target).collection) {
+    if (!(target as any).collection) {
       Object.defineProperty(target, "collection", {
         configurable: true, get(): string {
           return model.constructor.name;
