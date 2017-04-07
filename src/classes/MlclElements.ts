@@ -61,7 +61,7 @@ export class MlclElements {
    * @param  {Element}       element [description]
    * @return {any}                   [description]
    */
-  public toDbObject(element: Element): any {
+  public toDbObject(element: Element, forPopulationLayer: boolean = false): any {
     return this.toDbObjRecursive(element);
   }
 
@@ -150,21 +150,28 @@ export class MlclElements {
             result.errorCount++;
             result.errors.push(error);
           }
-          try {
-            await this.populate(instance);
-          } catch (error) {
-            const reason = new Error("Population failed");
-            (reason as any).object = error;
-            delete reason.stack;
-            result.errorCount++;
-            result.errors.push(reason);
-          }
-          try {
-            await dbHandler.populationDatabases.save(instance.toDbObject());
-          } catch (error) {
-            if (typeof error.errorCount === "undefined" || error.errorCount > 0) {
+          const decorators = _.concat(
+            Reflect.getMetadata(this.METADATAKEY, Reflect.getPrototypeOf(instance)),
+            Reflect.getMetadata(this.METADATAKEY, instance.constructor)).filter((defined) => defined);
+          if (!decorators.find((decorator) => {
+            return (decorator && decorator.type === ELD.Decorators.NOT_FOR_POPULATION);
+          })) {
+            try {
+              await this.populate(instance);
+            } catch (error) {
+              const reason = new Error("Population failed");
+              (reason as any).object = error;
+              delete reason.stack;
               result.errorCount++;
-              result.errors.push(error);
+              result.errors.push(reason);
+            }
+            try {
+              await dbHandler.populationDatabases.save(instance.toDbObject());
+            } catch (error) {
+              if (typeof error.errorCount === "undefined" || error.errorCount > 0) {
+                result.errorCount++;
+                result.errors.push(error);
+              }
             }
           }
         } else {
@@ -192,23 +199,32 @@ export class MlclElements {
    * @memberOf MlclElements
    */
   public async populate(obj: object, properties?: string): Promise<any> {
-    let meta;
-    if (Reflect.getMetadata(this.METADATAKEY, obj.constructor)) {
-      meta = Reflect.getMetadata(this.METADATAKEY, obj.constructor).filter((entry) => {
-        return (entry.type === ELD.Decorators.IS_REF_TO
-          && (!properties || _.includes(properties.split(" "), entry.property)));
-      });
-    } else {
-      meta = [];
-    }
-    const queryCollections = meta.map((entry) => {
+    const meta = _.concat(
+      Reflect.getMetadata(this.METADATAKEY, Reflect.getPrototypeOf(obj)),
+      Reflect.getMetadata(this.METADATAKEY, obj.constructor))
+      .filter((defined) => defined);
+    const refMeta = meta.filter((entry) => {
+      return (entry.type === ELD.Decorators.IS_REF_TO
+        && (!properties || _.includes(properties.split(" "), entry.property)));
+    });
+    const irrelevProps = meta.map((entry) => {
+      if (entry.type === ELD.Decorators.NOT_FOR_POPULATION
+        && entry.property
+        && (!properties || _.includes(properties.split(" "), entry.property))) {
+
+        return entry.property;
+      }
+    });
+    const queryCollections = refMeta.map((entry) => {
       const instance = this.getInstance(entry.value);
-      if (instance) {
+      if (instance && !_.includes(irrelevProps, entry.property)) {
         return instance.collection || instance.constructor.collection || instance.constructor.name;
       }
     });
-    const queryProperties = meta.map((entry) => {
-      return entry.property;
+    const queryProperties = refMeta.map((entry) => {
+      if (!_.includes(irrelevProps, entry.property)) {
+        return entry.property;
+      }
     });
     const dbHandler = di.getInstance("MlclDatabase");
     if (dbHandler && dbHandler.connections) {
@@ -285,10 +301,7 @@ export class MlclElements {
    * @param  {boolean} nested              [description]
    * @return any                           [description]
    */
-  protected toDbObjRecursive(obj: any, idPattern?: string): any {
-    if (!idPattern) {
-      idPattern = "id";
-    }
+  protected toDbObjRecursive(obj: any, idPattern: string = "id"): any {
     let objectValidatorDecorators;
     let result;
     if (_.isArray(obj)) {
@@ -309,12 +322,12 @@ export class MlclElements {
         || _.isArray(obj))) {
           // check for non-prototype, validator-decorated property
         if (_.isArray(obj[key])) {
-          result[key] = this.toDbObjRecursive(obj[key]);
+          result[key] = this.toDbObjRecursive(obj[key], idPattern);
         } else if (typeof obj[key] === "object") { // property is object
           if (obj[key][idPattern]) { // property has _id-property itself
             result[key] = obj[key][idPattern];
           } else if (!(idPattern in obj[key])) { // resolve property
-            result[key] = this.toDbObjRecursive(obj[key]);
+            result[key] = this.toDbObjRecursive(obj[key], idPattern);
           }
         } else if (typeof obj[key] !== "function") {
           result[key] = obj[key];

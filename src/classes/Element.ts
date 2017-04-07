@@ -32,8 +32,8 @@ export class Element implements IElement {
   public save(upsert: boolean = true): Promise<any> {
     return this.elements.saveInstances([this], upsert);
   }
-  public toDbObject(): any {
-    return this.elements.toDbObject(this);
+  public toDbObject(forPopulationLayer: boolean = false): any {
+    return this.elements.toDbObject(this, forPopulationLayer);
   }
   public async populate(properties?: string) {
     const population = await this.elements.populate(this, properties);

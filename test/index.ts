@@ -12,7 +12,8 @@ import {
   Collection,
   Element,
   IsDefined,
-  MlclElements, // ,
+  MlclElements,
+  NotForPopulation, // ,
   // ValidateType,
   // IsReferenceTo,
   // ValidateNested,
@@ -41,18 +42,18 @@ describe("Elements", () => {
   @injectable
   @Collection("post")
   class Post extends Element {
-    public static get collection(): string {
-      return "post";
-    }
+    // public static get collection(): string {
+    //   return "post";
+    // }
     @IsDefined()
     public recipient: string = "me";
   }
   @injectable
   @Collection("engines")
   class Engine extends Element {
-    public get collection(): string {
-      return "engines";
-    }
+    // public get collection(): string {
+    //   return "engines";
+    // }
     @D.ValidateType()
     @IsDefined()
     public horsepower: number;
@@ -361,6 +362,36 @@ describe("Elements", () => {
       await someCar.populate();
       assert(someCar.engine.horsepower > 9000);
     });
+    it("should store a class instance to persistence only if marked accordingly", async () => {
+      let response;
+      @injectable
+      @Collection("cylinders")
+      @NotForPopulation()
+      class Cylinder extends Element {
+        @IsDefined()
+        public discplacementCapacity: number;
+        constructor(capacity: number, elementHandler?: any) {
+          super(elementHandler);
+          this.discplacementCapacity = capacity;
+        }
+      }
+      const someCylinder = el.getInstance("Cylinder");
+      someCylinder.discplacementCapacity = 330;
+      try {
+        response = await someCylinder.save();
+        should.exist(response);
+        const hits = await dbHandler.populationDatabases.find({}, someCylinder.collection);
+        should.exist(hits);
+        hits.should.be.instanceOf(Array);
+        hits.length.should.equal(0);
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+    });
+    // it("should not populate a reference if marked accordingly", async() => {
+    //   // WIP
+    // });
   }); // category end
   describe("versioning", () => {
     const oldObj = {

@@ -28,7 +28,7 @@ export function Mapping() {
 }
 
 export function NotForPopulation() {
-  return (target: object, propertyName: string) => {
+  return (target?: object, propertyName?: string) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
     if (!metadata) {
       metadata = [];
@@ -36,7 +36,11 @@ export function NotForPopulation() {
     metadata = metadata.concat({
       property: propertyName,
       type: Decorators.NOT_FOR_POPULATION });
-    Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
+    if (propertyName) {
+      Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
+    } else {
+      Reflect.defineMetadata(METADATAKEY, metadata, target);
+    }
   };
 }
 
