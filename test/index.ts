@@ -25,18 +25,6 @@ import * as D from "../dist";
 // tslint:disable:max-classes-per-file
 // tslint:disable:variable-name
 
-// const config: any = {
-//   molecuel: {
-//     databases: [{
-//       layer: PERSISTENCE_LAYER,
-//       name: "mongodb_pers",
-//       type: "MlclMongoDb",
-//       uri: "mongodb://localhost/mongodb_persistence_test" }, {
-//       layer: POPULATION_LAYER,
-//       name: "mongodb_popul",
-//       type: "MlclMongoDb",
-//       url: "mongodb://localhost/mongodb_population_test" }] } };
-
 describe("Elements", () => {
   let el: MlclElements;
 
@@ -85,10 +73,6 @@ describe("Elements", () => {
   class Hubcap extends Element {
     @D.ValidateType()
     public diameter: number;
-    // constructor(dia?: number, elementHandler?: MlclElements) {
-    //   super(elementHandler);
-    //   this.diameter = dia;
-    // }
   }
   @injectable
   class Wheel extends Element {

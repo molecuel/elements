@@ -6,7 +6,6 @@ import * as TSV from "@molecuel/tsvalidate";
 import * as Jsonpatch from "fast-json-patch";
 import * as _ from "lodash";
 import "reflect-metadata";
-// import {Observable} from '@reactivex/rxjs';
 import {DiffObject} from "./DiffObject";
 import * as ELD from "./ElementDecorators";
 

@@ -2,7 +2,6 @@ export class Decorators {
   public static get NOT_FOR_POPULATION(): string { return "NotForPopulation"; }
   // public static get INDEX_MAPPING(): string { return "Mapping"; }
   // public static get USE_PERSISTANCE_COLLECTION_OR_TABLE(): string { return "UsePersistanceCollectionOrTable"; }
-  // public static get USE_ELASTIC_TYPE(): string { return "UseElasticType"; }
   public static get IS_REF_TO(): string { return "IsReferenceTo"; }
   public static get COLLECTION(): string { return "Collection"; }
 }
@@ -110,24 +109,3 @@ export function Collection(collectionName: string) {
     Reflect.defineMetadata(METADATAKEY, metadata, target);
   };
 }
-
-// export function UseElasticType(type: string) {
-//   return (target: object) => {
-//     const input: any = target;
-//     let className: string;
-//     if ("prototype" in input) {
-//       className = input.prototype.constructor.name;
-//     } else {
-//       className = input.constructor.name;
-//     }
-//     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
-//     if (!metadata) {
-//       metadata = [];
-//     }
-//     metadata = metadata.concat({
-//       property: className,
-//       type: Decorators.USE_ELASTIC_TYPE,
-//       value: type });
-//     Reflect.defineMetadata(METADATAKEY, metadata, target.constructor);
-//   };
-// }
