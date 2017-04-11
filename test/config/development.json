@@ -1,0 +1,16 @@
+{
+    "databases": [
+        {
+            "layer": "persistence",
+            "name": "mongodb_pers",
+            "type": "MlclMongoDb",
+            "uri": "mongodb://localhost/mongodb_persistence"
+        },
+        {
+            "layer": "population",
+            "name": "mongodb_popul",
+            "type": "MlclMongoDb",
+            "url": "mongodb://localhost/mongodb_population"
+        }
+    ]
+}

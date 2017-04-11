@@ -1,4 +1,5 @@
 "use strict";
+process.env.configpath = "./test/config/";
 import * as assert from "assert";
 import * as _ from "lodash";
 import "reflect-metadata";
@@ -24,17 +25,17 @@ import * as D from "../dist";
 // tslint:disable:max-classes-per-file
 // tslint:disable:variable-name
 
-const config: any = {
-  molecuel: {
-    databases: [{
-      layer: PERSISTENCE_LAYER,
-      name: "mongodb_pers",
-      type: "MlclMongoDb",
-      uri: "mongodb://localhost/mongodb_persistence_test" }, {
-      layer: POPULATION_LAYER,
-      name: "mongodb_popul",
-      type: "MlclMongoDb",
-      url: "mongodb://localhost/mongodb_population_test" }] } };
+// const config: any = {
+//   molecuel: {
+//     databases: [{
+//       layer: PERSISTENCE_LAYER,
+//       name: "mongodb_pers",
+//       type: "MlclMongoDb",
+//       uri: "mongodb://localhost/mongodb_persistence_test" }, {
+//       layer: POPULATION_LAYER,
+//       name: "mongodb_popul",
+//       type: "MlclMongoDb",
+//       url: "mongodb://localhost/mongodb_population_test" }] } };
 
 describe("Elements", () => {
   let el: MlclElements;
@@ -49,6 +50,17 @@ describe("Elements", () => {
     public recipient: string = "me";
   }
   @injectable
+  @Collection("cylinders")
+  @NotForPopulation()
+  class Cylinder extends Element {
+    @IsDefined()
+    public displacementCapacity: number;
+    constructor(capacity: number, elementHandler?: MlclElements) {
+      super(elementHandler);
+      this.displacementCapacity = capacity;
+    }
+  }
+  @injectable
   @Collection("engines")
   class Engine extends Element {
     // public get collection(): string {
@@ -57,18 +69,37 @@ describe("Elements", () => {
     @D.ValidateType()
     @IsDefined()
     public horsepower: number;
-    constructor(id: number, hp?: number, elementHandler?: any) {
+    @D.ValidateType()
+    @NotForPopulation()
+    @D.IsReferenceTo(Cylinder)
+    public cylinders: Cylinder;
+    constructor(id: number, cylinderType: Cylinder, hp?: number, elementHandler?: MlclElements) {
       super(elementHandler);
+      this.cylinders = cylinderType;
       this.horsepower = hp;
       this.id = id;
     }
   }
   @injectable
+  @Collection("hubcaps")
+  class Hubcap extends Element {
+    @D.ValidateType()
+    public diameter: number;
+    // constructor(dia?: number, elementHandler?: MlclElements) {
+    //   super(elementHandler);
+    //   this.diameter = dia;
+    // }
+  }
+  @injectable
   class Wheel extends Element {
     @D.ValidateType()
     public manufacturer: string;
-        constructor(manufacturer?: string, elementHandler?: any) {
+    @D.ValidateType(Hubcap)
+    @D.IsReferenceTo(Hubcap)
+    public hubcap: Hubcap;
+    constructor(manufacturer?: string, hubcap?: Hubcap, elementHandler?: MlclElements) {
       super(elementHandler);
+      this.hubcap = hubcap;
       this.manufacturer = manufacturer;
     }
   }
@@ -80,10 +111,11 @@ describe("Elements", () => {
     @D.ValidateNested()
     public engine: any;
     @D.ValidateNested()
+    @D.IsReferenceTo(Wheel)
     public wheels: Wheel[];
     @IsDefined()
     public model: string = undefined;
-    constructor(id: number, engine: Engine, wheels: Wheel[], elementHandler?: any) {
+    constructor(id: number, engine: Engine, wheels: Wheel[], elementHandler?: MlclElements) {
       super(elementHandler);
       this.id = id;
       this.engine = engine;
@@ -91,11 +123,20 @@ describe("Elements", () => {
     }
   }
 
-  before(() => {
+  before(async () => {
     di.bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
+    process.env.configpath = "./test/empty";
+    const cfgHandler = di.getInstance("MlclConfig");
+    cfgHandler.readConfig();
+    el = di.getInstance("MlclElements");
+    const success = await el.init();
+    assert(success === false);
+    el = undefined;
+    process.env.configpath = "./test/config/";
+    cfgHandler.readConfig();
   });
   describe("init", () => {
-    it("should start Elements", () => {
+    it("should start Elements", async () => {
       el = di.getInstance("MlclElements", [{name: "test"}]);
       assert(el);
     });
@@ -124,11 +165,52 @@ describe("Elements", () => {
       const car: Car = el.getInstance("Car", 1);
       should.exist(car);
       car.should.be.instanceOf(Element);
-      car.engine = el.getInstance("Engine", 1, 110);
+      car.engine.id = 1;
+      car.engine.horsepower = 110;
       car.model = "VRM";
       const validationResult = car.validate();
       should.exist(validationResult);
       validationResult.length.should.equal(0);
+    });
+  }); // category end
+  describe("versioning", () => {
+    const oldObj = {
+      firstname: "Diana",
+      id: 12,
+      lastname: "Brown" };
+    const newObj = {
+      firstname: "Diana",
+      id: 12,
+      lastname: "Green" };
+    const newObj2 = {
+      age: 22,
+      eyecolor: "yellow",
+      firstname: "Diana",
+      id: 12,
+      lastname: "Smith" };
+    let diff;
+    let diff2;
+    it("should be possible to diff objects", () => {
+      diff = el.diffObjects(oldObj, newObj);
+      diff[0].op.should.equal("replace");
+      diff[0].path.should.equal("/lastname");
+      diff[0].value.should.equal("Brown");
+    });
+    it("should be possible to diff with multiple changes", () => {
+      diff2 = el.diffObjects(newObj, newObj2);
+      diff2[0].op.should.equal("replace");
+      diff2[0].path.should.equal("/lastname");
+      diff2[0].value.should.equal("Green");
+      diff2[1].op.should.equal("remove");
+      diff2[1].path.should.equal("/eyecolor");
+      diff2[2].op.should.equal("remove");
+      diff2[2].path.should.equal("/age");
+    });
+    it("should be possible to revert with a collection of diffs in correct order", () => {
+      const patches = _.concat(diff2, diff);
+      newObj2.lastname.should.equal("Smith");
+      el.revertObject(newObj2, patches);
+      newObj2.lastname.should.equal("Brown");
     });
   }); // category end
   describe("serialization", () => {
@@ -184,11 +266,9 @@ describe("Elements", () => {
     });
   }); // category end
   describe("DB interaction", () => {
-    let dbHandler: MlclDatabase;
     let car: Car;
+    let wheel: Wheel;
     before(async () => {
-      dbHandler = di.getInstance("MlclDatabase");
-      dbHandler.addDatabasesFrom(config);
       try {
         const failPost: Post = el.getInstance("Post");
         failPost.id = 42;
@@ -215,7 +295,17 @@ describe("Elements", () => {
         should.exist(error.message);
         error.message.should.equal("No connected databases.");
       }
-      await dbHandler.init();
+      try {
+        const failPost: Post = el.getInstance("Post");
+        failPost.id = 42;
+        await failPost.populate();
+      } catch (error) {
+        should.exist(error);
+        should.exist(error.message);
+        error.message.should.equal("No connected databases.");
+      }
+      const success = await el.init();
+      assert(success);
     });
     it("should not save invalid instances", async () => {
       const failEngine: Engine = el.getInstance("Engine");
@@ -232,8 +322,9 @@ describe("Elements", () => {
       should.not.exist(response);
     });
     it("should save models without explicit colletion to one based on the model name", async () => {
-      const wheel: Wheel = el.getInstance("Wheel");
+      wheel = el.getInstance("Wheel");
       wheel.manufacturer = "Goodstone";
+      delete wheel.hubcap;
       let response;
       try {
         response = await wheel.save();
@@ -242,21 +333,51 @@ describe("Elements", () => {
       }
       should.exist(response);
       should.exist(response.successCount);
-      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      for (const con of dbHandler.persistenceDatabases.connections) {
+      response.successCount.should.equal(1);
+      for (const con of el.dbHandler.persistenceDatabases.connections) {
         const wheelColl = await con.database.collection(Wheel.name);
         const wheelCount = await wheelColl.count();
         wheelCount.should.equal(1);
       }
     });
     it("should save to all configured and connected databases after validation (persistence first)", async () => {
+      wheel.id = "basic";
+      wheel.hubcap = el.getInstance("Hubcap");
+      wheel.hubcap.id = "N7";
+      wheel.hubcap.diameter = 12.5;
       car = el.getInstance("Car");
       car.id = 101;
       car.model = "BRM";
-      car.engine = el.getInstance("Engine");
       car.engine.id = "V6";
       car.engine.horsepower = 9001;
+      car.engine.cylinders.id = 69;
+      car.engine.cylinders.displacementCapacity = 330;
+      car.wheels = [wheel, wheel, wheel, wheel];
       let response;
+      try {
+        response = await wheel.hubcap.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(1);
+      try {
+        response = await wheel.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(1);
+      try {
+        response = await car.engine.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(1);
       try {
         response = await car.save();
       } catch (error) {
@@ -264,16 +385,7 @@ describe("Elements", () => {
       }
       should.exist(response);
       should.exist(response.successCount);
-      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      const engine = car.engine;
-      try {
-        response = await engine.save();
-      } catch (error) {
-        should.not.exist(error);
-      }
-      should.exist(response);
-      should.exist(response.successCount);
-      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
+      response.successCount.should.equal(1);
     });
     it("should not find unsaved objects", async () => {
       let response;
@@ -298,15 +410,15 @@ describe("Elements", () => {
       }
       should.exist(response);
       should.exist(response.successCount);
-      response.successCount.should.equal(dbHandler.persistenceDatabases.connections.length);
-      for (const con of dbHandler.persistenceDatabases.connections) {
+      response.successCount.should.equal(el.dbHandler.persistenceDatabases.connections.length);
+      for (const con of el.dbHandler.persistenceDatabases.connections) {
         const fpColl = await con.database.collection((foreignPost as any).collection);
         const fpCount = await fpColl.count();
         fpCount.should.equal(1);
       }
     });
     it("should error during save, find and findbyId (closed connection)", async () => {
-      const con = dbHandler.connections[0];
+      const con = el.dbHandler.connections[0];
       try {
         await con.database.close();
         const failPost: Post = el.getInstance("Post");
@@ -353,34 +465,37 @@ describe("Elements", () => {
       newCar.id.should.equal(car.id);
       newCar.model.should.equal(car.model);
       newCar.engine.should.equal(car.engine.id);
-      assert(_.isEqual(newCar.wheels, car.wheels));
+      assert(newCar.wheels.length === car.wheels.length);
     });
     it("should be possible to populate another database object", async () => {
       const someCar = el.getInstance("Car", 2);
       someCar.model = "M3";
       someCar.engine = "V6";
+      someCar.wheels = [wheel.id, wheel.id];
       await someCar.populate();
-      assert(someCar.engine.horsepower > 9000);
+      someCar.engine.horsepower.should.be.above(9000);
+      someCar.wheels.should.be.instanceOf(Array);
+      someCar.wheels.length.should.equal(2);
+      someCar.wheels.forEach((entry) => {
+        should.exist(entry.id);
+        should.exist(entry.hubcap);
+        entry.hubcap.should.be.instanceOf(Hubcap);
+      });
     });
     it("should store a class instance to persistence only if marked accordingly", async () => {
       let response;
-      @injectable
-      @Collection("cylinders")
-      @NotForPopulation()
-      class Cylinder extends Element {
-        @IsDefined()
-        public discplacementCapacity: number;
-        constructor(capacity: number, elementHandler?: any) {
-          super(elementHandler);
-          this.discplacementCapacity = capacity;
-        }
-      }
       const someCylinder = el.getInstance("Cylinder");
-      someCylinder.discplacementCapacity = 330;
+      someCylinder.id = "Type45";
+      someCylinder.displacementCapacity = 330;
       try {
         response = await someCylinder.save();
         should.exist(response);
-        const hits = await dbHandler.populationDatabases.find({}, someCylinder.collection);
+        let hits = await el.dbHandler.persistenceDatabases.find({}, someCylinder.collection);
+        should.exist(hits);
+        hits.should.be.instanceOf(Array);
+        hits.length.should.equal(1);
+        hits[0]._id.should.equal(someCylinder.id);
+        hits = await el.dbHandler.populationDatabases.find({}, someCylinder.collection);
         should.exist(hits);
         hits.should.be.instanceOf(Array);
         hits.length.should.equal(0);
@@ -389,58 +504,28 @@ describe("Elements", () => {
       }
       should.exist(response);
     });
-    // it("should not populate a reference if marked accordingly", async() => {
-    //   // WIP
-    // });
-  }); // category end
-  describe("versioning", () => {
-    const oldObj = {
-      firstname: "Diana",
-      id: 12,
-      lastname: "Brown" };
-    const newObj = {
-      firstname: "Diana",
-      id: 12,
-      lastname: "Green" };
-    const newObj2 = {
-      age: 22,
-      eyecolor: "yellow",
-      firstname: "Diana",
-      id: 12,
-      lastname: "Smith" };
-    let diff;
-    let diff2;
-    it("should be possible to diff objects", () => {
-      diff = el.diffObjects(oldObj, newObj);
-      diff[0].op.should.equal("replace");
-      diff[0].path.should.equal("/lastname");
-      diff[0].value.should.equal("Brown");
-    });
-    it("should be possible to diff with multiple changes", () => {
-      diff2 = el.diffObjects(newObj, newObj2);
-      diff2[0].op.should.equal("replace");
-      diff2[0].path.should.equal("/lastname");
-      diff2[0].value.should.equal("Green");
-      diff2[1].op.should.equal("remove");
-      diff2[1].path.should.equal("/eyecolor");
-      diff2[2].op.should.equal("remove");
-      diff2[2].path.should.equal("/age");
-    });
-    it("should be possible to revert with a collection of diffs in correct order", () => {
-      const patches = _.concat(diff2, diff);
-      newObj2.lastname.should.equal("Smith");
-      el.revertObject(newObj2, patches);
-      newObj2.lastname.should.equal("Brown");
-    });
-  }); // category end
-  after(async () => {
-    const dbHandler: MlclDatabase = di.getInstance("MlclDatabase");
-    for (const con of dbHandler.connections) {
+    it("should not populate a reference if marked accordingly", async () => {
+      const someEngine = el.getInstance("Engine");
+      someEngine.cylinders = "Type45";
       try {
-        await con.database.dropDatabase();
+        await someEngine.populate("cylinders");
       } catch (error) {
         should.not.exist(error);
       }
-    }
-  });
+      someEngine.cylinders.should.not.be.instanceOf(Element);
+      someEngine.cylinders.should.be.type("string");
+    });
+    after(async () => {
+      const dbHandler: MlclDatabase = di.getInstance("MlclDatabase");
+      if (dbHandler && dbHandler.connections) {
+        for (const con of dbHandler.connections) {
+          try {
+            await con.database.dropDatabase();
+          } catch (error) {
+            should.not.exist(error);
+          }
+        }
+      }
+    });
+  }); // category end
 }); // test end
