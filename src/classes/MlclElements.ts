@@ -12,7 +12,7 @@ import * as ELD from "./ElementDecorators";
 @injectable
 export class MlclElements {
   private get METADATAKEY(): string {
-    return "mlcl_elements:validators";
+    return "mlcl_elements:decorators";
   }
   public dbHandler: MlclDatabase;
 
@@ -92,7 +92,7 @@ export class MlclElements {
    * @param  {Element}       element [description]
    * @return {any}                   [description]
    */
-  public toDbObject(element: Element, forPopulationLayer: boolean = false): any {
+  public toDbObject(element: object, forPopulationLayer: boolean = false): any {
     return this.toDbObjRecursive(element, forPopulationLayer);
   }
 
@@ -108,6 +108,33 @@ export class MlclElements {
       }
     }
     return result;
+  }
+
+  /**
+   * Applies specified decorator functions to given property of the target or to the target itself
+   *
+   * @param {object} target
+   * @param {string} [propertyName]
+   * @param {...Array<(...args: any[]) => any>} decorators
+   *
+   * @memberOf MlclElements
+   */
+  public applyDecorators(target: object, propertyName?: string, ...decorators: Array<(...args: any[]) => any>) {
+    for (const decorator of decorators) {
+      let actualTarget;
+      if (typeof Reflect.getPrototypeOf(target) === "function") {
+        actualTarget = target;
+        if (typeof actualTarget === "function") {
+          actualTarget = actualTarget.prototype;
+        }
+      } else {
+        actualTarget = Reflect.getPrototypeOf(target);
+      }
+      if (typeof propertyName === "undefined") {
+        actualTarget = actualTarget.constructor;
+      }
+      decorator(actualTarget, propertyName);
+    }
   }
 
   /**
@@ -400,11 +427,16 @@ export class MlclElements {
 
       // check for decorator
       if (collectionDecorator) {
+        // const setter = (setterValue) => {
+        //   Object.defineProperty(this, "collection", {
+        //     configurable: true, get(): string {
+        //       return setterValue;
+        //     }, set(value) { setter(value); } });
+        // };
         Object.defineProperty(target, "collection", {
           configurable: true, get(): string {
             return (collectionDecorator as any).value;
-          },
-        });
+        }/*, set(value) { (target as any).collection = value; } */});
       }
       // other getters have priority -> continue anyway
       const classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
@@ -428,8 +460,7 @@ export class MlclElements {
       Object.defineProperty(target, "collection", {
         configurable: true, get(): string {
           return model.constructor.name;
-        },
-      });
+      }/*, set(value) { (target as any).collection = value; }*/ });
     }
   }
 }

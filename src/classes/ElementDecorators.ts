@@ -6,7 +6,7 @@ export class Decorators {
   public static get COLLECTION(): string { return "Collection"; }
 }
 
-const METADATAKEY = "mlcl_elements:validators";
+const METADATAKEY = "mlcl_elements:decorators";
 
 export function versionable(targetClass) {
   // sets static on class
@@ -16,7 +16,7 @@ export function versionable(targetClass) {
 // export function Mapping() {
 //   return (target: object, propertyName: string) => {
 //     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
-//     if (!metadata) {
+//     if (typeof metadata === "undefined") {
 //       metadata = [];
 //     }
 //     metadata = metadata.concat({
@@ -29,7 +29,7 @@ export function versionable(targetClass) {
 export function NotForPopulation() {
   return (target?: object, propertyName?: string) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
-    if (!metadata) {
+    if (typeof metadata === "undefined") {
       metadata = [];
     }
     metadata = metadata.concat({
@@ -53,7 +53,7 @@ export function NotForPopulation() {
 //       className = input.constructor.name;
 //     }
 //     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
-//     if (!metadata) {
+//     if (typeof metadata === "undefined") {
 //       metadata = [];
 //     }
 //     metadata = metadata.concat({
@@ -86,7 +86,7 @@ export function IsReferenceTo(...models: any[]) {
       references = references.pop();
     }
     let metadata = Reflect.getMetadata(METADATAKEY, target.constructor);
-    if (!metadata) {
+    if (typeof metadata === "undefined") {
       metadata = [];
     }
     metadata = metadata.concat({
@@ -100,10 +100,12 @@ export function IsReferenceTo(...models: any[]) {
 export function Collection(collectionName: string) {
   return (target: object) => {
     let metadata = Reflect.getMetadata(METADATAKEY, target);
-    if (!metadata) {
+    if (typeof metadata === "undefined") {
       metadata = [];
     }
-    metadata = metadata.concat({
+    metadata = metadata.filter((entry) => {
+      return (entry && (!entry.type || entry.type !== Decorators.COLLECTION));
+    }).concat({
       type: Decorators.COLLECTION,
       value: collectionName });
     Reflect.defineMetadata(METADATAKEY, metadata, target);

@@ -156,6 +156,14 @@ describe("Elements", () => {
       should.exist(validationResult);
       validationResult.length.should.equal(0);
     });
+    it("should respect decorator functions being applied to any properties during runtime", () => {
+      const post = el.getInstance("Post");
+      post.applyDecorators("sender", IsDefined());
+      el.applyDecorators(Post, "sender", D.ValidateType(String));
+      const validationResult = post.validate();
+      should.exist(validationResult);
+      validationResult.length.should.equal(1);
+    });
   }); // category end
   describe("versioning", () => {
     const oldObj = {
@@ -380,13 +388,36 @@ describe("Elements", () => {
       }
       should.not.exist(response);
     });
+    it("should respect decorator functions being applied to a class during runtime", async () => {
+      el.applyDecorators(Post, undefined, NotForPopulation());
+      const post = el.getInstance("Post");
+      post.sender = "me";
+      post.recipient = "you";
+      let response;
+      let hitsPersistence;
+      let hitsPopulation;
+      try {
+        response = await post.save();
+        hitsPersistence = await el.dbHandler.persistenceDatabases.find({}, post.collection);
+        hitsPopulation = await el.dbHandler.populationDatabases.find({}, post.collection);
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(hitsPersistence);
+      should.exist(hitsPopulation);
+      hitsPersistence.should.be.instanceOf(Array);
+      hitsPopulation.should.be.instanceOf(Array);
+      hitsPersistence.length.should.be.above(0);
+      hitsPopulation.length.should.equal(0);
+    });
     it("should save to a different collection upon default override", async () => {
       let response;
+      el.applyDecorators(Post, undefined, Collection("foreignPost"));
       const foreignPost = el.getInstance("Post");
+      // foreignPost.collection = "foreignPost";
       foreignPost.recipient = "Mars";
-      Object.defineProperty(foreignPost, "collection", {
-        configurable: true, get(): string {
-          return "foreignPost"; } });
+      foreignPost.sender = "Earth";
       try {
         response = await foreignPost.save();
       } catch (error) {
@@ -396,7 +427,7 @@ describe("Elements", () => {
       should.exist(response.successCount);
       response.successCount.should.equal(el.dbHandler.persistenceDatabases.connections.length);
       for (const con of el.dbHandler.persistenceDatabases.connections) {
-        const fpColl = await con.database.collection((foreignPost as any).collection);
+        const fpColl = await con.database.collection("foreignPost");
         const fpCount = await fpColl.count();
         fpCount.should.equal(1);
       }
@@ -457,7 +488,10 @@ describe("Elements", () => {
       someCar.engine = "V6";
       someCar.wheels = [wheel.id, wheel.id];
       await someCar.populate();
+      should.exist(someCar.engine);
+      should.exist(someCar.engine.horsepower);
       someCar.engine.horsepower.should.be.above(9000);
+      should.exist(someCar.wheels);
       someCar.wheels.should.be.instanceOf(Array);
       someCar.wheels.length.should.equal(2);
       someCar.wheels.forEach((entry) => {
