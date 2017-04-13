@@ -415,7 +415,6 @@ describe("Elements", () => {
       let response;
       el.applyDecorators(Post, undefined, Collection("foreignPost"));
       const foreignPost = el.getInstance("Post");
-      // foreignPost.collection = "foreignPost";
       foreignPost.recipient = "Mars";
       foreignPost.sender = "Earth";
       try {
@@ -428,6 +427,20 @@ describe("Elements", () => {
       response.successCount.should.equal(el.dbHandler.persistenceDatabases.connections.length);
       for (const con of el.dbHandler.persistenceDatabases.connections) {
         const fpColl = await con.database.collection("foreignPost");
+        const fpCount = await fpColl.count();
+        fpCount.should.equal(1);
+      }
+      foreignPost.collection = "planetaryPost";
+      try {
+        response = await foreignPost.save();
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      should.exist(response.successCount);
+      response.successCount.should.equal(el.dbHandler.persistenceDatabases.connections.length);
+      for (const con of el.dbHandler.persistenceDatabases.connections) {
+        const fpColl = await con.database.collection("planetaryPost");
         const fpCount = await fpColl.count();
         fpCount.should.equal(1);
       }

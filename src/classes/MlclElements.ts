@@ -427,26 +427,18 @@ export class MlclElements {
 
       // check for decorator
       if (collectionDecorator) {
-        // const setter = (setterValue) => {
-        //   Object.defineProperty(this, "collection", {
-        //     configurable: true, get(): string {
-        //       return setterValue;
-        //     }, set(value) { setter(value); } });
-        // };
         Object.defineProperty(target, "collection", {
-          configurable: true, get(): string {
-            return (collectionDecorator as any).value;
-        }/*, set(value) { (target as any).collection = value; } */});
+          configurable: true, value: (collectionDecorator as any).value, writable: true });
       }
       // other getters have priority -> continue anyway
       const classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
       // check for static getter on class
-      if (classCollectionDescriptor && typeof classCollectionDescriptor.get === "function") {
+      if (classCollectionDescriptor) {
         Object.defineProperty(target, "collection", classCollectionDescriptor);
       }
       const protoCollectionDescriptor = Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(model), "collection");
       // check for getter on prototype
-      if (protoCollectionDescriptor && typeof protoCollectionDescriptor.get === "function") {
+      if (protoCollectionDescriptor) {
         Object.defineProperty(target, "collection", protoCollectionDescriptor);
       }
       const instanceCollectionDescriptor = Object.getOwnPropertyDescriptor(model, "collection");
@@ -458,9 +450,7 @@ export class MlclElements {
     // make sure there is always one collection getter
     if (!(target as any).collection) {
       Object.defineProperty(target, "collection", {
-        configurable: true, get(): string {
-          return model.constructor.name;
-      }/*, set(value) { (target as any).collection = value; }*/ });
+        configurable: true, value: model.constructor.name, writable: true });
     }
   }
 }
