@@ -17,7 +17,7 @@ export class MlclElements {
   public dbHandler: MlclDatabase;
 
   constructor() {
-    di.bootstrap(MlclCore, MlclConfig);
+    di.bootstrap(MlclCore, MlclConfig, MlclDatabase);
     this.dbHandler = di.getInstance("MlclDatabase");
     if (this.dbHandler) {
       const configHandler = di.getInstance("MlclConfig");

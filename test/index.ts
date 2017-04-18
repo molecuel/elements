@@ -108,7 +108,7 @@ describe("Elements", () => {
   }
 
   before(async () => {
-    di.bootstrap(MlclCore, MlclDatabase, MlclMongoDb);
+    di.bootstrap(MlclCore, MlclMongoDb);
     process.env.configpath = "./test/empty";
     const cfgHandler = di.getInstance("MlclConfig");
     cfgHandler.readConfig();
