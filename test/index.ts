@@ -536,14 +536,14 @@ describe("Elements", () => {
       should.exist(response);
     });
     it("should not populate a reference if marked accordingly", async () => {
-      const someEngine = el.getInstance("Engine");
-      someEngine.cylinders = "Type45";
+      const someEngine: Engine = el.getInstance("Engine");
+      (someEngine as any).cylinders = "Type45";
       try {
         await someEngine.populate("cylinders");
       } catch (error) {
         should.not.exist(error);
       }
-      someEngine.cylinders.should.not.be.instanceOf(Element);
+      assert(!(someEngine.cylinders instanceof Element));
       someEngine.cylinders.should.be.type("string");
     });
     after(async () => {

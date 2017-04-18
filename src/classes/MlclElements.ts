@@ -144,6 +144,10 @@ export class MlclElements {
    * @return any                             [description]
    */
   public toInstance(className: string, data: any): any {
+    if (className === "Cylinder") {
+      // tslint:disable-next-line:no-console
+      console.log(data);
+    }
     const instance = this.getInstance(className);
     if (instance) {
       const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
@@ -305,16 +309,33 @@ export class MlclElements {
           result = this.toInstance(obj.constructor.name, result);
         }
         for (const prop in result) {
-          if (result[prop] && _.includes(this.getClasses(), result[prop].constructor.name)) {
-            await result[prop].populate();
-          } else if (_.isArray(result[prop])) {
-            const reference = _.find(refMeta, ["property", prop]);
-            if (reference && reference.value && _.includes(this.getClasses(), reference.value)) {
-              for (const index in result[prop]) {
-                if (Reflect.has(result[prop], index)) {
-                  result[prop][index] = this.toInstance(reference.value, result[prop][index]);
-                  await result[prop][index].populate();
+          if (Reflect.has(result, prop) && !_.includes(irrelevProps, prop)) {
+            if (_.isArray(result[prop])) {
+              try {
+                const reference = _.find(refMeta, ["property", prop]);
+                if (reference && reference.value && _.includes(this.getClasses(), reference.value)) {
+                  for (const index in result[prop]) {
+                    if (Reflect.has(result[prop], index) && typeof result[prop][index] === "object") {
+                      result[prop][index] = this.toInstance(reference.value, result[prop][index]);
+                      await result[prop][index].populate();
+                    }
+                  }
                 }
+              } catch (e) {
+                continue;
+              }
+            } else {
+              try {
+                const reference = _.find(refMeta, ["property", prop]);
+                if (typeof result[prop] === "object" && !_.includes(this.getClasses(), result[prop].constructor.name)
+                  && reference && reference.value && _.includes(this.getClasses(), reference.value)) {
+                  result[prop] = this.toInstance(reference.value, result[prop]);
+                }
+                if (_.includes(this.getClasses(), result[prop].constructor.name)) {
+                  await result[prop].populate();
+                }
+              } catch (e) {
+                continue;
               }
             }
           }
