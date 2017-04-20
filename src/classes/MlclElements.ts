@@ -294,12 +294,24 @@ export class MlclElements {
     const queryCollections = refMeta.map((entry) => {
       const instance = this.getInstance(entry.value);
       if (instance && !_.includes(irrelevProps, entry.property)) {
-        return instance.collection || instance.constructor.collection || instance.constructor.name;
+        if (_.isArray(obj[entry.property])) {
+          if (obj[entry.property].length > 0) {
+            return instance.collection || instance.constructor.collection || instance.constructor.name;
+          }
+        } else {
+          return instance.collection || instance.constructor.collection || instance.constructor.name;
+        }
       }
     }).filter((defined) => defined);
     const queryProperties = refMeta.map((entry) => {
       if (!_.includes(irrelevProps, entry.property)) {
-        return entry.property;
+        if (_.isArray(obj[entry.property])) {
+          if (obj[entry.property].length > 0) {
+            return entry.property;
+          }
+        } else {
+          return entry.property;
+        }
       }
     }).filter((defined) => defined);
     if (this.dbHandler && this.dbHandler.connections) {
