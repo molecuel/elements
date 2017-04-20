@@ -181,12 +181,12 @@ export class MlclElements {
   }
 
   public diffObjects(oldObj, newObj) {
-    const diff: DiffObject[] = Jsonpatch.compare(newObj, oldObj);
+    const diff: DiffObject[] = Jsonpatch.default.compare(newObj, oldObj);
     return diff;
   }
 
   public revertObject(obj, patches: DiffObject[]) {
-    const result = Jsonpatch.apply(obj, patches);
+    const result = Jsonpatch.default.apply(obj, patches);
     return result;
   }
 
