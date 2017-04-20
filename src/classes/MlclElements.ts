@@ -144,10 +144,6 @@ export class MlclElements {
    * @return any                             [description]
    */
   public toInstance(className: string, data: any): any {
-    if (className === "Cylinder") {
-      // tslint:disable-next-line:no-console
-      console.log(data);
-    }
     const instance = this.getInstance(className);
     if (instance) {
       const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
@@ -426,15 +422,17 @@ export class MlclElements {
       return o.property;
     });
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)
+      if (Reflect.has(obj, key)
         && obj[key] !== undefined
         && (propertiesValidatorDecorators[key]
         || _.isArray(obj))) {
-          // check for non-prototype, validator-decorated property
+        // check for non-prototype, validator-decorated property
         if (_.isArray(obj[key])) {
           result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
         } else if (typeof obj[key] === "object") { // property is object
-          if (obj[key][idPattern] && !stripFunctionsOnly) { // property has _id-property itself
+          if (key === idPattern) {
+            result[key] = obj[key];
+          } else if (obj[key][idPattern] && !stripFunctionsOnly) { // property has _id-property itself
             result[key] = obj[key][idPattern];
           } else if (!(idPattern in obj[key]) || stripFunctionsOnly) { // resolve property
             result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
