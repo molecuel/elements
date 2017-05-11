@@ -332,7 +332,9 @@ describe("Elements", () => {
         wheelCount.should.equal(1);
       }
     });
-    it("should save to all configured and connected databases after validation (persistence first)", async () => {
+    // tslint:disable-next-line:only-arrow-functions
+    it("should save to all configured and connected databases after validation (persistence first)", async function() {
+      this.timeout(3750);
       wheel.id = "basic";
       wheel.hubcap = el.getInstance("Hubcap");
       wheel.hubcap.id = "N7";
