@@ -2,11 +2,8 @@
 process.env.configpath = "./test/config/";
 import * as assert from "assert";
 import * as _ from "lodash";
-import "reflect-metadata";
 import * as should from "should";
 
-import {MlclCore} from "@molecuel/core";
-import {MlclDatabase, PERSISTENCE_LAYER, POPULATION_LAYER} from "@molecuel/database";
 import {di, injectable} from "@molecuel/di";
 import {MlclMongoDb} from "@molecuel/mongodb";
 import {
@@ -108,7 +105,7 @@ describe("Elements", () => {
   }
 
   before(async () => {
-    di.bootstrap(MlclCore, MlclMongoDb);
+    di.bootstrap(MlclMongoDb);
     process.env.configpath = "./test/empty";
     const cfgHandler = di.getInstance("MlclConfig");
     cfgHandler.readConfig();
@@ -121,7 +118,7 @@ describe("Elements", () => {
   });
   describe("init", () => {
     it("should start Elements", async () => {
-      el = di.getInstance("MlclElements", [{name: "test"}]);
+      el = di.getInstance("MlclElements"); // alternatively: el = new MlclElements();
       assert(el);
     });
     it("should return a list of Element extending classes\' names", () => {
@@ -549,7 +546,7 @@ describe("Elements", () => {
       someEngine.cylinders.should.be.type("string");
     });
     after(async () => {
-      const dbHandler: MlclDatabase = di.getInstance("MlclDatabase");
+      const dbHandler = el.dbHandler;
       if (dbHandler && dbHandler.connections) {
         for (const con of dbHandler.connections) {
           try {
