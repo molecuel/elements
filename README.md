@@ -42,7 +42,7 @@ Configuration settings are imported via separate files and a reference path (e.g
 }
 ```
 ```typescript
-process.env.configpath = "./test/config/";
+process.env.configpath = "./config/";
 import { di } from "@molecuel/di";
 import { MlclElements } from  "@molecuel/elements";
 import { MlclMongoDb } from "@molecuel/mongodb";
@@ -82,7 +82,7 @@ elements.dbHandler.addDatabasesFrom(config);
 
 ### Initialization
 ```typescript
-import { di } from "@molecuel/di";
+import { di, injectable } from "@molecuel/di";
 import { MlclElements } from  "@molecuel/elements";
 
 const elements = di.getInstance("MlclElements");
@@ -90,13 +90,47 @@ const success = await elements.init();
 ```
 
 ## Usage
-### MlclElements properties & methods:
-#### .dbHandler
-The underlying @molecuel/database singleton.
-#### .getClasses()
-List of injectable, Element inheriting classes.
-#### .getInstance()
-Returns an instance of a injectable, Element inheriting class.
+### Example
+```typescript
+process.env.configpath = "./config/";
+import { di, injectable } from "@molecuel/di";
+import {
+  Collection,
+  Element,
+  IsDefined,
+  MlclElements,
+  NotForPopulation } from  "@molecuel/elements";
+import * as D from "@molecuel/elements";
+import { MlclMongoDb } from "@molecuel/mongodb";
+
+di.bootstrap(MlclMongoDb);
+const elements = di.getInstance("MlclElements");
+await elements.init();
+
+@injectable
+@Collection("post")
+@NotForPopulation()
+class Message extends Element {
+  @IsDefined()
+  @D.ValidateType([String])
+  public recipients: string[];
+  @D.ValidateType()
+  public sender: string;
+  @D.ValidateType()
+  public content: string;
+  constructor(recipients: string[], sender: string, content: string) {
+    super(elements);
+    this.recipients = recipients;
+    this.sender = sender;
+    this.content = content;
+  }
+}
+
+let exampleMessage = elements.getInstance("Message", ["you"], "me", "Text snippet.");
+await exampleMessage.save();
+
+await elements.find(exampleMessage._id, Message.collection);
+```
 
 ## Build System
 

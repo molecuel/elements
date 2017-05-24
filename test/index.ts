@@ -96,8 +96,8 @@ describe("Elements", () => {
     public wheels: Wheel[];
     @IsDefined()
     public model: string = undefined;
-    constructor(id: number, engine: Engine, wheels: Wheel[], elementHandler?: MlclElements) {
-      super(elementHandler);
+    constructor(id: number, engine: Engine, wheels: Wheel[]/*, elementHandler?: MlclElements*/) {
+      super(el);
       this.id = id;
       this.engine = engine;
       this.wheels = wheels;
