@@ -1,12 +1,10 @@
-/// <reference path="./typings/async/async.d.ts"/>
-/// <reference path="./typings/mongoose/mongoose.d.ts"/>
-/// <reference path="./typings/underscore/underscore.d.ts"/>
-/// <reference path="./typings/node/node.d.ts"/>
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var formServer = require('form-server');
-var _ = require('underscore');
-var fs = require('fs');
-var async = require('async');
-var url = require('url');
+var _ = require("underscore");
+var fs = require("fs");
+var async = require("async");
+var url = require("url");
 var mongolastic = require('mongolastic');
 var molecuel;
 var elements = function () {
@@ -189,8 +187,10 @@ elements.prototype.getDefinitions = function getDefinitions() {
     var self = this;
     var defFiles = fs.readdirSync(this.schemaDir);
     defFiles.forEach(function (entry) {
-        var currentSchema = require(self.schemaDir + '/' + entry)(self);
-        self.registerSchemaDefinition(currentSchema);
+        if (entry.indexOf('.js', entry.length - entry.length) !== -1) {
+            var currentSchema = require(self.schemaDir + '/' + entry)(self);
+            self.registerSchemaDefinition(currentSchema);
+        }
     });
     molecuel.emit('mlcl::elements::postGetDefinitions', this);
 };

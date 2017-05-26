@@ -3,7 +3,6 @@
 /// <reference path="./typings/underscore/underscore.d.ts"/>
 /// <reference path="./typings/node/node.d.ts"/>
 
-
 /**
  * Created by Dominic Böttger on 14.01.2014
  * INSPIRATIONlabs GmbH
@@ -355,9 +354,11 @@ elements.prototype.getDefinitions = function getDefinitions() {
    * @type {*}
    */
   var defFiles = fs.readdirSync(this.schemaDir);
-  defFiles.forEach(function (entry) {
-    var currentSchema = require(self.schemaDir + '/' + entry)(self);
-    self.registerSchemaDefinition(currentSchema);
+  defFiles.forEach(function (entry: string) {
+    if(entry.indexOf('.js', entry.length - entry.length) !== -1) {
+      var currentSchema = require(self.schemaDir + '/' + entry)(self);
+      self.registerSchemaDefinition(currentSchema);
+    }
   });
   molecuel.emit('mlcl::elements::postGetDefinitions', this);
 };
