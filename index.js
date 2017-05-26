@@ -187,7 +187,8 @@ elements.prototype.getDefinitions = function getDefinitions() {
     var self = this;
     var defFiles = fs.readdirSync(this.schemaDir);
     defFiles.forEach(function (entry) {
-        if (entry.indexOf('.js', entry.length - entry.length) !== -1) {
+        var suffix = '.js';
+        if (entry.indexOf('.js', entry.length - suffix.length) !== -1) {
             var currentSchema = require(self.schemaDir + '/' + entry)(self);
             self.registerSchemaDefinition(currentSchema);
         }
