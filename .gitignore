@@ -31,5 +31,10 @@ node_modules
 .DS_Store
 typings
 dist
+lib/**/*.js
+lib/**/*.js.map
+lib/**/*.d.ts
 coverage
 test/**/*.js
+test/**/*.js.map
+test/**/*.d.ts

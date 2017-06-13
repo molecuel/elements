@@ -1,9 +1,8 @@
 {
-  "extends": "./tsconfig",
+  "extends": "./tsconfig.npm.json",
   "compilerOptions": {
     "declaration": false,
-    "sourceMap": false,
-    "outDir": "test/"
+    "sourceMap": true
   },
   "include": [
       "test/**/*"
