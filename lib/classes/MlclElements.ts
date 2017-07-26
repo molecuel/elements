@@ -102,8 +102,8 @@ export class MlclElements {
    */
   public getClasses(): string[] {
     const result: string[] = [];
-    for (const [name, injectable] of di.injectables) {
-      if (injectable.injectable && new injectable.injectable() instanceof Element && name !== Element.name) {
+    for (const [name, injTemplate] of di.injectables) {
+      if (injTemplate.injectable && new injTemplate.injectable() instanceof Element && name !== Element.name) {
         result.push(name);
       }
     }
