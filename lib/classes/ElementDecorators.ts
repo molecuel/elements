@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 export class Decorators {
   public static get NOT_FOR_POPULATION(): string { return "NotForPopulation"; }
   // public static get INDEX_MAPPING(): string { return "Mapping"; }
@@ -108,6 +110,10 @@ export function Collection(collectionName: string) {
     }).concat({
       type: Decorators.COLLECTION,
       value: collectionName });
+    if (collectionName) {
+      Object.defineProperty(target, "collection", {
+        configurable: true, value: collectionName, writable: true });
+    }
     Reflect.defineMetadata(METADATAKEY, metadata, target);
   };
 }

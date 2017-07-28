@@ -1,6 +1,136 @@
 # @molecuel/elements [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
-elements module for the Molecuel framework. Creating and configuring data models and validation for the database persistence layer. New database connections (mongodb + elasticsearch) are in progress. They will be implemented as adapters and it will be possible to save to different databases with one save method and define the population level of the data in a special population level to denormalize the data for aggregation and optimized reading.
+elements module for the Molecuel framework. Creating and configuring data models and validation for the database persistence layer. New database connections (documentdb + elasticsearch) are in progress. They will be implemented as adapters and it will be possible to save to different databases with one save method and define the population level of the data in a special population level to denormalize the data for aggregation and optimized reading.
+
+## Initialization
+
+To start it, simply import and instantiate it. If you want to make use of molecuel's offered databases (e.g. @molecuel/mongodb), include them in @molecuel/di's bootstrap. Necessary configurations are read on instantiation via @molecuel/core's config functionality or manually via @molecuel/database's methods. Finally initialize the instance.
+Examples:
+
+### Instantiation
+```typescript
+import { MlclElements } from  "@molecuel/elements";
+
+const elements = new MlclElements();
+```
+OR
+```typescript
+import { di } from "@molecuel/di";
+import { MlclElements } from  "@molecuel/elements";
+
+const elements = di.getInstance("MlclElements");
+```
+
+### Configuration
+Configuration settings are imported via separate files and a reference path (e.g.: ./config/production.json)
+```json
+{
+    "databases": [
+        {
+            "layer": "persistence",
+            "name": "mongodb_pers",
+            "type": "MlclMongoDb",
+            "uri": "mongodb://localhost/mongodb_persistence"
+        },
+        {
+            "layer": "population",
+            "name": "mongodb_popul",
+            "type": "MlclMongoDb",
+            "url": "mongodb://localhost/mongodb_population"
+        }
+    ]
+}
+```
+```typescript
+process.env.configpath = "./config/";
+import { di } from "@molecuel/di";
+import { MlclElements } from  "@molecuel/elements";
+import { MlclMongoDb } from "@molecuel/mongodb";
+
+di.bootstrap(MlclMongoDb);
+
+const elements = di.getInstance("MlclElements");
+```
+or via objects and a manual method call
+```typescript
+import { di } from "@molecuel/di";
+import { MlclElements } from  "@molecuel/elements";
+import { MlclMongoDb } from "@molecuel/mongodb";
+
+const config = {
+    databases: [
+        {
+            layer: "persistence",
+            name: "mongodb_pers",
+            type: "MlclMongoDb",
+            uri: "mongodb://localhost/mongodb_persistence"
+        },
+        {
+            layer: "population",
+            name: "mongodb_popul",
+            type: "MlclMongoDb",
+            url: "mongodb://localhost/mongodb_population"
+        }
+    ]
+};
+
+di.bootstrap(MlclMongoDb);
+
+const elements = di.getInstance("MlclElements");
+elements.dbHandler.addDatabasesFrom(config);
+```
+
+### Initialization
+```typescript
+import { di, injectable } from "@molecuel/di";
+import { MlclElements } from  "@molecuel/elements";
+
+const elements = di.getInstance("MlclElements");
+const success = await elements.init();
+```
+
+## Usage
+### Example
+```typescript
+process.env.configpath = "./config/";
+import { di, injectable } from "@molecuel/di";
+import {
+  Collection,
+  Element,
+  IsDefined,
+  MlclElements,
+  NotForPopulation } from  "@molecuel/elements";
+import * as D from "@molecuel/elements";
+import { MlclMongoDb } from "@molecuel/mongodb";
+
+di.bootstrap(MlclMongoDb);
+const elements = di.getInstance("MlclElements");
+await elements.init();
+
+@injectable
+@Collection("post")
+@NotForPopulation()
+class Message extends Element {
+  @IsDefined()
+  @D.ValidateType([String])
+  public recipients: string[];
+  @D.ValidateType()
+  public sender: string;
+  @D.ValidateType()
+  public content: string;
+  constructor(recipients: string[], sender: string, content: string) {
+    super(elements);
+    this.recipients = recipients;
+    this.sender = sender;
+    this.content = content;
+  }
+}
+
+let exampleMessage = elements.getInstance("Message", ["you"], "me", "Text snippet.");
+await exampleMessage.save();
+
+await elements.find(exampleMessage._id, Message.collection);
+```
 
 ## Build System
 
