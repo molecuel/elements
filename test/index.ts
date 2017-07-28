@@ -4,8 +4,8 @@ import * as assert from "assert";
 import * as _ from "lodash";
 import * as should from "should";
 
-import {di, injectable} from "@molecuel/di";
-import {MlclMongoDb} from "@molecuel/mongodb";
+import { di, injectable } from "@molecuel/di";
+import { MlclMongoDb } from "@molecuel/mongodb";
 import {
   Collection,
   Element,
@@ -16,11 +16,12 @@ import {
   // IsReferenceTo,
   // ValidateNested,
   // InArray
-} from "../dist";
-import * as D from "../dist";
+} from "../lib";
+import * as D from "../lib";
 
 // tslint:disable:max-classes-per-file
 // tslint:disable:variable-name
+// tslint:disable:no-console
 
 describe("Elements", () => {
   let el: MlclElements;
@@ -28,9 +29,6 @@ describe("Elements", () => {
   @injectable
   @Collection("post")
   class Post extends Element {
-    // public static get collection(): string {
-    //   return "post";
-    // }
     @IsDefined()
     public recipient: string = "me";
   }
@@ -48,9 +46,6 @@ describe("Elements", () => {
   @injectable
   @Collection("engines")
   class Engine extends Element {
-    // public get collection(): string {
-    //   return "engines";
-    // }
     @D.ValidateType()
     @IsDefined()
     public horsepower: number;
@@ -166,17 +161,20 @@ describe("Elements", () => {
     const oldObj = {
       firstname: "Diana",
       id: 12,
-      lastname: "Brown" };
+      lastname: "Brown",
+    };
     const newObj = {
       firstname: "Diana",
       id: 12,
-      lastname: "Green" };
+      lastname: "Green",
+    };
     const newObj2 = {
       age: 22,
       eyecolor: "yellow",
       firstname: "Diana",
       id: 12,
-      lastname: "Smith" };
+      lastname: "Smith",
+    };
     let diff;
     let diff2;
     it("should be possible to diff objects", () => {
@@ -233,12 +231,14 @@ describe("Elements", () => {
       const carData = {
         engine: 2,
         id: 2,
-        model: "M3" };
+        model: "M3",
+      };
       const robotData = {
         _id: "PR0T0TYP3",
         alloy: "steel",
         arms: 2,
-        legs: 2 };
+        legs: 2,
+      };
       const car = el.toInstance("Car", carData);
       car.should.be.instanceOf(Car);
       assert(car.save !== undefined);
@@ -269,7 +269,7 @@ describe("Elements", () => {
         error.message.should.equal("No connected databases.");
       }
       try {
-        const response = await el.findById({}, (Post as any).collection);
+        const response = await el.findById({}, Post.collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -277,7 +277,7 @@ describe("Elements", () => {
         error.message.should.equal("No connected databases.");
       }
       try {
-        const response = await el.find({}, (Post as any).collection);
+        const response = await el.find({}, Post.collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -300,7 +300,7 @@ describe("Elements", () => {
       const failEngine: Engine = el.getInstance("Engine");
       failEngine.id = "V8";
       failEngine.horsepower = undefined;
-      let  response;
+      let response;
       try {
         response = await failEngine.save();
       } catch (error) {
@@ -381,7 +381,7 @@ describe("Elements", () => {
     it("should not find unsaved objects", async () => {
       let response;
       try {
-        response = await el.findById(404, (car as any).collection);
+        response = await el.findById(404, Car.collection);
       } catch (error) {
         should.not.exist(error);
       }
@@ -397,8 +397,8 @@ describe("Elements", () => {
       let hitsPopulation;
       try {
         response = await post.save();
-        hitsPersistence = await el.dbHandler.persistenceDatabases.find({}, post.collection);
-        hitsPopulation = await el.dbHandler.populationDatabases.find({}, post.collection);
+        hitsPersistence = await el.dbHandler.persistenceDatabases.find({}, Post.collection);
+        hitsPopulation = await el.dbHandler.populationDatabases.find({}, Post.collection);
       } catch (error) {
         should.not.exist(error);
       }
@@ -459,7 +459,7 @@ describe("Elements", () => {
       }
       try {
         await con.database.close();
-        const response = await el.findById(42, (Post as any).collection);
+        const response = await el.findById(42, Post.collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -468,7 +468,7 @@ describe("Elements", () => {
       }
       try {
         await con.database.close();
-        const response = await el.find({}, (Post as any).collection);
+        const response = await el.find({}, Post.collection);
         should.not.exist(response);
       } catch (error) {
         should.exist(error);
@@ -479,7 +479,7 @@ describe("Elements", () => {
     it("should find the saved object", async () => {
       let response;
       try {
-        response = await el.findById(101, (car as any).collection);
+        response = await el.findById(101, Car.collection);
       } catch (error) {
         should.not.exist(error);
       }

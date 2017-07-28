@@ -1,8 +1,8 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-alpha11",
+  "version": "2.0.0-alpha14",
   "description": "Molecuel Elements Module",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "tslint": "./node_modules/.bin/tslint --project tsconfig.json",
     "tslint_test": "./node_modules/.bin/tslint --project tsconfig.test.json",
@@ -31,7 +31,7 @@
     "@types/when": "^2.4.28",
     "assert": ">=0.0.1",
     "coveralls": "^2.11.15",
-    "del": "^2.2.0",
+    "del": "^3.0.0",
     "fast-json-patch": "^1.2.0",
     "gh-pages": "^0.12.0",
     "istanbul": "^0.4.5",

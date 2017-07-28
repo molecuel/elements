@@ -10,6 +10,7 @@ export class Element implements IElement {
   @TSV.ValidateType()
   public id: any;
   public version: number;
+  public static get collection(): string { return undefined; }
   constructor(private elements: MlclElements) {}
 
   /**
