@@ -41,8 +41,8 @@
     "remap-istanbul": "^0.9.3",
     "should": ">=11.2.0",
     "tslint": "^5.0.0",
-    "typescript": "^2.4.2"
     "typedoc": "^0.8.0",
+    "typescript": "^2.2.1"
   },
   "dependencies": {
     "@molecuel/core": "^2.0.17",
