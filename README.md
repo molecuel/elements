@@ -1,4 +1,5 @@
-# @molecuel/elements [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
+# @molecuel/elements
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
 elements module for the Molecuel framework. Creating and configuring data models and validation for the database persistence layer. New database connections (documentdb + elasticsearch) are in progress. They will be implemented as adapters and it will be possible to save to different databases with one save method and define the population level of the data in a special population level to denormalize the data for aggregation and optimized reading.
 
