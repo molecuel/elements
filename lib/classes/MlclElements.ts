@@ -199,14 +199,15 @@ export class MlclElements {
       successCount:  0,
       successes: [] };
     if (this.dbHandler && this.dbHandler.connections) {
-      let testflag = false;
       for (const instance of instances) {
-        if (instance.constructor.name === "Engine") {
-          testflag = true;
-        }
         let validationResult = [];
         try {
-          validationResult = instance.validate();
+          const clone: any = _.cloneDeep(instance);
+          try {
+            delete clone.elements.dbHandler.ownConnections;
+          } finally {
+            validationResult = clone.validate();
+          }
         } catch (error) {
           result.errorCount++;
           result.errors.push(error);
@@ -249,7 +250,6 @@ export class MlclElements {
           result.errorCount += validationResult ? validationResult.length : 1;
           result.errors = result.errors.concat(result.errors, validationResult);
         }
-        testflag = false;
       }
     } else {
       return Promise.reject(new Error("No connected databases."));
