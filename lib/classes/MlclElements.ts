@@ -158,9 +158,15 @@ export class MlclElements {
           instance[key.slice(1)] = data[key];
         } else if ((key in instance || _.includes(_.map(meta, "property"), key))
           && !_.isEmpty(data[key])) {
+            // todo: PRIMARILY CHECK AGAINST REQUESTED TYPE!!
           if (typeof data[key] === "object" && typeof instance[key] === "object") {
             if (_.includes(this.getClasses(), instance[key].constructor.name)) {
               instance[key] = this.toInstance(instance[key].constructor.name, data[key]);
+            // // } else if (typeof data[key] === "object" && meta.find((entry) => {
+            // //   return (entry.type === TSV.DecoratorTypes.IS_TYPED
+            //        && di.injectables.find(([name, injectable]) => { return name === entry.value.name });
+            // // })) {
+
             } else {
               instance[key] = Object.assign(instance[key], data[key]);
             }
