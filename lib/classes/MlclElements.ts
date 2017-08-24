@@ -1,12 +1,12 @@
 "use strict";
-import {MlclConfig, MlclCore} from "@molecuel/core";
-import {MlclDatabase} from "@molecuel/database";
-import {di, injectable} from "@molecuel/di";
+import { MlclConfig, MlclCore } from "@molecuel/core";
+import { MlclDatabase } from "@molecuel/database";
+import { di, injectable } from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
 import * as Jsonpatch from "fast-json-patch";
 import * as _ from "lodash";
 import "reflect-metadata";
-import {DiffObject} from "./DiffObject";
+import { DiffObject } from "./DiffObject";
 import * as ELD from "./ElementDecorators";
 
 @injectable
@@ -32,7 +32,7 @@ export class MlclElements {
    *
    * @memberOf MlclElements
    */
-  public async init(): Promise<boolean|Error> {
+  public async init(): Promise<boolean | Error> {
     try {
       await this.dbHandler.init();
       if (this.dbHandler.connections) {
@@ -84,7 +84,7 @@ export class MlclElements {
    * @return {Promise<void>}             [description]
    */
   public validate(instance: object): TSV.IValidatorError[] {
-      return (new TSV.Validator()).validate(instance);
+    return (new TSV.Validator()).validate(instance);
   }
 
   /**
@@ -144,7 +144,7 @@ export class MlclElements {
    * @return any                             [description]
    */
   public toInstance(className: string, data: any): any {
-    const instance = this.getInstance(className);
+    const instance = this.getInstance(className) || di.getInstance(className);
     if (instance) {
       const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
       let meta = [];
@@ -157,19 +157,20 @@ export class MlclElements {
         if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
           instance[key.slice(1)] = data[key];
         } else if ((key in instance || _.includes(_.map(meta, "property"), key))
-          && !_.isEmpty(data[key])) {
-            // todo: PRIMARILY CHECK AGAINST REQUESTED TYPE!!
-          if (typeof data[key] === "object" && typeof instance[key] === "object") {
+          && !_.isEmpty(data[key]) && typeof data[key] === "object") {
+          const typeMeta = meta.find((entry) => {
+            return (entry.type === TSV.DecoratorTypes.IS_TYPED
+              && entry.property === key
+              && typeof entry.value === "function");
+          });
+          if (typeof instance[key] === "object" && instance[key].constructor) {
             if (_.includes(this.getClasses(), instance[key].constructor.name)) {
               instance[key] = this.toInstance(instance[key].constructor.name, data[key]);
-            // // } else if (typeof data[key] === "object" && meta.find((entry) => {
-            // //   return (entry.type === TSV.DecoratorTypes.IS_TYPED
-            //        && di.injectables.find(([name, injectable]) => { return name === entry.value.name });
-            // // })) {
-
             } else {
               instance[key] = Object.assign(instance[key], data[key]);
             }
+          } else if (typeMeta && typeMeta.value) {
+            instance[key] = this.toInstance(typeMeta.value.name, data[key]);
           } else {
             instance[key] = data[key];
           }
@@ -202,8 +203,9 @@ export class MlclElements {
     const result = {
       errorCount: 0,
       errors: [],
-      successCount:  0,
-      successes: [] };
+      successCount: 0,
+      successes: []
+    };
     if (this.dbHandler && this.dbHandler.connections) {
       for (const instance of instances) {
         let validationResult = [];
@@ -431,7 +433,7 @@ export class MlclElements {
       if (Reflect.has(obj, key)
         && obj[key] !== undefined
         && (propertiesValidatorDecorators[key]
-        || _.isArray(obj))) {
+          || _.isArray(obj))) {
         // check for non-prototype, validator-decorated property
         if (_.isArray(obj[key])) {
           result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
@@ -460,12 +462,13 @@ export class MlclElements {
       Reflect.getMetadata(this.METADATAKEY, model.constructor),
       ["type", ELD.Decorators.COLLECTION]);
     if ((collectionDecorator || (model as any).collection || (model as any).constructor.collection)
-      && ! (target as any).collection) {
+      && !(target as any).collection) {
 
       // check for decorator
       if (collectionDecorator) {
         Object.defineProperty(target, "collection", {
-          configurable: true, value: (collectionDecorator as any).value, writable: true });
+          configurable: true, value: (collectionDecorator as any).value, writable: true
+        });
       }
       // other getters have priority -> continue anyway
       const classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
@@ -487,9 +490,10 @@ export class MlclElements {
     // make sure there is always one collection getter
     if (!(target as any).collection) {
       Object.defineProperty(target, "collection", {
-        configurable: true, value: model.constructor.name, writable: true });
+        configurable: true, value: model.constructor.name, writable: true
+      });
     }
   }
 }
 
-import {Element} from "./Element";
+import { Element } from "./Element";
