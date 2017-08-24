@@ -204,7 +204,7 @@ export class MlclElements {
       errorCount: 0,
       errors: [],
       successCount: 0,
-      successes: []
+      successes: [],
     };
     if (this.dbHandler && this.dbHandler.connections) {
       for (const instance of instances) {
@@ -467,7 +467,7 @@ export class MlclElements {
       // check for decorator
       if (collectionDecorator) {
         Object.defineProperty(target, "collection", {
-          configurable: true, value: (collectionDecorator as any).value, writable: true
+          configurable: true, value: (collectionDecorator as any).value, writable: true,
         });
       }
       // other getters have priority -> continue anyway
@@ -490,7 +490,7 @@ export class MlclElements {
     // make sure there is always one collection getter
     if (!(target as any).collection) {
       Object.defineProperty(target, "collection", {
-        configurable: true, value: model.constructor.name, writable: true
+        configurable: true, value: model.constructor.name, writable: true,
       });
     }
   }
