@@ -420,6 +420,9 @@ export class MlclElements {
     let result;
     if (_.isArray(obj)) {
       result = objectValidatorDecorators = [];
+    } else if (!Object.keys(obj).length) {
+      //  has no keys, keep as is (e.g. Date)
+      result = obj;
     } else {
       result = {};
       // get all validator decorators
