@@ -1,4 +1,5 @@
-# @molecuel/elements [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
+# @molecuel/elements
+[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/molecuel/elements.svg)](https://greenkeeper.io/)
 
