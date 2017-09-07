@@ -31,7 +31,6 @@
     "assert": ">=0.0.1",
     "coveralls": "^2.11.15",
     "del": "^3.0.0",
-    "fast-json-patch": "^1.2.0",
     "gh-pages": "^1.0.0",
     "istanbul": "^0.4.5",
     "mocha": "*",
@@ -49,7 +48,7 @@
     "@molecuel/database": "^2.0.0-alpha4",
     "@molecuel/tsvalidate": "^1.0.0-alpha1",
     "@reactivex/rxjs": "^5.4.3",
-    "fast-json-patch": "1.1.9",
+    "fast-json-patch": "^2.0.5",
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.3"
   }
