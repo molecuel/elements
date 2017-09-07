@@ -3,7 +3,7 @@ import {MlclConfig, MlclCore} from "@molecuel/core";
 import {MlclDatabase} from "@molecuel/database";
 import {di, injectable} from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
-import {compare, applyPatch} from "fast-json-patch";
+import {applyPatch, compare} from "fast-json-patch";
 import * as _ from "lodash";
 import "reflect-metadata";
 import {DiffObject} from "./DiffObject";
