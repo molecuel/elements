@@ -157,7 +157,9 @@ export class MlclElements {
         if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
           instance[key.slice(1)] = data[key];
         } else if ((key in instance || _.includes(_.map(meta, "property"), key))
-          && !_.isEmpty(data[key]) && typeof data[key] === "object") {
+          && !_.isEmpty(data[key]) && (typeof data[key] === "object"
+          || _.includes(_.map(meta, "property"), key))) {
+            // todo: cleanly transfer unpopulated references AS WELL AS serialized Types (e.g. Date)
           const typeMeta = meta.find((entry) => {
             return (entry.type === TSV.DecoratorTypes.IS_TYPED
               && entry.property === key
@@ -170,7 +172,15 @@ export class MlclElements {
               instance[key] = Object.assign(instance[key], data[key]);
             }
           } else if (typeMeta && typeMeta.value) {
-            instance[key] = this.toInstance(typeMeta.value.name, data[key]);
+            if (_.includes(this.getClasses(), typeMeta.value.name) || di.injectables.has(typeMeta.value.name)) {
+              instance[key] = this.toInstance(typeMeta.value.name, data[key]);
+            } else {
+              try {
+                instance[key] = new typeMeta.value();
+              } catch (error) {
+                instance[key] = data[key];
+              }
+            }
           } else {
             instance[key] = data[key];
           }
