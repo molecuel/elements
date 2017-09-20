@@ -27,30 +27,28 @@
   "devDependencies": {
     "@molecuel/mongodb": "^2.0.1-alpha9",
     "@types/mocha": "^2.2.36",
-    "@types/should": "^8.1.30",
     "@types/when": "^2.4.28",
     "assert": ">=0.0.1",
     "coveralls": "^2.11.15",
     "del": "^3.0.0",
-    "fast-json-patch": "^1.2.0",
     "gh-pages": "^1.0.0",
     "istanbul": "^0.4.5",
     "mocha": "*",
     "mocha-lcov-reporter": "^1.2.0",
     "publish": "^0.6.0",
     "remap-istanbul": "^0.9.3",
-    "should": ">=11.2.0",
-    "tslint": "^5.0.0",
+    "tslint": "^5.6.0",
+    "should": "^13.0.1",
     "typedoc": "^0.8.0",
-    "typescript": "^2.2.1"
+    "typescript": "^2.5.2"
   },
   "dependencies": {
     "@molecuel/core": "^2.0.17",
     "@molecuel/di": "^0.2.1",
     "@molecuel/database": "^2.0.0-alpha4",
     "@molecuel/tsvalidate": "^1.0.0-alpha1",
-    "@reactivex/rxjs": ">=5.4.3",
-    "fast-json-patch": "1.1.9",
+    "@reactivex/rxjs": "^5.4.3",
+    "fast-json-patch": "^2.0.5",
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.3"
   }

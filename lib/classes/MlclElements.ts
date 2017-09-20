@@ -3,7 +3,7 @@ import { MlclConfig, MlclCore } from "@molecuel/core";
 import { MlclDatabase } from "@molecuel/database";
 import { di, injectable } from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
-import * as Jsonpatch from "fast-json-patch";
+import {applyPatch, compare, Operation, OperationResult} from "fast-json-patch";
 import * as _ from "lodash";
 import "reflect-metadata";
 import { DiffObject } from "./DiffObject";
@@ -184,12 +184,12 @@ export class MlclElements {
   }
 
   public diffObjects(oldObj, newObj) {
-    const diff: DiffObject[] = Jsonpatch.default.compare(newObj, oldObj);
+    const diff: DiffObject[] = compare(newObj, oldObj);
     return diff;
   }
 
-  public revertObject(obj, patches: DiffObject[]) {
-    const result = Jsonpatch.default.apply(obj, patches);
+  public revertObject(obj, patches: Operation[]): OperationResult<any> {
+    const result = applyPatch(obj, patches);
     return result;
   }
 
