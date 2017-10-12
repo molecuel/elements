@@ -193,34 +193,6 @@ export class MlclElements {
           } else {
             instance[key] = data[key];
           }
-          /*(key in instance || _.includes(_.map(meta, "property"), key))
-            && !_.isEmpty(data[key]) && (typeof data[key] === "object"
-            || _.includes(_.map(meta, "property"), key))) {
-              // todo: cleanly transfer unpopulated references AS WELL AS serialized Types (e.g. Date)
-            const typeMeta = meta.find((entry) => {
-              return (entry.type === TSV.DecoratorTypes.IS_TYPED
-                && entry.property === key
-                && typeof entry.value === "function");
-            });
-            if (typeof instance[key] === "object" && instance[key].constructor) {
-              if (_.includes(this.getClasses(), instance[key].constructor.name)) {
-                instance[key] = this.toInstance(instance[key].constructor.name, data[key]);
-              } else {
-                instance[key] = Object.assign(instance[key], data[key]);
-              }
-            } else if (typeMeta && typeMeta.value) {
-              if (_.includes(this.getClasses(), typeMeta.value.name) || di.injectables.has(typeMeta.value.name)) {
-                instance[key] = this.toInstance(typeMeta.value.name, data[key]);
-              } else {
-                try {
-                  instance[key] = new typeMeta.value();
-                } catch (error) {
-                  instance[key] = data[key];
-                }
-              }
-            } else {
-              instance[key] = data[key];
-            }*/
         } else {
           instance[key] = data[key];
         }
