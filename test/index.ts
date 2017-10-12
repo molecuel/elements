@@ -545,7 +545,7 @@ describe("Elements", () => {
       } catch (error) {
         should.not.exist(error);
       }
-      assert(!(someEngine.cylinders instanceof Element));
+      expect(someEngine.cylinders).to.not.be.instanceof(Element);
       expect(someEngine.cylinders).to.be.a("string");
     });
     after(async () => {
