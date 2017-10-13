@@ -1,6 +1,6 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-alpha15",
+  "version": "2.0.0-alpha16",
   "description": "Molecuel Elements Module",
   "main": "lib/index.js",
   "scripts": {
@@ -11,9 +11,9 @@
     "build": "npm run tslint && npm run ts",
     "build_test": "npm run tslint_test && npm run ts_test",
     "build_all": "npm run build && npm run build_test",
-    "mocha": "./node_modules/.bin/mocha",
+    "mocha": "./node_modules/.bin/mocha --exit",
     "test": "npm run build_test && npm run mocha",
-    "cover": "istanbul cover ./node_modules/mocha/bin/_mocha && npm run remap && npm run remaphtml && npm run remaplcov",
+    "cover": "istanbul cover ./node_modules/mocha/bin/_mocha -- --exit && npm run remap && npm run remaphtml && npm run remaplcov",
     "remap": "./node_modules/.bin/remap-istanbul -i coverage/coverage.json -o coverage/coverage-remap.json",
     "remaphtml": "./node_modules/.bin/remap-istanbul -i coverage/coverage.json -o coverage/html -t html",
     "remaplcov": "./node_modules/.bin/remap-istanbul -i coverage/coverage.json -o coverage/lcov-remap.info -t lcovonly",
@@ -25,10 +25,10 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@molecuel/mongodb": "^2.0.1-alpha9",
+    "@molecuel/mongodb": "^2.0.1-alpha10",
     "@types/mocha": "^2.2.36",
     "@types/when": "^2.4.28",
-    "assert": ">=0.0.1",
+    "chai": "^4.1.2",
     "coveralls": "^2.11.15",
     "del": "^3.0.0",
     "gh-pages": "^1.0.0",
@@ -38,7 +38,6 @@
     "publish": "^0.6.0",
     "remap-istanbul": "^0.9.3",
     "tslint": "^5.6.0",
-    "should": "^13.0.1",
     "typedoc": "^0.8.0",
     "typescript": "^2.5.2"
   },

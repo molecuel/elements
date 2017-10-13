@@ -1,8 +1,11 @@
 "use strict";
 process.env.configpath = "./test/config/";
-import * as assert from "assert";
 import * as _ from "lodash";
-import * as should from "should";
+
+import * as chai from "chai";
+const should = chai.should();
+const expect = chai.expect;
+const assert = chai.assert;
 
 import { di, injectable } from "@molecuel/di";
 import { MlclMongoDb } from "@molecuel/mongodb";
@@ -119,8 +122,8 @@ describe("Elements", () => {
     it("should return a list of Element extending classes\' names", () => {
       const classNames = el.getClasses();
       should.exist(classNames);
-      classNames.length.should.be.above(0);
-      classNames[0].should.be.type("string");
+      expect(classNames.length).to.be.above(0);
+      expect(classNames[0]).to.be.a("string");
     });
     it("should not generate a new instance of unconfigured classes", () => {
       const compareInstance = el.getInstance("Robot");
@@ -131,22 +134,22 @@ describe("Elements", () => {
     it("should NOT validate erroneous Element instances", () => {
       const post: Post = el.getInstance("Post");
       should.exist(post);
-      post.should.be.instanceOf(Element);
+      expect(post).to.be.instanceOf(Element);
       delete post.recipient;
       const validationResult = post.validate();
       should.exist(validationResult);
-      validationResult.length.should.equal(1);
+      expect(validationResult.length).to.equal(1);
     });
     it("should validate an Element inheriting instance", () => {
       const car: Car = el.getInstance("Car", 1);
       should.exist(car);
-      car.should.be.instanceOf(Element);
+      expect(car).to.be.instanceOf(Element);
       car.engine.id = 1;
       car.engine.horsepower = 110;
       car.model = "VRM";
       const validationResult = car.validate();
       should.exist(validationResult);
-      validationResult.length.should.equal(0);
+      expect(validationResult.length).to.equal(0);
     });
     it("should respect decorator functions being applied to any properties during runtime", () => {
       const post = el.getInstance("Post");
@@ -195,9 +198,9 @@ describe("Elements", () => {
     });
     it("should be possible to revert with a collection of diffs in correct order", () => {
       const patches = _.concat(diff2, diff);
-      newObj2.lastname.should.equal("Smith");
+      expect(newObj2.lastname).to.equal("Smith");
       el.revertObject(newObj2, patches);
-      newObj2.lastname.should.equal("Brown");
+      expect(newObj2.lastname).to.equal("Brown");
     });
   }); // category end
   describe("serialization", () => {
@@ -542,8 +545,8 @@ describe("Elements", () => {
       } catch (error) {
         should.not.exist(error);
       }
-      assert(!(someEngine.cylinders instanceof Element));
-      someEngine.cylinders.should.be.type("string");
+      expect(someEngine.cylinders).to.not.be.instanceof(Element);
+      expect(someEngine.cylinders).to.be.a("string");
     });
     after(async () => {
       const dbHandler = el.dbHandler;

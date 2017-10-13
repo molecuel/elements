@@ -1,12 +1,12 @@
 "use strict";
-import {MlclConfig, MlclCore} from "@molecuel/core";
-import {MlclDatabase} from "@molecuel/database";
-import {di, injectable} from "@molecuel/di";
+import { MlclConfig, MlclCore } from "@molecuel/core";
+import { MlclDatabase } from "@molecuel/database";
+import { di, injectable } from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
-import {applyPatch, compare, Operation, OperationResult} from "fast-json-patch";
+import { applyPatch, compare, Operation, OperationResult } from "fast-json-patch";
 import * as _ from "lodash";
 import "reflect-metadata";
-import {DiffObject} from "./DiffObject";
+import { DiffObject } from "./DiffObject";
 import * as ELD from "./ElementDecorators";
 
 @injectable
@@ -32,7 +32,7 @@ export class MlclElements {
    *
    * @memberOf MlclElements
    */
-  public async init(): Promise<boolean|Error> {
+  public async init(): Promise<boolean | Error> {
     try {
       await this.dbHandler.init();
       if (this.dbHandler.connections) {
@@ -84,7 +84,7 @@ export class MlclElements {
    * @return {Promise<void>}             [description]
    */
   public validate(instance: object): TSV.IValidatorError[] {
-      return (new TSV.Validator()).validate(instance);
+    return (new TSV.Validator()).validate(instance);
   }
 
   /**
@@ -144,22 +144,56 @@ export class MlclElements {
    * @return any                             [description]
    */
   public toInstance(className: string, data: any): any {
-    const instance = this.getInstance(className);
+    const instance = this.getInstance(className) || di.getInstance(className);
     if (instance) {
-      const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance));
+      const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance))
+        .concat(Reflect.getMetadataKeys(instance.constructor));
       let meta = [];
       for (const metakey of metakeys) {
         if (!metakey.includes("design:")) {
-          meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)));
+          meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)))
+            .concat(Reflect.getMetadata(metakey, instance.constructor))
+            .filter((defined: any) => defined);
         }
       }
       for (const key in data) {
         if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
           instance[key.slice(1)] = data[key];
-        } else if ((key in instance || _.includes(_.map(meta, "property"), key))
+        } else if (key in instance || _.includes(_.map(meta, "property"), key)
           && !_.isEmpty(data[key])) {
-          if (typeof data[key] === "object" && typeof instance[key] === "object") {
+          const typeMeta = meta.find((entry: any) => {
+            return (entry.type === TSV.DecoratorTypes.IS_TYPED
+              && entry.property === key
+              && typeof entry.value === "function");
+          });
+          const refMeta = meta.find((entry: any) => {
+            return (entry.type === ELD.Decorators.IS_REF_TO
+              && entry.property === key
+              && (typeof entry.value === "function"
+                || typeof entry.value === "string"));
+          });
+          if (typeMeta && typeMeta.value) {
+            if (refMeta && refMeta.value) {
+              instance[key] = data[key];
+            } else if (_.includes(this.getClasses(), typeMeta.value.name)) {
+              instance[key] = this.toInstance(typeMeta.value.name, data[key]);
+            } else if (di.injectables.has(typeMeta.value.name)) {
+              instance[key] = this.toInstance(typeMeta.value.name, data[key]);
+            } else {
+              try {
+                if (typeof data[key] === "object") {
+                  instance[key] = new typeMeta.value(...data[key]);
+                } else {
+                  instance[key] = new typeMeta.value(data[key]);
+                }
+              } catch (error) {
+                instance[key] = data[key];
+              }
+            }
+          } else if (typeof instance[key] === "object" && instance[key].constructor) {
             if (_.includes(this.getClasses(), instance[key].constructor.name)) {
+              instance[key] = this.toInstance(instance[key].constructor.name, data[key]);
+            } else if (di.injectables.has(instance[key].constructor)) {
               instance[key] = this.toInstance(instance[key].constructor.name, data[key]);
             } else {
               instance[key] = Object.assign(instance[key], data[key]);
@@ -196,8 +230,9 @@ export class MlclElements {
     const result = {
       errorCount: 0,
       errors: [],
-      successCount:  0,
-      successes: [] };
+      successCount: 0,
+      successes: [],
+    };
     if (this.dbHandler && this.dbHandler.connections) {
       for (const instance of instances) {
         let validationResult = [];
@@ -224,7 +259,7 @@ export class MlclElements {
           const decorators = _.concat(
             Reflect.getMetadata(this.METADATAKEY, Reflect.getPrototypeOf(instance)),
             Reflect.getMetadata(this.METADATAKEY, instance.constructor)).filter((defined) => defined);
-          const check = decorators.find((decorator) => {
+          const check = decorators.find((decorator: any) => {
             return (decorator && decorator.type === ELD.Decorators.NOT_FOR_POPULATION && !decorator.property);
           });
           if (!check) {
@@ -274,20 +309,20 @@ export class MlclElements {
     const meta = _.concat(
       Reflect.getMetadata(this.METADATAKEY, Reflect.getPrototypeOf(obj)),
       Reflect.getMetadata(this.METADATAKEY, obj.constructor))
-      .filter((defined) => defined);
-    const refMeta = meta.filter((entry) => {
+      .filter((defined: any) => defined);
+    const refMeta = meta.filter((entry: any) => {
       return (entry.type === ELD.Decorators.IS_REF_TO
         && (!properties || _.includes(properties.split(" "), entry.property)));
     });
-    const irrelevProps = meta.map((entry) => {
+    const irrelevProps = meta.map((entry: any) => {
       if (entry.type === ELD.Decorators.NOT_FOR_POPULATION
         && entry.property
         && (!properties || _.includes(properties.split(" "), entry.property))) {
 
         return entry.property;
       }
-    }).filter((defined) => defined);
-    const queryCollections = refMeta.map((entry) => {
+    }).filter((defined: any) => defined);
+    const queryCollections = refMeta.map((entry: any) => {
       const instance = this.getInstance(entry.value);
       if (instance && !_.includes(irrelevProps, entry.property)) {
         if (_.isArray(obj[entry.property])) {
@@ -298,8 +333,8 @@ export class MlclElements {
           return instance.collection || instance.constructor.collection || instance.constructor.name;
         }
       }
-    }).filter((defined) => defined);
-    const queryProperties = refMeta.map((entry) => {
+    }).filter((defined: any) => defined);
+    const queryProperties = refMeta.map((entry: any) => {
       if (!_.includes(irrelevProps, entry.property)) {
         if (_.isArray(obj[entry.property])) {
           if (obj[entry.property].length > 0) {
@@ -309,41 +344,46 @@ export class MlclElements {
           return entry.property;
         }
       }
-    }).filter((defined) => defined);
+    }).filter((defined: any) => defined);
     if (this.dbHandler && this.dbHandler.connections) {
       try {
-        let result = await this.dbHandler.populate((obj as any).toDbObject(), queryProperties, queryCollections);
-        if (_.includes(this.getClasses(), obj.constructor.name)) {
-          result = this.toInstance(obj.constructor.name, result);
-        }
-        for (const prop in result) {
-          if (Reflect.has(result, prop) && !_.includes(irrelevProps, prop)) {
-            if (_.isArray(result[prop])) {
-              try {
-                const reference = _.find(refMeta, ["property", prop]);
-                if (reference && reference.value && _.includes(this.getClasses(), reference.value)) {
-                  for (const index in result[prop]) {
-                    if (Reflect.has(result[prop], index) && typeof result[prop][index] === "object") {
-                      result[prop][index] = this.toInstance(reference.value, result[prop][index]);
-                      await result[prop][index].populate();
+        let result;
+        if (irrelevProps.length > 0 && irrelevProps.length === refMeta.length) {
+          result = obj;
+        } else {
+          result = await this.dbHandler.populate((obj as any).toDbObject(), queryProperties, queryCollections);
+          if (_.includes(this.getClasses(), obj.constructor.name)) {
+            result = this.toInstance(obj.constructor.name, result);
+          }
+          for (const prop in result) {
+            if (Reflect.has(result, prop) && !_.includes(irrelevProps, prop)) {
+              if (_.isArray(result[prop])) {
+                try {
+                  const reference = _.find(refMeta, ["property", prop]);
+                  if (reference && reference.value && _.includes(this.getClasses(), reference.value)) {
+                    for (const index in result[prop]) {
+                      if (Reflect.has(result[prop], index) && typeof result[prop][index] === "object") {
+                        result[prop][index] = this.toInstance(reference.value, result[prop][index]);
+                        await result[prop][index].populate();
+                      }
                     }
                   }
+                } catch (e) {
+                  continue;
                 }
-              } catch (e) {
-                continue;
-              }
-            } else {
-              try {
-                const reference = _.find(refMeta, ["property", prop]);
-                if (typeof result[prop] === "object" && !_.includes(this.getClasses(), result[prop].constructor.name)
-                  && reference && reference.value && _.includes(this.getClasses(), reference.value)) {
-                  result[prop] = this.toInstance(reference.value, result[prop]);
+              } else {
+                try {
+                  const reference = _.find(refMeta, ["property", prop]);
+                  if (typeof result[prop] === "object" && !_.includes(this.getClasses(), result[prop].constructor.name)
+                    && reference && reference.value && _.includes(this.getClasses(), reference.value)) {
+                    result[prop] = this.toInstance(reference.value, result[prop]);
+                  }
+                  if (_.includes(this.getClasses(), result[prop].constructor.name)) {
+                    await result[prop].populate();
+                  }
+                } catch (e) {
+                  continue;
                 }
-                if (_.includes(this.getClasses(), result[prop].constructor.name)) {
-                  await result[prop].populate();
-                }
-              } catch (e) {
-                continue;
               }
             }
           }
@@ -412,6 +452,9 @@ export class MlclElements {
     let result;
     if (_.isArray(obj)) {
       result = objectValidatorDecorators = [];
+    } else if (!Object.keys(obj).length) {
+      //  has no keys, keep as is (e.g. Date)
+      result = obj;
     } else {
       result = {};
       // get all validator decorators
@@ -425,7 +468,7 @@ export class MlclElements {
       if (Reflect.has(obj, key)
         && obj[key] !== undefined
         && (propertiesValidatorDecorators[key]
-        || _.isArray(obj))) {
+          || _.isArray(obj))) {
         // check for non-prototype, validator-decorated property
         if (_.isArray(obj[key])) {
           result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
@@ -454,12 +497,13 @@ export class MlclElements {
       Reflect.getMetadata(this.METADATAKEY, model.constructor),
       ["type", ELD.Decorators.COLLECTION]);
     if ((collectionDecorator || (model as any).collection || (model as any).constructor.collection)
-      && ! (target as any).collection) {
+      && !(target as any).collection) {
 
       // check for decorator
       if (collectionDecorator) {
         Object.defineProperty(target, "collection", {
-          configurable: true, value: (collectionDecorator as any).value, writable: true });
+          configurable: true, value: (collectionDecorator as any).value, writable: true,
+        });
       }
       // other getters have priority -> continue anyway
       const classCollectionDescriptor = Object.getOwnPropertyDescriptor(model.constructor, "collection");
@@ -481,9 +525,10 @@ export class MlclElements {
     // make sure there is always one collection getter
     if (!(target as any).collection) {
       Object.defineProperty(target, "collection", {
-        configurable: true, value: model.constructor.name, writable: true });
+        configurable: true, value: model.constructor.name, writable: true,
+      });
     }
   }
 }
 
-import {Element} from "./Element";
+import { Element } from "./Element";
