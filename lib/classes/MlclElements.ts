@@ -180,7 +180,18 @@ export class MlclElements {
             } else if (di.injectables.has(typeMeta.value.name)) {
               instance[key] = this.toInstance(typeMeta.value.name, data[key]);
             } else {
-              instance[key] = data[key];
+              try {
+                // typeMeta.value.name === "Date"
+                //   ? console.log(...data[key])
+                //   : null;
+                if (typeof data[key] === "object") {
+                  instance[key] = new typeMeta.value(...data[key]);
+                } else {
+                  instance[key] = new typeMeta.value(data[key]);
+                }
+              } catch (error) {
+                instance[key] = data[key];
+              }
             }
           } else if (typeof instance[key] === "object" && instance[key].constructor) {
             if (_.includes(this.getClasses(), instance[key].constructor.name)) {
