@@ -181,9 +181,6 @@ export class MlclElements {
               instance[key] = this.toInstance(typeMeta.value.name, data[key]);
             } else {
               try {
-                // typeMeta.value.name === "Date"
-                //   ? console.log(...data[key])
-                //   : null;
                 if (typeof data[key] === "object") {
                   instance[key] = new typeMeta.value(...data[key]);
                 } else {
