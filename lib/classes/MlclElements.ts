@@ -234,9 +234,9 @@ export class MlclElements {
       this.gqlStore.set(key, item);
     }
     const queryType = {
-      name: "Query",
       description: "The root query type.",
       fields: {},
+      name: "Query",
     };
 
     for (const [key, gqlElement] of this.gqlStore) {
@@ -256,8 +256,8 @@ export class MlclElements {
 
   public renderGqlItem(name: string, definitions: any) {
     const gqlObjDef = {
-      name,
       fields: {},
+      name,
     };
     for ( const prop of definitions[name]) {
       let gqlType;
