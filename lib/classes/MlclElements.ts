@@ -4,6 +4,17 @@ import { MlclDatabase } from "@molecuel/database";
 import { di, injectable } from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
 import { applyPatch, compare, Operation, OperationResult } from "fast-json-patch";
+import {
+  GraphQLBoolean,
+  GraphQLFloat,
+  GraphQLID,
+  GraphQLInt,
+  GraphQLList,
+  GraphQLObjectType,
+  GraphQLSchema,
+  GraphQLString,
+  printSchema,
+} from "graphql";
 import * as _ from "lodash";
 import "reflect-metadata";
 import { DiffObject } from "./DiffObject";
@@ -15,6 +26,7 @@ export class MlclElements {
     return "mlcl_elements:decorators";
   }
   public dbHandler: MlclDatabase;
+  private gqlStore: any = new Map();
 
   constructor() {
     di.bootstrap(MlclCore, MlclConfig, MlclDatabase);
@@ -135,6 +147,143 @@ export class MlclElements {
       }
       decorator(actualTarget, propertyName);
     }
+  }
+
+  public getClassAttributes(className: string) {
+    const instance = this.getInstance(className) || di.getInstance(className);
+    if (instance) {
+      const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance))
+      .concat(Reflect.getMetadataKeys(instance.constructor));
+      let meta = [];
+      for (const metakey of metakeys) {
+        if (!metakey.includes("design:")) {
+          meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)))
+            .concat(Reflect.getMetadata(metakey, instance.constructor))
+            .filter((defined: any) => {
+              if (defined) {
+                return defined.property;
+              } else {
+                return defined;
+              }
+            })
+            .map((data) => {
+              return data.property;
+            });
+          const uniqueMeta = [...new Set(meta)];
+          return uniqueMeta;
+        }
+      }
+    } else {
+      return [];
+    }
+  }
+
+  public getMetadataTypesForClass(classname: string, allowAny?: false) {
+    const attribs = this.getClassAttributes(classname);
+    const instance = this.getInstance(classname) || di.getInstance(classname);
+    let types = [];
+    for (const attrib of attribs) {
+      const designType = Reflect.getMetadata("tsvalidate:validators", Reflect.getPrototypeOf(instance))
+      .filter((data) => {
+        if (data.property === attrib && data.type === "ValidateType"  ) {
+          return data;
+        } else {
+          return;
+        }
+      });
+      const metaTypes = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib);
+      let attType;
+      if (designType && designType[0] && designType[0].value ) {
+        attType = designType[0].value.name;
+      } else if (metaTypes && metaTypes.name && metaTypes.name !== "Object" && metaTypes.name !== "Array") {
+        attType = metaTypes.name;
+        // attType = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib).name;
+      } else if (allowAny && metaTypes && metaTypes.name && metaTypes.name !== "Array") {
+        attType = metaTypes.name;
+      }
+
+      let nested = false;
+
+      if (metaTypes && metaTypes.name && metaTypes.name === "Array") {
+        nested = true;
+      }
+      if (attType) {
+        types = [
+          ...types,
+          { property: attrib, type: attType, nested },
+        ];
+      }
+    }
+    return types;
+  }
+
+  public getMetadataTypesForElements() {
+    const elemclasses = this.getClasses();
+    const allClassTypes = {};
+    for (const elclass of elemclasses) {
+      allClassTypes[elclass] = this.getMetadataTypesForClass(elclass);
+    }
+    return allClassTypes;
+  }
+
+  public renderGraphQL() {
+    const elemProperties = this.getMetadataTypesForElements();
+    const keys = Object.keys(elemProperties);
+    for (const key of keys) {
+      const item = this.renderGqlItem(key, elemProperties);
+      this.gqlStore.set(key, item);
+    }
+    const queryType = {
+      name: "Query",
+      description: "The root query type.",
+      fields: {},
+    };
+
+    for (const [key, gqlElement] of this.gqlStore) {
+      queryType.fields[key] = {
+        type: gqlElement,
+      };
+    }
+
+    const queryGqlType = new GraphQLObjectType(queryType);
+
+    const schema = new GraphQLSchema({
+      query: queryGqlType,
+    });
+
+    return printSchema(schema);
+  }
+
+  public renderGqlItem(name: string, definitions: any) {
+    const gqlObjDef = {
+      name,
+      fields: {},
+    };
+    for ( const prop of definitions[name]) {
+      let gqlType;
+      if (prop.type === "Number") {
+        gqlObjDef.fields[prop.property] = {};
+        gqlType = GraphQLFloat;
+      } else if (prop.type === "String") {
+        gqlObjDef.fields[prop.property] = {};
+        gqlType = GraphQLString;
+      } else if (prop.type === "Boolean") {
+        gqlObjDef.fields[prop.property] = {};
+        gqlType = GraphQLBoolean;
+      } else {
+        gqlObjDef.fields[prop.property] = {};
+        if (this.gqlStore.get(prop.type)) {
+          gqlType = this.gqlStore.get(prop.type);
+        } else {
+          gqlType = this.renderGqlItem(prop.type, definitions);
+        }
+      }
+      if (prop.nested) {
+        gqlType = new GraphQLList(gqlType);
+      }
+      gqlObjDef.fields[prop.property].type = gqlType;
+    }
+    return new GraphQLObjectType(gqlObjDef);
   }
 
   /**

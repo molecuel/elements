@@ -6,6 +6,7 @@ import { DiffObject } from "./DiffObject";
 export declare class MlclElements {
     private readonly METADATAKEY;
     dbHandler: MlclDatabase;
+    private gqlStore;
     constructor();
     init(): Promise<boolean | Error>;
     getInstance(name: string, ...params: any[]): any;
@@ -13,6 +14,11 @@ export declare class MlclElements {
     toDbObject(element: object, forPopulationLayer?: boolean): any;
     getClasses(): string[];
     applyDecorators(target: object, propertyName?: string, ...decorators: Array<(...args: any[]) => any>): void;
+    getClassAttributes(className: string): any[];
+    getMetadataTypesForClass(classname: string, allowAny?: false): any[];
+    getMetadataTypesForElements(): {};
+    renderGraphQL(): any;
+    renderGqlItem(name: string, definitions: any): any;
     toInstance(className: string, data: any): any;
     diffObjects(oldObj: any, newObj: any): DiffObject[];
     revertObject(obj: any, patches: Operation[]): OperationResult<any>;

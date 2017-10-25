@@ -257,6 +257,26 @@ describe("Elements", () => {
       assert(robot.alloy === robotData.alloy);
     });
   }); // category end
+  describe("Metadata render", () => {
+    it("Render meta information for car object", async () => {
+      const meta = el.getMetadataTypesForClass("Car");
+      expect(meta[0].property).equal("engine");
+      expect(meta[0].type).equal("Engine");
+      expect(meta[1].property).equal("model");
+      expect(meta[1].type).equal("String");
+    });
+    it("Return all meta informations for registered elements", async () => {
+      const meta: any = el.getMetadataTypesForElements();
+      const car = meta.Car;
+      expect(car[0].property).equal("engine");
+      expect(car[0].type).equal("Engine");
+      expect(car[1].property).equal("model");
+      expect(car[1].type).equal("String");
+    });
+    it("Should render graphql structure", () => {
+      expect(typeof el.renderGraphQL()).equal("string");
+    });
+  });
   describe("DB interaction", () => {
     let car: Car;
     let wheel: Wheel;
