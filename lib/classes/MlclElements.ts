@@ -249,7 +249,10 @@ export class MlclElements {
         }
         if (validationResult.length === 0) {
           try {
-            const response = await this.dbHandler.persistenceDatabases.save(instance.toDbObject());
+            const response = await this.dbHandler.persistenceDatabases.save(
+              instance.toDbObject(),
+              upsert,
+              (instance as any).collection);
             result.successCount++;
             result.successes = result.successes.concat(response.successes);
           } catch (error) {
@@ -447,9 +450,10 @@ export class MlclElements {
    * @param  {boolean} nested              [description]
    * @return any                           [description]
    */
-  protected toDbObjRecursive(obj: any, stripFunctionsOnly: boolean = false, idPattern: string = "id"): any {
+  protected toDbObjRecursive(obj: any, stripFunctionsOnly: boolean = false): any {
     let objectValidatorDecorators;
     let result;
+    const idPattern = di.getInstance("MlclConfig").getConfig().idPattern || "id";
     if (_.isArray(obj)) {
       result = objectValidatorDecorators = [];
     } else if (!Object.keys(obj).length) {
@@ -471,14 +475,14 @@ export class MlclElements {
           || _.isArray(obj))) {
         // check for non-prototype, validator-decorated property
         if (_.isArray(obj[key])) {
-          result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
+          result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly);
         } else if (typeof obj[key] === "object") { // property is object
           if (key === idPattern) {
             result[key] = obj[key];
           } else if (obj[key][idPattern] && !stripFunctionsOnly) { // property has _id-property itself
             result[key] = obj[key][idPattern];
           } else if (!(idPattern in obj[key]) || stripFunctionsOnly) { // resolve property
-            result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly, idPattern);
+            result[key] = this.toDbObjRecursive(obj[key], stripFunctionsOnly);
           }
         } else if (typeof obj[key] !== "function") {
           result[key] = obj[key];

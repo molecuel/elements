@@ -12,5 +12,6 @@
             "type": "MlclMongoDb",
             "url": "mongodb://localhost/mongodb_population"
         }
-    ]
+    ],
+    "idPattern": "id"
 }

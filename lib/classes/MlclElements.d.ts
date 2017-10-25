@@ -20,7 +20,7 @@ export declare class MlclElements {
     populate(obj: object, properties?: string): Promise<any>;
     find(query: any, collection: string): Promise<any>;
     findById(id: any, collection: string): Promise<any>;
-    protected toDbObjRecursive(obj: any, stripFunctionsOnly?: boolean, idPattern?: string): any;
+    protected toDbObjRecursive(obj: any, stripFunctionsOnly?: boolean): any;
     protected addCollectionTo(target: object, model?: object): void;
 }
 import { Element } from "./Element";
