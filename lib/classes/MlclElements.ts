@@ -149,6 +149,13 @@ export class MlclElements {
     }
   }
 
+  /**
+   * Returns all reachable (decorated) class attributes.
+   *
+   * @param {string} className
+   *
+   * @memberOf MlclElements
+   */
   public getClassAttributes(className: string) {
     const instance = this.getInstance(className) || di.getInstance(className);
     if (instance) {
@@ -178,6 +185,14 @@ export class MlclElements {
     }
   }
 
+  /**
+   * Returns the metadata information for a specific class
+   *
+   * @param {string} className
+   * @param {boolean} allowAny  [Should the any data type (Object) be allowed]
+   *
+   * @memberOf MlclElements
+   */
   public getMetadataTypesForClass(classname: string, allowAny?: false) {
     const attribs = this.getClassAttributes(classname);
     const instance = this.getInstance(classname) || di.getInstance(classname);
@@ -217,6 +232,11 @@ export class MlclElements {
     return types;
   }
 
+  /**
+   * Returns the metadata information for all classes
+   *
+   * @memberOf MlclElements
+   */
   public getMetadataTypesForElements() {
     const elemclasses = this.getClasses();
     const allClassTypes = {};
@@ -226,6 +246,11 @@ export class MlclElements {
     return allClassTypes;
   }
 
+  /**
+   * Returns a graphql schema for all registered Elements
+   *
+   * @memberOf MlclElements
+   */
   public renderGraphQL() {
     const elemProperties = this.getMetadataTypesForElements();
     const keys = Object.keys(elemProperties);
@@ -254,6 +279,14 @@ export class MlclElements {
     return printSchema(schema);
   }
 
+  /**
+   * Renders a Object type as graphql object type
+   *
+   * @param  {string} name              [The item name]
+   * @param {object} definitions        [The property definitions of the elements]
+   *
+   * @memberOf MlclElements
+   */
   public renderGqlItem(name: string, definitions: any) {
     const gqlObjDef = {
       fields: {},

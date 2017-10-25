@@ -2,6 +2,7 @@
 [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage percentage][coveralls-image]][coveralls-url]
 
 elements module for the Molecuel framework. Creating and configuring data models and validation for the database persistence layer. New database connections (documentdb + elasticsearch) are in progress. They will be implemented as adapters and it will be possible to save to different databases with one save method and define the population level of the data in a special population level to denormalize the data for aggregation and optimized reading.
+Elements is able to export all registered Typescript classes as graphql schema which can be used with any graphql server.
 
 ## Initialization
 
@@ -133,6 +134,13 @@ await exampleMessage.save();
 await elements.find(exampleMessage._id, Message.collection);
 ```
 
+### Export graphql schema
+
+```typescript
+const elements = di.getInstance("MlclElements");
+// returns schema as string
+const schema = elements.renderGraphQL();
+```
 ## Build System
 
 We are using npm to build the entire module.
