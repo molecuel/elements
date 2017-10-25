@@ -1,6 +1,6 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-beta1",
+  "version": "2.0.0-beta2",
   "description": "Molecuel Elements Module",
   "main": "lib/index.js",
   "scripts": {
