@@ -156,9 +156,19 @@ export class MlclElements {
             .filter((defined: any) => defined);
         }
       }
+      const idPattern = di.getInstance("MlclConfig").getConfig().idPattern || "id";
+      const dbIdPatterns: string[] = this.dbHandler.connections ? [] : ["_id"];
+      if (this.dbHandler.connections) {
+        for (const connection of this.dbHandler.connections) {
+          dbIdPatterns.push(connection.idPattern || connection.constructor.idPattern);
+        }
+      }
       for (const key in data) {
-        if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
-          instance[key.slice(1)] = data[key];
+        if (dbIdPatterns.indexOf(key) >= 0 && !instance[idPattern]) {
+          instance[idPattern] = data[key];
+          // }
+          // if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
+          //   instance[key.slice(1)] = data[key];
         } else if (key in instance || _.includes(_.map(meta, "property"), key)
           && !_.isEmpty(data[key])) {
           const typeMeta = meta.find((entry: any) => {
