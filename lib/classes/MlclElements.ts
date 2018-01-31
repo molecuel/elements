@@ -4,17 +4,6 @@ import { MlclDatabase } from "@molecuel/database";
 import { di, injectable } from "@molecuel/di";
 import * as TSV from "@molecuel/tsvalidate";
 import { applyPatch, compare, Operation, OperationResult } from "fast-json-patch";
-import {
-  GraphQLBoolean,
-  GraphQLFloat,
-  GraphQLID,
-  GraphQLInt,
-  GraphQLList,
-  GraphQLObjectType,
-  GraphQLSchema,
-  GraphQLString,
-  printSchema,
-} from "graphql";
 import * as _ from "lodash";
 import "reflect-metadata";
 import { DiffObject } from "./DiffObject";
