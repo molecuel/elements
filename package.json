@@ -1,6 +1,6 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-beta3",
+  "version": "2.0.0-beta4",
   "description": "Molecuel Elements Module",
   "main": "lib/index.js",
   "scripts": {
@@ -43,13 +43,11 @@
   },
   "dependencies": {
     "@molecuel/core": "^2.0.17",
-    "@molecuel/database": "2.0.0-alpha7",
-    "@molecuel/di": "^0.2.1",
     "@molecuel/database": "^2.0.0-alpha8",
+    "@molecuel/di": "^0.2.1",
     "@molecuel/tsvalidate": "^1.0.0-alpha1",
     "@reactivex/rxjs": "^5.4.3",
     "fast-json-patch": "^2.0.5",
-    "graphql": "^0.11.7",
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.3"
   }

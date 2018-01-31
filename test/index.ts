@@ -273,9 +273,6 @@ describe("Elements", () => {
       expect(car[1].property).equal("model");
       expect(car[1].type).equal("String");
     });
-    it("Should render graphql structure", () => {
-      expect(typeof el.renderGraphQL()).equal("string");
-    });
   });
   describe("DB interaction", () => {
     let car: Car;

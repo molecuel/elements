@@ -160,7 +160,7 @@ export class MlclElements {
     const instance = this.getInstance(className) || di.getInstance(className);
     if (instance) {
       const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance))
-      .concat(Reflect.getMetadataKeys(instance.constructor));
+        .concat(Reflect.getMetadataKeys(instance.constructor));
       let meta = [];
       for (const metakey of metakeys) {
         if (!metakey.includes("design:")) {
@@ -196,28 +196,44 @@ export class MlclElements {
   public getMetadataTypesForClass(classname: string, allowAny?: false) {
     const attribs = this.getClassAttributes(classname);
     const instance = this.getInstance(classname) || di.getInstance(classname);
+    //#region testing
+    const metakeys = Reflect.getMetadataKeys(Reflect.getPrototypeOf(instance))
+      .concat(Reflect.getMetadataKeys(instance.constructor));
+    let meta = [];
+    for (const metakey of metakeys) {
+      if (!metakey.includes("design:")) {
+        meta = meta.concat(Reflect.getMetadata(metakey, Reflect.getPrototypeOf(instance)))
+          .concat(Reflect.getMetadata(metakey, instance.constructor))
+          .filter((defined: any) => defined);
+      }
+    }
+    //#endregion
     let types = [];
     for (const attrib of attribs) {
       const designType = Reflect.getMetadata("tsvalidate:validators", Reflect.getPrototypeOf(instance))
-      .filter((data) => {
-        if (data.property === attrib && data.type === "ValidateType"  ) {
-          return data;
-        } else {
-          return;
-        }
-      });
+        .find((data) => {
+          if (data.property === attrib && data.type === "ValidateType") {
+            return data;
+            // } else {
+            //   return;
+          }
+        });
+      let nested = false;
       const metaTypes = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib);
       let attType;
-      if (designType && designType[0] && designType[0].value ) {
-        attType = designType[0].value.name;
+      if (designType && designType.value) {
+        if (Array.isArray(designType.value)) {
+          // todo: solution for recursive (array of arrays)
+          attType = designType.value[0].name;
+        } else {
+          attType = designType.value.name;
+        }
       } else if (metaTypes && metaTypes.name && metaTypes.name !== "Object" && metaTypes.name !== "Array") {
         attType = metaTypes.name;
         // attType = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib).name;
       } else if (allowAny && metaTypes && metaTypes.name && metaTypes.name !== "Array") {
         attType = metaTypes.name;
       }
-
-      let nested = false;
 
       if (metaTypes && metaTypes.name && metaTypes.name === "Array") {
         nested = true;
@@ -229,6 +245,7 @@ export class MlclElements {
         ];
       }
     }
+    // console.log({ classname, attribs, types, meta });
     return types;
   }
 
@@ -244,79 +261,6 @@ export class MlclElements {
       allClassTypes[elclass] = this.getMetadataTypesForClass(elclass);
     }
     return allClassTypes;
-  }
-
-  /**
-   * Returns a graphql schema for all registered Elements
-   *
-   * @memberOf MlclElements
-   */
-  public renderGraphQL() {
-    const elemProperties = this.getMetadataTypesForElements();
-    const keys = Object.keys(elemProperties);
-    for (const key of keys) {
-      const item = this.renderGqlItem(key, elemProperties);
-      this.gqlStore.set(key, item);
-    }
-    const queryType = {
-      description: "The root query type.",
-      fields: {},
-      name: "Query",
-    };
-
-    for (const [key, gqlElement] of this.gqlStore) {
-      queryType.fields[key] = {
-        type: gqlElement,
-      };
-    }
-
-    const queryGqlType = new GraphQLObjectType(queryType);
-
-    const schema = new GraphQLSchema({
-      query: queryGqlType,
-    });
-
-    return printSchema(schema);
-  }
-
-  /**
-   * Renders a Object type as graphql object type
-   *
-   * @param  {string} name              [The item name]
-   * @param {object} definitions        [The property definitions of the elements]
-   *
-   * @memberOf MlclElements
-   */
-  public renderGqlItem(name: string, definitions: any) {
-    const gqlObjDef = {
-      fields: {},
-      name,
-    };
-    for ( const prop of definitions[name]) {
-      let gqlType;
-      if (prop.type === "Number") {
-        gqlObjDef.fields[prop.property] = {};
-        gqlType = GraphQLFloat;
-      } else if (prop.type === "String") {
-        gqlObjDef.fields[prop.property] = {};
-        gqlType = GraphQLString;
-      } else if (prop.type === "Boolean") {
-        gqlObjDef.fields[prop.property] = {};
-        gqlType = GraphQLBoolean;
-      } else {
-        gqlObjDef.fields[prop.property] = {};
-        if (this.gqlStore.get(prop.type)) {
-          gqlType = this.gqlStore.get(prop.type);
-        } else {
-          gqlType = this.renderGqlItem(prop.type, definitions);
-        }
-      }
-      if (prop.nested) {
-        gqlType = new GraphQLList(gqlType);
-      }
-      gqlObjDef.fields[prop.property].type = gqlType;
-    }
-    return new GraphQLObjectType(gqlObjDef);
   }
 
   /**
@@ -348,9 +292,6 @@ export class MlclElements {
       for (const key in data) {
         if (dbIdPatterns.indexOf(key) >= 0 && !instance[idPattern]) {
           instance[idPattern] = data[key];
-          // }
-          // if (key === "_id" && (key.slice(1) in instance || _.includes(_.map(meta, "property"), key.slice(1)))) {
-          //   instance[key.slice(1)] = data[key];
         } else if (key in instance || _.includes(_.map(meta, "property"), key)
           && !_.isEmpty(data[key])) {
           const typeMeta = meta.find((entry: any) => {

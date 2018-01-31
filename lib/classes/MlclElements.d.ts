@@ -17,8 +17,6 @@ export declare class MlclElements {
     getClassAttributes(className: string): any[];
     getMetadataTypesForClass(classname: string, allowAny?: false): any[];
     getMetadataTypesForElements(): {};
-    renderGraphQL(): any;
-    renderGqlItem(name: string, definitions: any): any;
     toInstance(className: string, data: any): any;
     diffObjects(oldObj: any, newObj: any): DiffObject[];
     revertObject(obj: any, patches: Operation[]): OperationResult<any>;
