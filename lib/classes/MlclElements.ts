@@ -182,7 +182,7 @@ export class MlclElements {
    *
    * @memberOf MlclElements
    */
-  public getMetadataTypesForClass(classname: string, allowAny?: false) {
+  public getMetadataTypesForClass(classname: string, allowAny: boolean = false) {
     const attribs = this.getClassAttributes(classname);
     const instance = this.getInstance(classname) || di.getInstance(classname);
     //#region testing
@@ -199,9 +199,9 @@ export class MlclElements {
     //#endregion
     let types = [];
     for (const attrib of attribs) {
-      const designType = Reflect.getMetadata("tsvalidate:validators", Reflect.getPrototypeOf(instance))
+      const designType = Reflect.getMetadata(TSV.METADATAKEY, Reflect.getPrototypeOf(instance))
         .find((data) => {
-          if (data.property === attrib && data.type === "ValidateType") {
+          if (data.property === attrib && data.type === TSV.DecoratorTypes.IS_TYPED) {
             return data;
             // } else {
             //   return;
@@ -210,6 +210,10 @@ export class MlclElements {
       let nested = false;
       const metaTypes = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib);
       let attType;
+      if (attrib === di.getInstance("MlclConfig").getConfig().idPattern || "id"
+        && (!designType || !designType.value) && metaTypes && metaTypes.name === "Object")  {
+        attType = "ID";
+      }
       if (designType && designType.value) {
         if (Array.isArray(designType.value)) {
           // todo: solution for recursive (array of arrays)
@@ -243,11 +247,11 @@ export class MlclElements {
    *
    * @memberOf MlclElements
    */
-  public getMetadataTypesForElements() {
+  public getMetadataTypesForElements(allowAny: boolean = false) {
     const elemclasses = this.getClasses();
     const allClassTypes = {};
     for (const elclass of elemclasses) {
-      allClassTypes[elclass] = this.getMetadataTypesForClass(elclass);
+      allClassTypes[elclass] = this.getMetadataTypesForClass(elclass, allowAny);
     }
     return allClassTypes;
   }

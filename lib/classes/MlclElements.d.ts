@@ -15,8 +15,8 @@ export declare class MlclElements {
     getClasses(): string[];
     applyDecorators(target: object, propertyName?: string, ...decorators: Array<(...args: any[]) => any>): void;
     getClassAttributes(className: string): any[];
-    getMetadataTypesForClass(classname: string, allowAny?: false): any[];
-    getMetadataTypesForElements(): {};
+    getMetadataTypesForClass(classname: string, allowAny?: boolean): any[];
+    getMetadataTypesForElements(allowAny?: boolean): {};
     toInstance(className: string, data: any): any;
     diffObjects(oldObj: any, newObj: any): DiffObject[];
     revertObject(obj: any, patches: Operation[]): OperationResult<any>;
