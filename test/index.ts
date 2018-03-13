@@ -569,6 +569,23 @@ describe("Elements", () => {
       expect(someEngine.cylinders).to.not.be.instanceof(Element);
       expect(someEngine.cylinders).to.be.a("string");
     });
+    it("should delete documents via query", async () => {
+      let response;
+      try {
+        response = await el.remove({}, Car.collection);
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      try {
+        response = await el.find({}, Car.collection);
+      } catch (error) {
+        should.not.exist(error);
+      }
+      should.exist(response);
+      expect(response).to.be.instanceof(Array);
+      expect(response.length).to.equal(0);
+    });
     after(async () => {
       const dbHandler = el.dbHandler;
       if (dbHandler && dbHandler.connections) {

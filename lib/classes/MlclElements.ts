@@ -211,7 +211,7 @@ export class MlclElements {
       const metaTypes = Reflect.getMetadata("design:type", Reflect.getPrototypeOf(instance), attrib);
       let attType;
       if (attrib === di.getInstance("MlclConfig").getConfig().idPattern || "id"
-        && (!designType || !designType.value) && metaTypes && metaTypes.name === "Object")  {
+        && (!designType || !designType.value) && metaTypes && metaTypes.name === "Object") {
         attType = "ID";
       }
       if (designType && designType.value) {
@@ -238,7 +238,6 @@ export class MlclElements {
         ];
       }
     }
-    // console.log({ classname, attribs, types, meta });
     return types;
   }
 
@@ -426,6 +425,24 @@ export class MlclElements {
   }
 
   /**
+   * Remove on all databases based on query
+   * @param query
+   * @param collection
+   */
+  public async remove(query: object, collection: string): Promise<any> {
+    if (this.dbHandler && this.dbHandler.connections) {
+      try {
+        const result = await this.dbHandler.remove(query, collection);
+        return Promise.resolve(result);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    } else {
+      return Promise.reject(new Error("No connected databases."));
+    }
+  }
+
+  /**
    * Populates an instance
    *
    * @param {Object} obj            object instance to populate
@@ -509,6 +526,13 @@ export class MlclElements {
                   }
                   if (_.includes(this.getClasses(), result[prop].constructor.name)) {
                     await result[prop].populate();
+                  } else {
+                    const propPop = await this.populate(result[prop]);
+                    // try {
+
+                    // } catch (error) {
+                    result[prop] = propPop;
+                    // }
                   }
                 } catch (e) {
                   continue;

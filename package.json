@@ -1,6 +1,6 @@
 {
   "name": "@molecuel/elements",
-  "version": "2.0.0-beta5",
+  "version": "2.0.0-beta6",
   "description": "Molecuel Elements Module",
   "main": "lib/index.js",
   "scripts": {
@@ -25,7 +25,7 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@molecuel/mongodb": "^2.0.1-alpha10",
+    "@molecuel/mongodb": "^2.0.1-beta1",
     "@types/mocha": "^2.2.36",
     "@types/when": "^2.4.28",
     "chai": "^4.1.2",
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@molecuel/core": "^2.0.17",
-    "@molecuel/database": "^2.0.0-alpha8",
+    "@molecuel/database": "^2.0.0-beta1",
     "@molecuel/di": "^0.2.1",
     "@molecuel/tsvalidate": "^1.0.0-alpha1",
     "@reactivex/rxjs": "^5.4.3",

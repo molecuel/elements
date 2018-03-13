@@ -21,6 +21,7 @@ export declare class MlclElements {
     diffObjects(oldObj: any, newObj: any): DiffObject[];
     revertObject(obj: any, patches: Operation[]): OperationResult<any>;
     saveInstances(instances: Element[], upsert?: boolean): Promise<any>;
+    remove(query: object, collection: string): Promise<any>;
     populate(obj: object, properties?: string): Promise<any>;
     find(query: any, collection: string): Promise<any>;
     findById(id: any, collection: string): Promise<any>;
