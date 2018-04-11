@@ -621,6 +621,7 @@ export class MlclElements {
     for (const key in obj) {
       if (Reflect.has(obj, key)
         && obj[key] !== undefined
+        && obj[key] !== null
         && (propertiesValidatorDecorators[key]
           || _.isArray(obj))) {
         // check for non-prototype, validator-decorated property
