@@ -32,7 +32,8 @@
             "runtimeExecutable": null,
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/test/**/*.js"
+                "${workspaceRoot}/test/**/*.js",
+                "${workspaceRoot}/lib/**/*.js"
             ]
         }
     ]

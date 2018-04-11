@@ -390,7 +390,8 @@ export class MlclElements {
           const check = decorators.find((decorator: any) => {
             return (decorator && decorator.type === ELD.Decorators.NOT_FOR_POPULATION && !decorator.property);
           });
-          if (!check) {
+          if (!check && this.dbHandler.populationDatabases.connections
+              && this.dbHandler.populationDatabases.connections.length) {
             try {
               await this.populate(instance);
             } catch (error) {
