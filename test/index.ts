@@ -544,7 +544,7 @@ describe("Elements", () => {
       try {
         response = await someCylinder.save();
         should.exist(response);
-        let hits = await el.dbHandler.persistenceDatabases.find({}, someCylinder.collection);
+        let hits: any = await el.dbHandler.persistenceDatabases.find({}, someCylinder.collection);
         should.exist(hits);
         hits.should.be.instanceOf(Array);
         hits.length.should.equal(1);
