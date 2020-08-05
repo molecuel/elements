@@ -11,19 +11,19 @@
     "mongolastic": ">=0.8.22"
   },
   "devDependencies": {
-    "mocha": "*",
-    "should": ">= 0.0.1",
     "assert": ">=0.0.1",
-    "mongoose": ">=0.0.1",
-    "mocha-jshint": ">=0.0.1",
-    "mlcl_database": ">=0.0.1",
-    "mlcl_elastic": ">=1.2.0",
     "express": ">=4.0.0",
+    "mlcl_database": ">=0.0.1",
+    "mlcl_elastic": "^1.2.1",
+    "mlcl_url": ">=0.0.1",
+    "mocha": "*",
+    "mocha-jshint": ">=0.0.1",
+    "mongoose": ">=0.0.1",
     "request": ">=0.0.1",
-    "mlcl_url": ">=0.0.1"
+    "should": ">= 0.0.1"
   },
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha -R spec --exit"
   },
   "description": "Elements / Data type definition module for the molecuel CMS",
   "main": "index.js",

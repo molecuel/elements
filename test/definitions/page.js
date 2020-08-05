@@ -12,13 +12,14 @@ var definition = function() {
   };
   this.search = {
     mapping: {
-      'location.geo': { type: 'geo_point', 'lat_lon': true }
+      'location.geo': { type: 'geo_point' },
+      url: {type: 'keyword'}
     }
   };
   this.schema = {
     title: {type: String, required: true},
     body: {type: String},
-    url: {type: String, elastic: {mapping: {type: 'string', index: 'not_analyzed'}}},
+    url: {type: String},
     lang: {type: String},
     file: {type: elements.coreSchema.Types.Mixed, form: {type: 'fileuploader'}},
     'location': {
