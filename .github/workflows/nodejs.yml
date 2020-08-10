@@ -23,12 +23,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://npm.pkg.github.com/
-      # - name: Download Docker-Slim
-      #   run: |
-      #     curl -o $HOME/docker-slim.tar.gz https://downloads.dockerslim.com/releases/1.29.0/dist_linux.tar.gz
-      #     tar xvzf $HOME/docker-slim.tar.gz -C $HOME/
-      #     mv $HOME/dist_linux $HOME/docker-slim
-      #     echo "::set-env name=HOME::$HOME"
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.3.0
         with:
@@ -47,36 +41,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.GH_PACKAGE_READ}}
       - run: npm test
-      # - uses: Azure/docker-login@v1
-      #   if: ${{github.event_name == 'push' && (endsWith(github.ref, 'refs/heads/master') || endsWith(github.ref, 'refs/heads/staging'))}}
-      #   with:
-      #     login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-      #     username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USER }}
-      #     password: ${{ secrets.AZURE_CONTAINER_REGISTRY_SECRET }}
-      # - name: build & push image to azure
-      #   if: ${{github.event_name == 'push' && (endsWith(github.ref, 'refs/heads/master') || endsWith(github.ref, 'refs/heads/staging'))}}
-      #   shell: pwsh
-      #   run: |
-      #     $VERSION = $((Get-Content -Raw .\package.json | ConvertFrom-Json).version)
-      #     $BRANCH = $("${{github.ref}}".Replace("refs/heads/", $null))
-      #     Write-Host "::set-env name=BRANCH::$($BRANCH)"
-      #     Write-Host "::set-env name=VERSION::$($VERSION)"
-      #     ${{env.HOME}}\docker-slim\docker-slim build --dockerfile Dockerfile --include-shell --include-path=/var/node/config --include-path=/var/node/node_modules/iconv-lite/encodings --include-path=/var/node/node_modules/negotiator/lib --include-path=/usr/local/lib/node_modules/npm/node_modules --env NODE_ENV=staging --tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-$($BRANCH) .
-      #     docker tag ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-$($BRANCH) ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-$($BRANCH):$($VERSION)
-      #     docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-$($BRANCH):$($VERSION)
-      #     docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-$($BRANCH)
-      # - uses: Azure/aks-set-context@v1
-      #   if: ${{github.event_name == 'push' && (endsWith(github.ref, 'refs/heads/master') || endsWith(github.ref, 'refs/heads/staging'))}}
-      #   with:
-      #     creds: '${{ secrets.KUBE_SERVICE_PRINCIPLE_AUTH }}'
-      #     cluster-name: il-Kube-prod
-      #     resource-group: il_AKS_prod
-      # - uses: Azure/k8s-deploy@v1
-      #   if: ${{github.event_name == 'push' && (endsWith(github.ref, 'refs/heads/master') || endsWith(github.ref, 'refs/heads/staging'))}}
-      #   with:
-      #     manifests: |
-      #       config/deployManifests/ces_deployment.yaml
-      #       config/deployManifests/ces_ingressroute.yaml
-      #     namespace: sxrac
-      #     images: |
-      #       ${{ secrets.AZURE_CONTAINER_REGISTRY }}/inspirationlabs/csi2015-${{env.BRANCH}}:${{env.VERSION}}
