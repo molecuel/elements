@@ -1,6 +1,6 @@
 {
   "name": "mlcl_elements",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "dependencies": {
     "mongoose": ">=0.0.1",
     "form-server": "git+https://github.com/molecuel/form-server.git",
@@ -11,20 +11,20 @@
     "mongolastic": ">=0.8.22"
   },
   "devDependencies": {
-    "mocha": "*",
-    "should": ">= 0.0.1",
     "assert": ">=0.0.1",
-    "mongoose": ">=0.0.1",
-    "mocha-jshint": ">=0.0.1",
-    "mlcl_database": ">=0.0.1",
-    "mlcl_elastic": ">=0.0.1",
     "express": ">=4.0.0",
-    "request": ">=0.0.1",
+    "mlcl_database": ">=0.0.1",
+    "mlcl_elastic": "^1.2.1",
+    "mlcl_log": "^0.9.6",
     "mlcl_url": ">=0.0.1",
-    "mlcl_queue": ">=0.0.1"
+    "mocha": "*",
+    "mocha-jshint": ">=0.0.1",
+    "mongoose": ">=0.0.1",
+    "request": ">=0.0.1",
+    "should": ">= 0.0.1"
   },
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha -R spec --exit"
   },
   "description": "Elements / Data type definition module for the molecuel CMS",
   "main": "index.js",

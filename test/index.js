@@ -10,9 +10,9 @@ var should = require('should'),
   mlcl_database = require('mlcl_database'),
   mlcl_elastic = require('mlcl_elastic'),
   mlcl_url = require('mlcl_url'),
+  mlcl_log = require('mlcl_log'),
   request = require('request'),
   assert = require('assert'),
-  mlcl_queue = require('mlcl_queue'),
   mlcl_elements = require('../');
 
 describe('mlcl_elastic', function() {
@@ -31,6 +31,19 @@ describe('mlcl_elastic', function() {
     molecuel = new mlcl();
 
     molecuel.config = { };
+    molecuel.config.log = {
+      ttl: '1d',
+      overwriteConsole: false,
+      pathdebug: false,
+      'transports': {
+        'console': {
+          'level': 'debug'
+        },
+        'elasticsearch': {
+          'level': 'error'
+        }
+      }
+    };
     molecuel.config.search = {
       hosts: ['http://localhost:9200'],
       prefix: 'mlcl-elements-unit'
@@ -41,10 +54,6 @@ describe('mlcl_elastic', function() {
     };
     molecuel.config.elements = {
       schemaDir: __dirname + '/definitions'
-    };
-
-    molecuel.config.queue = {
-      uri: 'amqp://localhost'
     };
 
     molecuel.config.routes = [
@@ -66,9 +75,9 @@ describe('mlcl_elastic', function() {
     };
 
     mongo = mlcl_database(molecuel);
-    mlcl_queue(molecuel);
     elastic = mlcl_elastic(molecuel);
     elements = mlcl_elements(molecuel);
+    log = new mlcl_log(molecuel);
     mlcl_url(molecuel);
     done();
   });
