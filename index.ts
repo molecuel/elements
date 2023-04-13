@@ -63,86 +63,30 @@ var elements = function (): void {
    * Check if database and elasticsearch are available and register the schemas
    */
   var checkInit = function checkInit() {
-    if (self.database && self.elastic) {
-      molecuel.emit('mlcl::elements::registrations:pre', self);
-      // register subschemas from registry
-      self.registerSubSchemas();
-      // load the definitions
-      self.getDefinitions();
-      // register schemas from registry
-      self.registerSchemas();
-      // render Schemas from registry
-      self.setElementTypes();
-      // all registered event
-      molecuel.emit('mlcl::elements::registrations:post', self);
-      // send init event
-      molecuel.emit('mlcl::elements::init:post', self);
-    }
   };
 
   /**
    * Execute after successful database connection
    */
   molecuel.on('mlcl::database::connection:success', function (database) {
-    // mlcl_database module instance
-    self.database = database;
-    // make mongoose directly available
-    self.mongoose = self.database.database;
-    // Make the mongoose schema instance available
-    var Schema = self.mongoose.Schema;
-    var ObjectId = self.mongoose.Schema.ObjectId;
-    // Make the ObjectId available as local variable
-    self.ObjectId = ObjectId;
-    self.Types = self.mongoose.Schema.Types;
-    self.coreSchema = Schema;
-    self.baseSchema = {
-      published: { type: Boolean}
-    };
-    checkInit();
   });
 
   /**
    * Execute after successful elasticsearch connection
    */
   molecuel.on('mlcl::search::connection:success', function (elastic) {
-    self.elastic = elastic;
-    checkInit();
   });
 
   /**
    * Register form handler for every data Type
    */
   var formHandlerReg = function formHandlerReg() {
-    if (self.dataFormHandler) {
-      molecuel.emit('mlcl::elements::dataFormHandler::addResources:pre', self);
-      async.each(self.dataFormHandlerRegQueue, function (elname: string, callback) {
-        if (_.indexOf(self.dataFormHandlerReg, elname) === -1) {
-          self.dataFormHandler.addResource(elname, self.modelRegistry[elname], {
-            onSave: function(doc, req, callback) {
-              molecuel.emit('mlcl::elements::api:save', doc, req);
-              async.each(self.postApiQueue, function(queueElement: Function, qcallback: Function) {
-                queueElement(doc, req, qcallback);
-              }, function() {
-                callback(null);
-              });
-            }
-            //@todo findFunc function(req, callback(err, query)) applies a filter to records returned by the server
-          });
-          self.dataFormHandlerReg.push(elname);
-        }
-        callback();
-      }, function () {
-        molecuel.emit('mlcl::elements::dataFormHandler::addResources:post', self);
-      });
-    }
   };
 
   molecuel.on('mlcl::elements::dataFormHandlerInit:post', function () {
-    formHandlerReg();
   });
 
   molecuel.on('mlcl::elements::setElementType:post', function () {
-    formHandlerReg();
   });
 
   return this;
@@ -181,11 +125,9 @@ elements.prototype.save = function(model, callback) {
 * api handler registration
 */
 elements.prototype.registerPostApiHandler = function registerPostApiHandler(handlerFunction) {
-  this.postApiQueue.push(handlerFunction);
 };
 
 elements.prototype.registerIndexPreprocessor = function registerIndexPreprocessor(handlerFunction) {
-  mongolastic.registerIndexPreprocessor(handlerFunction);
 };
 
 
@@ -234,63 +176,15 @@ elements.prototype.getBaseSchema = function getBaseSchema() {
  * @param app the express app
  */
 elements.prototype.initApplication = function initApplication() {
-  // send init event
-  molecuel.emit('mlcl::elements::initApplication:pre', this);
-
-  molecuel.emit('mlcl::elements::initApplication:post', this);
 };
 
 elements.prototype.middleware = function middleware(config, app) {
-  if(config.type === 'formserver') {
-    /**
-     * Form handler stuff
-     */
-      // send init dataForm Handler
-    molecuel.emit('mlcl::elements::dataFormHandlerInit:pre', this);
-
-    // initialize the form handler
-    this.dataFormHandler = new (formServer)(app, this, molecuel);
-
-    // set the initialized variable to true
-    this.appInitialized = true;
-
-    molecuel.emit('mlcl::elements::dataFormHandlerInit:post', this, this.dataFormHandler);
-  }
 };
 
 /**
  * Express middleware
  */
 elements.prototype.get = function get(req, res, next) {
-  var self = this;
-  if (!req.language || req.language === 'dev') {
-    req.language = 'en';
-  }
-  var urlObject = url.parse(req.url);
-  self.searchByUrl(urlObject.pathname, req.language, function (err, result) {
-    if (result && result.hits && result.hits.hits && result.hits.hits[0]) {
-      var myObject = result.hits.hits[0];
-      var mySource = result.hits.hits[0]._source;
-      var myType = result.hits.hits[0]._type;
-      // set the elements content first for the main section
-      mySource._meta = {
-        module: 'elements',
-        type: myObject._type
-      };
-      molecuel.setContent(res, 'main', mySource);
-
-      // get the type handler if not default handling
-      var currentTypeHandler = self.getTypeHandler(myType);
-      // check if there is a special handler for the element type
-      if(currentTypeHandler) {
-        currentTypeHandler(req, res, next);
-      } else {
-        next();
-      }
-    } else {
-      next();
-    }
-  });
 };
 
 /**
@@ -321,14 +215,6 @@ elements.prototype.getById = function get(index, id, callback) {
  *
  */
 elements.prototype.syncMiddleware = function syncMiddleware(req, res) {
-  if(req.query.model) {
-    var elements = getInstance();
-    var model = elements.getModel(req.query.model);
-    model.resync(req.query.model);
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(404);
-  }
 };
 
 /**
@@ -346,22 +232,6 @@ elements.prototype.injectDefinition = function injectDefinition(name, definition
  * @todo load from configuration
  */
 elements.prototype.getDefinitions = function getDefinitions() {
-  molecuel.emit('mlcl::elements::preGetDefinitions', this);
-  var self = this;
-
-  /**
-   * Load schema definitions
-   * @type {*}
-   */
-  var defFiles = fs.readdirSync(this.schemaDir);
-  defFiles.forEach(function (entry: string) {
-    var suffix = '.js';
-    if(entry.indexOf('.js', entry.length - suffix.length) !== -1) {
-      var currentSchema = require(self.schemaDir + '/' + entry)(self);
-      self.registerSchemaDefinition(currentSchema);
-    }
-  });
-  molecuel.emit('mlcl::elements::postGetDefinitions', this);
 };
 
 /**
@@ -392,30 +262,12 @@ elements.prototype.getSubSchemaSchema = function getSubSchemaSchema(schemaname) 
  * @param config
  */
 elements.prototype.registerSchemaDefinition = function registerSchemaDefinition(schema, coreSchema) {
-  var schemaName = schema.schemaName;
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre', this, schema.schemaName, schema, coreSchema);
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:pre::' + schema.schemaName, this, schema, coreSchema);
-
-  if (!this.schemaDefinitionRegistry[schemaName]) {
-    this.schemaDefinitionRegistry[schemaName] = schema;
-    if (coreSchema) {
-      this.schemaDefinitionRegistry[schemaName].coreSchema = coreSchema;
-    }
-  }
-
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:post::' + schemaName, this, this.schemaDefinitionRegistry[schema.schemaName]);
-  molecuel.emit('mlcl::elements::registerSchemaDefinition:post', this, schemaName, this.schemaDefinitionRegistry[schema.schemaName]);
 };
 
 /**
  * Register all possible Subschemas
  */
 elements.prototype.registerSubSchemas = function registerSubSchemas() {
-  for (var name in this.schemaDefinitionRegistry) {
-    if (this.schemaDefinitionRegistry[name].options.subSchema === true) {
-      this.registerSubSchema(name);
-    }
-  }
 };
 
 /**
@@ -424,21 +276,6 @@ elements.prototype.registerSubSchemas = function registerSubSchemas() {
  * this is the place to extend the schema by other modules in the preRegister phase
  */
 elements.prototype.registerSubSchema = function registerSubSchema(schemaname) {
-  molecuel.emit('mlcl::elements::registerSubSchema:pre', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
-  molecuel.emit('mlcl::elements::registerSubSchema:pre::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
-
-  // create the schema
-  var modelSchema = new this.coreSchema(this.schemaDefinitionRegistry[schemaname].schema);
-
-  // add to schema registry
-  this.subSchemaRegistry[schemaname] = {};
-  this.subSchemaRegistry[schemaname].schema = modelSchema;
-  this.subSchemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
-  this.subSchemaRegistry[schemaname].indexes = this.schemaDefinitionRegistry[schemaname].indexes;
-
-  // emit post register events
-  molecuel.emit('mlcl::elements::registerSubSchema:post::' + schemaname, this, modelSchema);
-  molecuel.emit('mlcl::elements::registerSubSchema:post', this, schemaname, modelSchema);
 };
 
 /**
@@ -447,51 +284,6 @@ elements.prototype.registerSubSchema = function registerSubSchema(schemaname) {
  * this is the place to extend the schema by other modules in the preRegister phase
  */
 elements.prototype.registerSchema = function registerSchema(schemaname) {
-  var self = this;
-  molecuel.emit('mlcl::elements::registerSchema:pre', this, schemaname, this.schemaDefinitionRegistry[schemaname]);
-  molecuel.emit('mlcl::elements::registerSchema:pre::' + schemaname, this, this.schemaDefinitionRegistry[schemaname]);
-  // merge after putting into registry
-
-  var currentSchema = {};
-  _.extend(currentSchema, this.baseSchema, this.schemaDefinitionRegistry[schemaname].schema);
-
-  // if another schema is defined for the element
-  if (this.schemaDefinitionRegistry[schemaname].coreSchema) {
-    currentSchema = this.coreSchema;
-  }
-
-  var options = this.schemaDefinitionRegistry[schemaname].options;
-
-  var schemaOptions:any = {};
-
-  if (options.collection) {
-    schemaOptions.collection = options.collection;
-  }
-  if (options.safe) {
-    schemaOptions.safe = options.safe;
-  }
-
-  // create the schema
-  var modelSchema = new this.coreSchema(currentSchema, schemaOptions);
-
-  // add default plugin
-  modelSchema.plugin(self._defaultSchemaPlugin);
-
-  // add indexes
-  _.each(this.schemaDefinitionRegistry[schemaname].indexes, function(index) {
-    modelSchema.index(index);
-  });
-
-  // add to schema registry
-  this.schemaRegistry[schemaname] = {};
-  this.schemaRegistry[schemaname].schema = modelSchema;
-  this.schemaRegistry[schemaname].options = this.schemaDefinitionRegistry[schemaname].options;
-  this.schemaRegistry[schemaname].indexes = this.schemaDefinitionRegistry[schemaname].indexes;
-
-
-  // emit post register event and send the schemaRegistry for the current schema including the model
-  molecuel.emit('mlcl::elements::registerSchema:post', this, schemaname, this.schemaRegistry[schemaname]);
-  molecuel.emit('mlcl::elements::registerSchema:post::'+schemaname, this, this.schemaRegistry[schemaname]);
 };
 
 /**
@@ -499,11 +291,6 @@ elements.prototype.registerSchema = function registerSchema(schemaname) {
  * @param schemaname
  */
 elements.prototype.registerSchemas = function registerSchemas() {
-  for (var name in this.schemaDefinitionRegistry) {
-    if(this.schemaDefinitionRegistry.hasOwnProperty(name)) {
-      this.registerSchema(name);
-    }
-  }
 };
 
 /**
@@ -517,7 +304,6 @@ elements.prototype.getElementTypeSchemas = function getElementTypeSchemas() {
  * Get the schema config of a element
  */
 elements.prototype.getElementTypeSchemaConfig = function getElementTypeSchemaConfig(elementtypename) {
-  return this.schemaRegistry[elementtypename];
 };
 
 /**
@@ -533,7 +319,6 @@ elements.prototype.getElementTypes = function getElementTypes() {
  * @todo implement this
  */
 elements.prototype.getElementType = function getElementType(typename) {
-  return this.modelRegistry[typename];
 };
 
 /**
@@ -549,13 +334,6 @@ elements.prototype.getElementTypeNames = function getElementTypeNames() {
  *
  */
 elements.prototype.setElementTypes = function setElementTypes() {
-  molecuel.emit('mlcl::elements::setElementTypes:pre', this);
-  for (var name in this.schemaRegistry) {
-    if (this.schemaRegistry[name].options && !this.schemaRegistry[name].options.noCollection) {
-      this.setElementType(name);
-    }
-  }
-  molecuel.emit('mlcl::elements::setElementTypes:post', this);
 };
 
 /**
@@ -566,23 +344,6 @@ elements.prototype.setElementTypes = function setElementTypes() {
  * @param coreSchema can be used to use the mongoose core schema
  */
 elements.prototype.setElementType = function setElementType(typeName) {
-  molecuel.emit('mlcl::elements::setElementType:pre', this, typeName, this.schemaRegistry[typeName]);
-  molecuel.emit('mlcl::elements::setElementType:pre::' + typeName, this, this.schemaRegistry[typeName]);
-
-  var model = this.database.registerModel(typeName, this.schemaRegistry[typeName].schema, this.schemaRegistry[typeName].options);
-
-  if(this.schemaDefinitionRegistry[typeName].search) {
-    model.elastic = this.schemaDefinitionRegistry[typeName].search;
-  }
-
-  // add the model to the model registry
-  this.modelRegistry[typeName] = model;
-
-  // add a form handler for the ressource
-  this.dataFormHandlerRegQueue.push(typeName);
-
-  molecuel.emit('mlcl::elements::setElementType:post', this, typeName, model);
-  molecuel.emit('mlcl::elements::setElementType:post::' + typeName, this, model);
 };
 
 /**
@@ -593,32 +354,6 @@ elements.prototype.getFields = function getFields() {
 };
 
 elements.prototype._defaultSchemaPlugin = function _defaultSchemaPlugin(schema) {
-  /**
-   * Add fields
-   */
-  schema.add({
-    updatedat: { type: Date, default: Date.now, form: {readonly: true} },
-    createdat: { type: Date, default: Date.now, form: {readonly: true} },
-    publishedat: {type: Date, form: {readonly: true}}
-  });
-
-  /**
-   * Set published date
-   */
-  schema.path('published').set(function(newval) {
-    if(this.published === false && newval === true)  {
-      this.publishedat = new Date();
-    }
-    return newval;
-  });
-
-  /**
-   * pre validation function to create a url if it does not exist yet
-   */
-  schema.pre('save', function (next) {
-    this.updatedat = new Date();
-    next();
-  });
 };
 
 /**

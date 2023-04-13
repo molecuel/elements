@@ -1,14 +1,15 @@
 {
   "name": "mlcl_elements",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "dependencies": {
-    "mongoose": ">=0.0.1",
-    "form-server": "git+https://github.com/molecuel/form-server.git",
-    "validator": ">=0.0.1",
-    "uuid": ">=0.0.1",
-    "underscore": ">=0.0.1",
     "async": ">=0.0.1",
-    "mongolastic": ">=0.8.22"
+    "form-server": "git+https://github.com/molecuel/form-server.git",
+    "mongolastic": ">=0.8.22",
+    "mongoose": ">=0.0.1",
+    "typescript": "^5.0.4",
+    "underscore": ">=0.0.1",
+    "uuid": ">=0.0.1",
+    "validator": ">=0.0.1"
   },
   "devDependencies": {
     "assert": ">=0.0.1",
